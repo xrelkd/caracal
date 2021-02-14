@@ -1,0 +1,39 @@
+[package]
+name = "caracal"
+version = "0.1.0"
+authors = ["xrelkd <46590321+xrelkd@users.noreply.github.com>"]
+edition = "2018"
+
+autoexamples = false
+
+[features]
+default = ["x11"]
+
+x11 = ["x11rb"]
+
+[dependencies]
+mime = "0.3"
+snafu = "0.6"
+tracing = "0.1"
+serde = { version = "1", features = ["derive"] }
+
+[target.'cfg(all(unix, not(any(target_os="macos", target_os="android", target_os="emscripten"))))'.dependencies]
+x11rb = { version = "0.8", features = ["xfixes"], optional = true }
+
+[dev-dependencies]
+signal-hook = "0.3.4"
+
+[[example]]
+name = "x11-load"
+path = "examples/x11_load.rs"
+required-features = ["x11"]
+
+[[example]]
+name = "x11-load-wait"
+path = "examples/x11_load_wait.rs"
+required-features = ["x11"]
+
+[[example]]
+name = "x11-store"
+path = "examples/x11_store.rs"
+required-features = ["x11"]

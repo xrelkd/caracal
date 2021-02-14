@@ -3,7 +3,7 @@
 pkgs.mkShell {
   nativeBuildInputs = with pkgs; [ git rustup ];
 
-  buildInputs = with pkgs; [ xorg.libxcb ];
+  buildInputs = with pkgs; [ ];
 
   RUST_BACKTRACE = "full";
 }
