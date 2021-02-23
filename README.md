@@ -1,6 +1,8 @@
 # Caracal
 
-`caracal` is a library for getting, setting, monitoring the contents of the `X11` clipboard.
+[![Build](https://github.com/xrelkd/caracal/actions/workflows/build.yaml/badge.svg?branch=main)](https://github.com/xrelkd/caracal/actions/workflows/build.yaml)
+
+`caracal` is Rust library for getting, setting, watching the contents of the `X11` clipboard.
 
 # License
 
