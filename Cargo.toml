@@ -12,7 +12,7 @@ keywords    = ["download"]
 
 [workspace]
 resolver = "2"
-members  = ["crates/base", "crates/cli"]
+members  = ["crates/base", "crates/cli", "crates/metrics"]
 
 [workspace.lints.rust]
 box_pointers = "allow"
