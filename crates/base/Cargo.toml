@@ -1,0 +1,28 @@
+[package]
+name                 = "caracal-base"
+description          = "Caracal"
+version.workspace    = true
+authors.workspace    = true
+homepage.workspace   = true
+readme.workspace     = true
+repository.workspace = true
+license.workspace    = true
+edition.workspace    = true
+categories.workspace = true
+keywords.workspace   = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+
+http = "1"
+
+bytes       = "1"
+directories = "5"
+lazy_static = "1"
+mime        = "0.3"
+semver      = "1"
+snafu       = "0.7"
+time        = { version = "0.3", features = ["formatting", "local-offset", "macros"] }
+
+[lints]
+workspace = true
