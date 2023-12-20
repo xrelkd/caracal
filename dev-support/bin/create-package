@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+set -euxo pipefail
+
+PACKAGE_NAME="caracal"
+VERSION=$(basename "$REF")
+DIST=$(pwd)/dist
+
+echo "Packaging $PACKAGE_NAME $VERSION for $TARGET..."
+
+echo "Building $PACKAGE_NAME..."
+RUSTFLAGS="$TARGET_RUSTFLAGS" cargo build --target "$TARGET" --release
+
+echo "Copying release files..."
+mkdir "$DIST"
+cp -v "target/$TARGET/release/caracal" "$DIST"
+cp \
+    LICENSE \
+    README.md \
+    "$DIST"
+
+cd "$DIST"
+echo "Creating release archive..."
+case "$OS" in
+ubuntu-latest | macos-latest)
+    ARCHIVE="$DIST/$PACKAGE_NAME-$VERSION-$TARGET.tar.gz"
+    tar czvf "$ARCHIVE" -- *
+    echo "archive=$ARCHIVE" >>"$GITHUB_OUTPUT"
+    ;;
+
+esac
