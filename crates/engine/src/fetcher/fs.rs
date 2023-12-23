@@ -14,7 +14,7 @@ use tokio::{
 
 use crate::{error, error::Result, fetcher::Metadata};
 
-const MAX_BUFFER_SIZE: usize = 1 << 10;
+const MAX_BUFFER_SIZE: usize = 1 << 16;
 
 #[derive(Clone, Debug)]
 pub struct Fetcher {
