@@ -183,7 +183,7 @@ pedantic = "deny"
 
 [profile.release]
 opt-level = 3
-# lto       = true
+lto       = true
 
 [profile.dev]
 opt-level = 0
