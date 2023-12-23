@@ -1,0 +1,42 @@
+name: "Nix Flakes"
+
+on:
+  push:
+    branches:
+      - main
+      - ci/*
+      - develop
+      - feat/*
+      - feature/*
+      - hotfix/*
+      - release/*
+
+  pull_request:
+    paths:
+      - "**/src/**"
+      - ".github/**"
+      - "devshell/**"
+      - "src/**"
+      - Cargo.lock
+      - Cargo.toml
+      - flake.lock
+      - flake.nix
+      - rust-toolchain.toml
+
+jobs:
+  build-nix-flake:
+    name: Build Nix Flake
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v9
+
+      - name: Build Nix Flake
+        run: nix build
+
+      - name: Test executable
+        run: |
+          ./result/bin/caracal version
+          ./result/bin/caracald version
