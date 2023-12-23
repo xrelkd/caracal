@@ -1,0 +1,40 @@
+[package]
+name                 = "caracal"
+description          = "Caracal file downloader"
+version.workspace    = true
+authors.workspace    = true
+homepage.workspace   = true
+readme.workspace     = true
+repository.workspace = true
+license.workspace    = true
+edition.workspace    = true
+categories.workspace = true
+keywords.workspace   = true
+
+[dependencies]
+tracing            = "0.1"
+tracing-journald   = "0.3"
+tracing-subscriber = "0.3"
+
+http-serde = "2"
+serde      = { version = "1", features = ["derive"] }
+toml       = "0.8"
+
+futures = "0.3"
+sigfinn = "0.1"
+tokio   = { version = "1", features = ["rt-multi-thread", "sync"] }
+
+reqwest = { version = "0.11", default-features = false, features = ["stream"] }
+
+clap          = { version = "4", features = ["derive", "env"] }
+clap_complete = "4"
+http          = "1"
+indicatif     = "0.17"
+snafu         = "0.7"
+
+caracal-base   = { path = "../crates/base" }
+caracal-cli    = { path = "../crates/cli" }
+caracal-engine = { path = "../crates/engine" }
+
+[lints]
+workspace = true
