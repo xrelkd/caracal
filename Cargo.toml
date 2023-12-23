@@ -6,13 +6,20 @@ repository  = "https://github.com/xrelkd/caracal"
 readme      = "README.md"
 license     = "GPL-3.0-only"
 edition     = "2021"
-description = "Download manager written in Rust Programming Language."
+description = "File downloader written in Rust Programming Language."
 categories  = ["download manager"]
 keywords    = ["download"]
 
 [workspace]
 resolver = "2"
-members  = ["crates/base", "crates/cli", "crates/metrics"]
+members = [
+  "caracal",
+  "caracal-daemon",
+  "crates/base",
+  "crates/cli",
+  "crates/engine",
+  "crates/metrics",
+]
 
 [workspace.lints.rust]
 box_pointers = "allow"
@@ -176,7 +183,7 @@ pedantic = "deny"
 
 [profile.release]
 opt-level = 3
-lto       = true
+# lto       = true
 
 [profile.dev]
 opt-level = 0
