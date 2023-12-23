@@ -1,0 +1,50 @@
+[package]
+name                 = "caracal-engine"
+description          = "Caracal engine"
+version.workspace    = true
+authors.workspace    = true
+homepage.workspace   = true
+readme.workspace     = true
+repository.workspace = true
+license.workspace    = true
+edition.workspace    = true
+categories.workspace = true
+keywords.workspace   = true
+
+[dependencies]
+tracing = "0.1"
+
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+async-channel = "2"
+futures = "0.3"
+tokio = { version = "1", features = [
+  "fs",
+  "macros",
+  "rt-multi-thread",
+  "sync",
+] }
+tokio-stream = { version = "0.1", features = ["net"] }
+
+http = "1"
+suppaftp = { version = "5", default-features = false, features = [
+  "async",
+  "async-rustls",
+] }
+reqwest = { version = "0.11", default-features = false, features = [
+  "json",
+  "rustls",
+  "rustls-tls",
+  "stream",
+] }
+
+bytes       = "1"
+humansize   = "2"
+snafu       = "0.7"
+urlencoding = "2"
+
+caracal-base = { path = "../base" }
+
+[lints]
+workspace = true
