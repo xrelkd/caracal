@@ -19,5 +19,7 @@ tracing            = "0.1"
 tracing-journald   = "0.3"
 tracing-subscriber = "0.3"
 
+caracal-base = { path = "../base" }
+
 [lints]
 workspace = true

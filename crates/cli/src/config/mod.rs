@@ -1,3 +1,4 @@
+mod downloader;
 mod log;
 
-pub use self::log::LogConfig;
+pub use self::{downloader::DownloaderConfig, log::LogConfig};

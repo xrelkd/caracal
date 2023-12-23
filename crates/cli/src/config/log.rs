@@ -49,7 +49,7 @@ impl LogConfig {
 
     #[inline]
     #[must_use]
-    pub const fn default_emit_journald() -> bool { true }
+    pub const fn default_emit_journald() -> bool { false }
 
     #[inline]
     #[must_use]
@@ -60,9 +60,9 @@ impl LogConfig {
     pub const fn default_emit_stderr() -> bool { false }
 
     pub fn registry(&self) {
-        let Self { emit_journald, file_path, emit_stdout, emit_stderr, level: log_level } = self;
+        let Self { emit_journald, file_path, emit_stdout, emit_stderr, level } = self;
 
-        let filter_layer = tracing_subscriber::filter::LevelFilter::from_level(*log_level);
+        let filter_layer = tracing_subscriber::filter::LevelFilter::from_level(*level);
 
         tracing_subscriber::registry()
             .with(filter_layer)
@@ -84,7 +84,7 @@ enum LogDriver {
 
 impl LogDriver {
     /// # Panics
-    #[allow(clippy::type_repetition_in_bounds)]
+    #[allow(clippy::option_if_let_else, clippy::type_repetition_in_bounds)]
     fn layer<S>(self) -> Box<dyn Layer<S> + Send + Sync + 'static>
     where
         S: tracing::Subscriber,
@@ -108,7 +108,11 @@ impl LogDriver {
                 Box::new(fmt.with_writer(file))
             }
             Self::Journald => {
-                Box::new(tracing_journald::layer().expect("failed to open journald socket"))
+                if let Ok(journald) = tracing_journald::layer() {
+                    Box::new(journald)
+                } else {
+                    Box::new(fmt.with_writer(std::io::stdout))
+                }
             }
         }
     }
