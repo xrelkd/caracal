@@ -23,7 +23,7 @@ rustPlatform.buildRustPackage {
   ];
 
   postInstall = ''
-    for cmd in caracal caracal-daemon caracalctl; do
+    for cmd in caracal caracal-daemon; do
       installShellCompletion --cmd $cmd \
         --bash <($out/bin/$cmd completions bash) \
         --fish <($out/bin/$cmd completions fish) \
@@ -32,7 +32,7 @@ rustPlatform.buildRustPackage {
   '';
 
   meta = with lib; {
-    description = "Download Manager written in Rust Programming Language";
+    description = "File downloader written in Rust Programming Language";
     homepage = "https://github.com/xrelkd/caracal";
     license = licenses.gpl3Only;
     platforms = platforms.linux;

@@ -34,6 +34,7 @@ RUN cargo build --locked --release
 FROM alpine as caracal
 
 COPY --from=builder /build/target/release/caracal /usr/bin
+COPY --from=builder /build/target/release/caracal-daemon /usr/bin
 
 RUN <<EOF
 #!/usr/bin/env ash
@@ -45,4 +46,4 @@ set -eu
 
 EOF
 
-ENTRYPOINT [ "/usr/bin/caracal", "daemon" ]
+ENTRYPOINT [ "/usr/bin/caracal", "version" ]

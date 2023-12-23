@@ -39,4 +39,4 @@ jobs:
       - name: Test executable
         run: |
           ./result/bin/caracal version
-          ./result/bin/caracald version
+          ./result/bin/caracal-daemon version

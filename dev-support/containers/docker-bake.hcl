@@ -33,7 +33,7 @@ target "caracal" {
     "image.type"                      = "final"
     "image.authors"                   = "46590321+xrelkd@users.noreply.github.com"
     "image.vendor"                    = "xrelkd"
-    "image.description"               = "Caracal - download manager written in Rust Programming Language"
+    "image.description"               = "Caracal - File downloader written in Rust Programming Language"
     "org.opencontainers.image.source" = "https://github.com/xrelkd/caracal"
   }
 }
@@ -61,7 +61,7 @@ target "caracal-distroless" {
     "image.type"                      = "final"
     "image.authors"                   = "46590321+xrelkd@users.noreply.github.com"
     "image.vendor"                    = "xrelkd"
-    "image.description"               = "Caracal - download manager written in Rust Programming Language"
+    "image.description"               = "Caracal - File downloader written in Rust Programming Language"
     "org.opencontainers.image.source" = "https://github.com/xrelkd/caracal"
   }
 }
