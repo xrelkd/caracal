@@ -1,6 +1,6 @@
-use std::{future::Future, path::Path, pin::Pin, time::Duration};
+use std::{collections::HashMap, future::Future, path::Path, pin::Pin, time::Duration};
 
-use caracal_engine::{Factory, NewTask};
+use caracal_engine::{minio::MinioAlias, Factory, NewTask};
 use futures::{FutureExt, StreamExt};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use sigfinn::{ExitStatus, LifecycleManager};
@@ -12,7 +12,7 @@ const PROGRESS_STYLE_TEMPLATE: &str = "{spinner:.green} [{elapsed_precise}] [{ms
                                        [{wide_bar:.cyan/blue}] {binary_bytes_per_sec} {percent}% \
                                        {bytes}/{total_bytes} ({eta})";
 
-const CHUNK_SIZE: u64 = 10240;
+const CHUNK_SIZE: u64 = 100 * 1024;
 
 enum Event {
     Shutdown,
@@ -24,6 +24,7 @@ pub async fn run<P>(
     output_directory: Option<P>,
     default_worker_number: u16,
     worker_number: Option<u16>,
+    minio_aliases: HashMap<String, MinioAlias>,
 ) -> Result<(), Error>
 where
     P: AsRef<Path> + Send,
@@ -45,7 +46,7 @@ where
         return Err(Error::OutputDirectoryPathIsFile { output_directory });
     }
 
-    let factory = Factory::new(u64::from(default_worker_number), CHUNK_SIZE);
+    let factory = Factory::new(u64::from(default_worker_number), CHUNK_SIZE, minio_aliases);
     let multi_progress = MultiProgress::new();
     let sty = ProgressStyle::with_template(PROGRESS_STYLE_TEMPLATE)
         .expect("valid template")
