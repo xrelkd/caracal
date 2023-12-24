@@ -2,6 +2,7 @@ mod fs;
 mod generic;
 mod http;
 mod minio;
+mod sftp;
 
 use std::{fmt, path::PathBuf};
 
@@ -21,6 +22,7 @@ pub enum Fetcher {
     FileSystem(fs::Fetcher),
     Http(http::Fetcher),
     Minio(minio::Fetcher),
+    Sftp(sftp::Fetcher),
 }
 
 impl Fetcher {
@@ -30,6 +32,21 @@ impl Fetcher {
 
     pub const fn new_http(client: reqwest::Client, url: reqwest::Url) -> Self {
         Self::Http(http::Fetcher::new(client, url))
+    }
+
+    pub async fn new_sftp<S, T, U, V>(
+        endpoint: S,
+        user: T,
+        identity_file: U,
+        file_path: V,
+    ) -> Result<Self>
+    where
+        S: fmt::Display + Send + Sync,
+        T: fmt::Display + Send + Sync,
+        U: fmt::Display + Send + Sync,
+        V: fmt::Display + Send + Sync,
+    {
+        Ok(Self::Sftp(sftp::Fetcher::new(endpoint, user, identity_file, file_path).await?))
     }
 
     pub fn new_minio<S, T, U, V, W>(
@@ -60,25 +77,28 @@ impl Fetcher {
             Self::FileSystem(fetcher) => Ok(fetcher.fetch_metadata()),
             Self::Http(fetcher) => fetcher.fetch_metadata().await,
             Self::Minio(fetcher) => fetcher.fetch_metadata().await,
+            Self::Sftp(fetcher) => Ok(fetcher.fetch_metadata()),
         }
     }
 
     pub async fn fetch_bytes(&mut self, start: u64, end: u64) -> Result<ByteStream> {
         debug_assert!(start <= end);
         match self {
-            Self::Http(client) => client.fetch_bytes(start, end).await.map(ByteStream::Http),
-            Self::Minio(client) => client.fetch_bytes(start, end).await.map(ByteStream::Generic),
             Self::FileSystem(client) => {
                 client.fetch_bytes(start, end).await.map(ByteStream::Generic)
             }
+            Self::Http(client) => client.fetch_bytes(start, end).await.map(ByteStream::Http),
+            Self::Minio(client) => client.fetch_bytes(start, end).await.map(ByteStream::Generic),
+            Self::Sftp(client) => client.fetch_bytes(start, end).await.map(ByteStream::Generic),
         }
     }
 
     pub async fn fetch_all(&mut self) -> Result<ByteStream> {
         match self {
+            Self::FileSystem(client) => client.fetch_all().await.map(ByteStream::Generic),
             Self::Http(client) => client.fetch_all().await.map(ByteStream::Http),
             Self::Minio(client) => client.fetch_all().await.map(ByteStream::Generic),
-            Self::FileSystem(client) => client.fetch_all().await.map(ByteStream::Generic),
+            Self::Sftp(client) => client.fetch_all().await.map(ByteStream::Generic),
         }
     }
 }

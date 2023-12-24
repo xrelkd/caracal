@@ -17,6 +17,9 @@ pub enum Error {
     #[snafu(display("URL {url} is not a valid MinIO URL"))]
     InvalidMinioUrl { url: reqwest::Url },
 
+    #[snafu(display("Hostname is not a provided"))]
+    HostnameNotProvided,
+
     #[snafu(display("Could not fetch the length of resource"))]
     NoLength,
 
@@ -77,8 +80,8 @@ pub enum Error {
     #[snafu(display("Error occurs while fetching bytes from MinIO, error: {source}"))]
     FetchBytesFromMinio { source: opendal::Error },
 
-    #[snafu(display("Error occurs while fetching metadata from MinIO, error: {error}"))]
-    FetchMetadataFromMinio { error: String },
+    #[snafu(display("Error occurs while getting metadata from SFTP server, error: {source}"))]
+    GetMetadataFromSftp { source: opendal::Error },
 
     #[snafu(display("Error occurs while fetching HTTP header, error: {source}"))]
     FetchHttpHeader { source: reqwest::Error },
@@ -91,6 +94,9 @@ pub enum Error {
 
     #[snafu(display("MinIO alias `{alias}` not found"))]
     MinioAliasNotFound { alias: String },
+
+    #[snafu(display("SSH configuration `{endpoint}` not found"))]
+    SshConfigNotFound { endpoint: String },
 
     #[snafu(display("Error occurs while join tokio task, error: {source}"))]
     JoinTask { source: tokio::task::JoinError },
