@@ -19,6 +19,8 @@ pub const DBUS_OBJECT_PATH_PREFIX: &str = "/org/caracal/caracal-daemon";
 pub const DBUS_SYSTEM_OBJECT_PATH: &str = "/org/caracal/caracal-daemon/system";
 pub const DBUS_MANAGER_OBJECT_PATH: &str = "/org/caracal/caracal-daemon/manager";
 
+pub const FALLBACK_FILENAME: &str = "index.html";
+
 lazy_static! {
     pub static ref PROJECT_SEMVER: semver::Version = semver::Version::parse(PROJECT_VERSION)
         .unwrap_or(semver::Version {
