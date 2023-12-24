@@ -27,7 +27,7 @@ impl Fetcher {
         if resp.status().is_success() {
             let len_str = resp
                 .headers()
-                .get("content-length")
+                .get(header::CONTENT_LENGTH)
                 .context(error::NoLengthSnafu)?
                 .to_str()
                 .ok()
