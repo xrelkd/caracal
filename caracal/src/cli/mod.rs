@@ -6,7 +6,7 @@ use caracal_cli::{
     profile,
     profile::{Profile, ProfileItem},
 };
-use caracal_engine::minio::MinioAlias;
+use caracal_engine::{minio::MinioAlias, ssh::SshConfig};
 use clap::{CommandFactory, Parser, Subcommand};
 use snafu::ResultExt;
 use tokio::runtime::Runtime;
@@ -112,10 +112,23 @@ impl Cli {
             match commands {
                 None => {
                     let mut minio_aliases = HashMap::new();
+                    let mut ssh_servers = HashMap::new();
                     for profile_file in config.profile_files {
                         for profile_item in Profile::load(profile_file).await?.profiles {
                             match profile_item {
-                                ProfileItem::Ssh(_) => {}
+                                ProfileItem::Ssh(profile::Ssh {
+                                    name,
+                                    endpoint,
+                                    user,
+                                    identity_file,
+                                }) => {
+                                    let config = SshConfig {
+                                        endpoint,
+                                        user,
+                                        identity_file: identity_file.to_string_lossy().to_string(),
+                                    };
+                                    drop(ssh_servers.insert(name, config));
+                                }
                                 ProfileItem::Minio(profile::Minio {
                                     name,
                                     endpoint_url,
@@ -135,6 +148,7 @@ impl Cli {
                         config.downloader.http.concurrent_connections,
                         concurrent_connections,
                         minio_aliases,
+                        ssh_servers,
                     )
                     .await
                 }

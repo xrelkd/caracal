@@ -1,6 +1,6 @@
 use std::{collections::HashMap, future::Future, path::Path, pin::Pin, time::Duration};
 
-use caracal_engine::{minio::MinioAlias, Factory, NewTask};
+use caracal_engine::{minio::MinioAlias, ssh::SshConfig, Factory, NewTask};
 use futures::{FutureExt, StreamExt};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use sigfinn::{ExitStatus, LifecycleManager};
@@ -25,6 +25,7 @@ pub async fn run<P>(
     default_worker_number: u16,
     worker_number: Option<u16>,
     minio_aliases: HashMap<String, MinioAlias>,
+    ssh_servers: HashMap<String, SshConfig>,
 ) -> Result<(), Error>
 where
     P: AsRef<Path> + Send,
@@ -46,7 +47,8 @@ where
         return Err(Error::OutputDirectoryPathIsFile { output_directory });
     }
 
-    let factory = Factory::new(u64::from(default_worker_number), CHUNK_SIZE, minio_aliases);
+    let factory =
+        Factory::new(u64::from(default_worker_number), CHUNK_SIZE, minio_aliases, ssh_servers);
     let multi_progress = MultiProgress::new();
     let sty = ProgressStyle::with_template(PROGRESS_STYLE_TEMPLATE)
         .expect("valid template")
