@@ -45,7 +45,7 @@ impl Fetcher {
             filename: self
                 .file_path
                 .file_name()
-                .map_or_else(|| PathBuf::from("index.html"), PathBuf::from),
+                .map_or_else(|| PathBuf::from(caracal_base::FALLBACK_FILENAME), PathBuf::from),
         }
     }
 

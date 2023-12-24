@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use crate::minio::MinioPath;
 
 pub trait UrlExt {
-    const FALLBACK_FILENAME: &'static str = "index.html";
+    const FALLBACK_FILENAME: &'static str = caracal_base::FALLBACK_FILENAME;
 
     fn guess_filename(&self) -> PathBuf;
 

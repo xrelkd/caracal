@@ -56,11 +56,10 @@ impl Fetcher {
             length: metadata.content_length(),
             filename: metadata.content_disposition().map_or_else(
                 || {
-                    self.filename
-                        .split('/')
-                        .collect::<Vec<_>>()
-                        .last()
-                        .map_or_else(|| PathBuf::from("index.html"), PathBuf::from)
+                    self.filename.split('/').collect::<Vec<_>>().last().map_or_else(
+                        || PathBuf::from(caracal_base::FALLBACK_FILENAME),
+                        PathBuf::from,
+                    )
                 },
                 PathBuf::from,
             ),
