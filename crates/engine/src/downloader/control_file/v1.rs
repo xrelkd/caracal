@@ -22,15 +22,19 @@ pub struct Chunk {
     pub end: u64,
 
     pub received: u64,
+
+    pub is_completed: bool,
 }
 
 impl From<Chunk> for downloader::Chunk {
-    fn from(Chunk { start, end, received }: Chunk) -> Self { Self { start, end, received } }
+    fn from(Chunk { start, end, received, is_completed }: Chunk) -> Self {
+        Self { start, end, received, is_completed }
+    }
 }
 
 impl From<downloader::Chunk> for Chunk {
-    fn from(downloader::Chunk { start, end, received }: downloader::Chunk) -> Self {
-        Self { start, end, received }
+    fn from(downloader::Chunk { start, end, received, is_completed }: downloader::Chunk) -> Self {
+        Self { start, end, received, is_completed }
     }
 }
 

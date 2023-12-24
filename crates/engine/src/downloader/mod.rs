@@ -186,6 +186,7 @@ impl Downloader {
                     if let Err(err) = sink.sync_all().await {
                         tracing::warn!("Error occurs while synchronizing file, error: {err}");
                     }
+                    transfer_status.mark_chunk_completed(0);
                     summary = Summary::Completed { transfer_status };
                     break;
                 }
@@ -247,6 +248,8 @@ impl Downloader {
                 }
                 Event::ChunkTransferCompleted { chunk_start, worker_id: _worker_id } => {
                     let _unused = chunk_to_worker.remove(&chunk_start);
+                    transfer_status.mark_chunk_completed(chunk_start);
+
                     if transfer_status.is_completed() {
                         summary = Summary::Completed { transfer_status };
                         control_file.remove().await;
