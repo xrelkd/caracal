@@ -8,6 +8,9 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
 pub enum Error {
+    #[snafu(display("Fetching directory is not supported"))]
+    FetchingDirectory,
+
     #[snafu(display("The chunk size is invalid, value: {value}"))]
     BadChunkSize { value: u64 },
 
@@ -44,9 +47,6 @@ pub enum Error {
     #[snafu(display("Error occurs while writing file `{}`, error: {source}", file_path.display()))]
     WriteFile { file_path: PathBuf, source: std::io::Error },
 
-    #[snafu(display("Error occurs while reading file `{}`, error: {source}", file_path.display()))]
-    ReadFile { file_path: PathBuf, source: std::io::Error },
-
     #[snafu(display("Error occurs while flushing file `{}`, error: {source}", file_path.display()))]
     FlushFile { file_path: PathBuf, source: std::io::Error },
 
@@ -55,6 +55,15 @@ pub enum Error {
 
     #[snafu(display("Error occurs while resizing file `{}`, error: {source}", file_path.display()))]
     ResizeFile { file_path: PathBuf, source: std::io::Error },
+
+    #[snafu(display("Error occurs while creating reader, error: {source}"))]
+    CreateReader { source: opendal::Error },
+
+    #[snafu(display("Error occurs while reading from reader, error: {source}"))]
+    ReadFromReader { source: std::io::Error },
+
+    #[snafu(display("Error occurs while seeking in reader, error: {source}"))]
+    SeekReader { source: std::io::Error },
 
     #[snafu(display("Error occurs while cloning file instance `{}`, error: {source}", file_path.display()))]
     CloneFileInstance { file_path: PathBuf, source: std::io::Error },

@@ -1,13 +1,13 @@
-use std::{fmt, io::SeekFrom, path::PathBuf};
+use std::{fmt, path::PathBuf};
 
-use bytes::{Bytes, BytesMut};
 use opendal::{services, Operator};
 use snafu::ResultExt;
-use tokio::io::{AsyncReadExt, AsyncSeekExt};
 
-use crate::{error, error::Result, fetcher::Metadata};
-
-const MAX_BUFFER_SIZE: usize = 1 << 16;
+use crate::{
+    error,
+    error::Result,
+    fetcher::{generic::ByteStream, Metadata},
+};
 
 #[derive(Clone, Debug)]
 pub struct Fetcher {
@@ -75,37 +75,5 @@ impl Fetcher {
     pub async fn fetch_all(&self) -> Result<ByteStream> {
         let length = self.fetch_metadata().await?.length;
         self.fetch_bytes(0, length - 1).await
-    }
-}
-
-pub struct ByteStream {
-    reader: opendal::Reader,
-    start: u64,
-    end: u64,
-}
-
-impl ByteStream {
-    pub const fn new(reader: opendal::Reader, start: u64, end: u64) -> Self {
-        Self { reader, start, end }
-    }
-
-    pub async fn bytes(&mut self) -> Result<Option<Bytes>> {
-        if self.start > self.end {
-            return Ok(None);
-        }
-
-        let capacity = MAX_BUFFER_SIZE
-            .min(usize::try_from(self.end - self.start + 1).unwrap_or(MAX_BUFFER_SIZE));
-        let mut buf = BytesMut::zeroed(capacity);
-
-        let _ = self.reader.seek(SeekFrom::Start(self.start)).await.unwrap();
-        let n = self.reader.read_exact(buf.as_mut()).await.unwrap();
-
-        if n == 0 {
-            Ok(None)
-        } else {
-            self.start += n as u64;
-            Ok(Some(buf.freeze()))
-        }
     }
 }

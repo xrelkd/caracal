@@ -1,4 +1,5 @@
 mod fs;
+mod generic;
 mod http;
 mod minio;
 
@@ -65,33 +66,33 @@ impl Fetcher {
     pub async fn fetch_bytes(&mut self, start: u64, end: u64) -> Result<ByteStream> {
         debug_assert!(start <= end);
         match self {
-            Self::FileSystem(client) => Ok(ByteStream::FileSystem(client.fetch_bytes(start, end))),
             Self::Http(client) => client.fetch_bytes(start, end).await.map(ByteStream::Http),
-            Self::Minio(client) => client.fetch_bytes(start, end).await.map(ByteStream::Minio),
+            Self::Minio(client) => client.fetch_bytes(start, end).await.map(ByteStream::Generic),
+            Self::FileSystem(client) => {
+                client.fetch_bytes(start, end).await.map(ByteStream::Generic)
+            }
         }
     }
 
     pub async fn fetch_all(&mut self) -> Result<ByteStream> {
         match self {
-            Self::FileSystem(client) => Ok(ByteStream::FileSystem(client.fetch_all())),
             Self::Http(client) => client.fetch_all().await.map(ByteStream::Http),
-            Self::Minio(client) => client.fetch_all().await.map(ByteStream::Minio),
+            Self::Minio(client) => client.fetch_all().await.map(ByteStream::Generic),
+            Self::FileSystem(client) => client.fetch_all().await.map(ByteStream::Generic),
         }
     }
 }
 
 pub enum ByteStream {
-    FileSystem(fs::ByteStream),
     Http(http::ByteStream),
-    Minio(minio::ByteStream),
+    Generic(generic::ByteStream),
 }
 
 impl ByteStream {
     pub async fn bytes(&mut self) -> Result<Option<Bytes>> {
         match self {
-            Self::FileSystem(stream) => stream.bytes().await,
             Self::Http(stream) => stream.bytes().await,
-            Self::Minio(stream) => stream.bytes().await,
+            Self::Generic(stream) => stream.bytes().await,
         }
     }
 }
