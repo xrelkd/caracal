@@ -12,7 +12,7 @@ pub enum Error {
     GetCurrentDirectory { source: std::io::Error },
 
     #[snafu(display("Build HTTP client, error: {source}"))]
-    BuildHttpClient { source: reqwest::Error },
+    BuildHttpClient { source: opendal::Error },
 
     #[snafu(display("Connection timed out"))]
     ConnectionTimedOut,
@@ -91,6 +91,9 @@ pub enum Error {
 
     #[snafu(display("Error occurs while getting metadata from SFTP server, error: {source}"))]
     GetMetadataFromSftp { source: opendal::Error },
+
+    #[snafu(display("Error occurs while getting metadata from HTTP server, error: {source}"))]
+    GetMetadataFromHttp { source: opendal::Error },
 
     #[snafu(display("Error occurs while fetching HTTP header, error: {source}"))]
     FetchHttpHeader { source: reqwest::Error },

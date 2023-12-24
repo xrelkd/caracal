@@ -106,13 +106,13 @@ impl Builder {
             connection_timeout,
         } = self;
 
-        let http_client = reqwest::Client::builder()
-            .user_agent(
+        let http_client = {
+            let builder = reqwest::Client::builder().user_agent(
                 http_user_agent
                     .unwrap_or_else(|| caracal_base::DEFAULT_HTTP_USER_AGENT.to_string()),
-            )
-            .build()
-            .context(error::BuildHttpClientSnafu)?;
+            );
+            opendal::raw::HttpClient::build(builder).context(error::BuildHttpClientSnafu)?
+        };
 
         Ok(Factory {
             http_client,
@@ -128,7 +128,7 @@ impl Builder {
 
 #[derive(Clone, Debug)]
 pub struct Factory {
-    http_client: reqwest::Client,
+    http_client: opendal::raw::HttpClient,
 
     default_output_directory_path: PathBuf,
 

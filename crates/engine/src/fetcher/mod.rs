@@ -36,8 +36,8 @@ impl Fetcher {
         Ok(Self::FileSystem(fs::Fetcher::new(file_path).await?))
     }
 
-    pub async fn new_http(client: reqwest::Client, uri: Uri) -> Result<Self> {
-        Ok(Self::Http(http::Fetcher::new(client, uri).await?))
+    pub async fn new_http(http_client: opendal::raw::HttpClient, uri: Uri) -> Result<Self> {
+        Ok(Self::Http(http::Fetcher::new(http_client, uri).await?))
     }
 
     pub async fn new_sftp<S, T, U, V>(
@@ -97,7 +97,7 @@ impl Fetcher {
             Self::FileSystem(client) => {
                 client.fetch_bytes(start, end).await.map(ByteStream::Generic)
             }
-            Self::Http(client) => client.fetch_bytes(start, end).await.map(ByteStream::Http),
+            Self::Http(client) => client.fetch_bytes(start, end).await.map(ByteStream::Generic),
             Self::Minio(client) => client.fetch_bytes(start, end).await.map(ByteStream::Generic),
             Self::Sftp(client) => client.fetch_bytes(start, end).await.map(ByteStream::Generic),
         }
@@ -106,7 +106,7 @@ impl Fetcher {
     pub async fn fetch_all(&mut self) -> Result<ByteStream> {
         match self {
             Self::FileSystem(client) => client.fetch_all().await.map(ByteStream::Generic),
-            Self::Http(client) => client.fetch_all().await.map(ByteStream::Http),
+            Self::Http(client) => client.fetch_all().await.map(ByteStream::Generic),
             Self::Minio(client) => client.fetch_all().await.map(ByteStream::Generic),
             Self::Sftp(client) => client.fetch_all().await.map(ByteStream::Generic),
         }
@@ -114,14 +114,12 @@ impl Fetcher {
 }
 
 pub enum ByteStream {
-    Http(http::ByteStream),
     Generic(generic::ByteStream),
 }
 
 impl ByteStream {
     pub async fn bytes(&mut self) -> Result<Option<&[u8]>> {
         match self {
-            Self::Http(stream) => stream.bytes().await,
             Self::Generic(stream) => stream.bytes().await,
         }
     }

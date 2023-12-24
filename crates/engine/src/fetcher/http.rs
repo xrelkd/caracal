@@ -1,59 +1,66 @@
-use bytes::Bytes;
-use reqwest::{header, StatusCode};
-use snafu::ResultExt;
+use std::path::PathBuf;
+
+use opendal::{services, Operator};
+use snafu::{OptionExt, ResultExt};
 
 use crate::{
     error,
-    error::{Error, Result},
-    ext::{HttpResponseExt, UriExt},
-    fetcher::Metadata,
+    error::Result,
+    ext::UriExt,
+    fetcher::{generic::ByteStream, Metadata},
 };
 
 #[derive(Clone, Debug)]
 pub struct Fetcher {
-    client: reqwest::Client,
-    uri: http::Uri,
+    operator: Operator,
+
+    file_path: String,
+
     metadata: Metadata,
 }
 
 impl Fetcher {
-    pub async fn new(client: reqwest::Client, uri: http::Uri) -> Result<Self> {
-        let resp =
-            client.head(uri.to_string()).send().await.context(error::FetchHttpHeaderSnafu)?;
-        tracing::debug!("Response code: {}", resp.status());
-        tracing::debug!("Received HEAD response: {:?}", resp.headers());
+    pub async fn new(http_client: opendal::raw::HttpClient, uri: http::Uri) -> Result<Self> {
+        let host = uri.host().context(error::HostnameNotProvidedSnafu)?;
 
-        let metadata = if resp.status().is_success() {
-            let length = resp.headers().get(header::CONTENT_LENGTH).map_or(0, |len_str| {
-                len_str.to_str().map_or(0, |len_str| len_str.parse::<u64>().unwrap_or_default())
-            });
-
-            let filename = resp.filename().unwrap_or_else(|| uri.guess_filename());
-            Metadata { length, filename }
+        let mut builder = services::Http::default();
+        let _ = builder.http_client(http_client);
+        let scheme = uri.scheme_str().unwrap_or("https");
+        if let Some(port) = uri.port() {
+            let _ = builder.endpoint(&format!("{scheme}://{host}:{port}"));
         } else {
-            let resp = client
-                .get(uri.to_string())
-                .header(header::RANGE, "0-0")
-                .send()
-                .await
-                .context(error::FetchHttpHeaderSnafu)?;
-            let resp_status = resp.status();
-            tracing::debug!("Response code: {resp_status}");
-            if resp_status.is_success() {
-                tracing::debug!("Received GET 1B response: {:?}", resp.headers());
-
-                let length = resp.content_length().unwrap_or(0);
-                let filename = resp.filename().unwrap_or_else(|| uri.guess_filename());
-                Metadata { length, filename }
+            let _ = builder.endpoint(&format!("{scheme}://{host}"));
+        }
+        let _ = builder.root("/");
+        let file_path = {
+            let path = uri.path_and_query().map_or("/", http::uri::PathAndQuery::as_str);
+            if path == "/" {
+                String::from("index.html")
             } else {
-                return match resp_status {
-                    StatusCode::NOT_FOUND => Err(Error::NotFound { uri: uri.clone() }),
-                    _ => Err(Error::UnknownHttpError { status_code: resp_status }),
-                };
+                path.to_string()
             }
         };
 
-        Ok(Self { client, uri, metadata })
+        let operator =
+            Operator::new(builder).with_context(|_| error::BuildOpenDALOperatorSnafu)?.finish();
+
+        let metadata = {
+            let metadata = operator
+                .stat(file_path.as_ref())
+                .await
+                .with_context(|_| error::GetMetadataFromHttpSnafu)?;
+            let filename = metadata
+                .content_disposition()
+                .map(|content_disposition| {
+                    extract_filename_from_content_disposition(content_disposition)
+                        .unwrap_or_else(|| uri.guess_filename())
+                })
+                .map_or_else(|| uri.guess_filename(), PathBuf::from);
+            let length = metadata.content_length();
+            Metadata { length, filename }
+        };
+
+        Ok(Self { operator, file_path, metadata })
     }
 
     #[inline]
@@ -61,46 +68,36 @@ impl Fetcher {
 
     pub fn fetch_metadata(&self) -> Metadata { self.metadata.clone() }
 
-    pub async fn fetch_bytes(&mut self, start: u64, end: u64) -> Result<ByteStream> {
-        let resp = self
-            .client
-            .get(self.uri.to_string())
-            .header(header::RANGE, format!("bytes={start}-{end}"))
-            .send()
+    pub async fn fetch_all(&self) -> Result<ByteStream> {
+        self.operator
+            .reader_with(&self.file_path)
             .await
-            .context(error::FetchRangeFromHttpSnafu)?;
-        Ok(ByteStream::from(resp))
-    }
-
-    pub async fn fetch_all(&mut self) -> Result<ByteStream> {
-        self.client
-            .get(self.uri.to_string())
-            .send()
-            .await
-            .context(error::FetchRangeFromHttpSnafu)
             .map(ByteStream::from)
+            .context(error::CreateReaderSnafu)
+    }
+
+    pub async fn fetch_bytes(&self, start: u64, end: u64) -> Result<ByteStream> {
+        self.operator
+            .reader_with(&self.file_path)
+            .range(start..=end)
+            .await
+            .map(ByteStream::from)
+            .context(error::CreateReaderSnafu)
     }
 }
 
-#[derive(Debug)]
-pub struct ByteStream {
-    response: reqwest::Response,
-    buffer: Bytes,
-}
-
-impl ByteStream {
-    pub async fn bytes(&mut self) -> Result<Option<&[u8]>> {
-        match self.response.chunk().await.context(error::FetchBytesFromHttpSnafu) {
-            Ok(Some(mut bytes)) => {
-                std::mem::swap(&mut self.buffer, &mut bytes);
-                Ok(Some(self.buffer.as_ref()))
+fn extract_filename_from_content_disposition(content_disposition: &str) -> Option<PathBuf> {
+    let content_disposition = mailparse::parse_content_disposition(content_disposition);
+    if let Some(value) = content_disposition.params.get("filename*") {
+        let mut parts = value.split("UTF-8''");
+        let _ = parts.next();
+        if let Some(part) = parts.next() {
+            if let Ok(s) = urlencoding::decode(part) {
+                if !s.is_empty() {
+                    return Some(PathBuf::from(s.to_string()));
+                }
             }
-            Ok(None) => Ok(None),
-            Err(err) => Err(err),
         }
     }
-}
-
-impl From<reqwest::Response> for ByteStream {
-    fn from(response: reqwest::Response) -> Self { Self { response, buffer: Bytes::new() } }
+    content_disposition.params.get("filename").map(PathBuf::from)
 }
