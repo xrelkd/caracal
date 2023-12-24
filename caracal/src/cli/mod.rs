@@ -1,7 +1,12 @@
 mod standalone;
 
-use std::{io::Write, path::PathBuf};
+use std::{collections::HashMap, io::Write, path::PathBuf};
 
+use caracal_cli::{
+    profile,
+    profile::{Profile, ProfileItem},
+};
+use caracal_engine::{minio::MinioAlias, ssh::SshConfig};
 use clap::{CommandFactory, Parser, Subcommand};
 use snafu::ResultExt;
 use tokio::runtime::Runtime;
@@ -106,11 +111,44 @@ impl Cli {
         Runtime::new().context(error::InitializeTokioRuntimeSnafu)?.block_on(async move {
             match commands {
                 None => {
+                    let mut minio_aliases = HashMap::new();
+                    let mut ssh_servers = HashMap::new();
+                    for profile_file in config.profile_files {
+                        for profile_item in Profile::load(profile_file).await?.profiles {
+                            match profile_item {
+                                ProfileItem::Ssh(profile::Ssh {
+                                    name,
+                                    endpoint,
+                                    user,
+                                    identity_file,
+                                }) => {
+                                    let config = SshConfig {
+                                        endpoint,
+                                        user,
+                                        identity_file: identity_file.to_string_lossy().to_string(),
+                                    };
+                                    drop(ssh_servers.insert(name, config));
+                                }
+                                ProfileItem::Minio(profile::Minio {
+                                    name,
+                                    endpoint_url,
+                                    access_key,
+                                    secret_key,
+                                }) => {
+                                    let alias = MinioAlias { endpoint_url, access_key, secret_key };
+                                    drop(minio_aliases.insert(name, alias));
+                                }
+                            }
+                        }
+                    }
+
                     standalone::run(
                         urls,
                         output_directory,
                         config.downloader.http.concurrent_connections,
                         concurrent_connections,
+                        minio_aliases,
+                        ssh_servers,
                     )
                     .await
                 }

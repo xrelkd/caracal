@@ -13,6 +13,9 @@ pub struct Config {
 
     #[serde(default)]
     pub downloader: caracal_cli::config::DownloaderConfig,
+
+    #[serde(default)]
+    pub profile_files: Vec<PathBuf>,
 }
 
 impl Config {

@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{fmt, path::PathBuf};
 
 use opendal::{services, Operator};
 use snafu::ResultExt;
@@ -19,10 +19,26 @@ pub struct Fetcher {
 }
 
 impl Fetcher {
-    pub async fn new(url: reqwest::Url) -> Result<Self> {
-        let mut builder = services::Fs::default();
-        let _ = builder.root("/");
-        let file_path = PathBuf::from(url.path());
+    pub async fn new<S, T, U, V>(
+        endpoint: S,
+        user: T,
+        identity_file: U,
+        file_path: V,
+    ) -> Result<Self>
+    where
+        S: fmt::Display + Send + Sync,
+        T: fmt::Display + Send + Sync,
+        U: fmt::Display + Send + Sync,
+        V: fmt::Display + Send + Sync,
+    {
+        let mut builder = services::Sftp::default();
+        let _ = builder
+            .root("/")
+            .endpoint(endpoint.to_string().as_str())
+            .user(user.to_string().as_str())
+            .key(dbg!(identity_file.to_string().as_str()))
+            .known_hosts_strategy("Accept");
+        let file_path = PathBuf::from(file_path.to_string());
 
         let operator =
             Operator::new(builder).with_context(|_| error::BuildOpenDALOperatorSnafu)?.finish();
@@ -30,7 +46,7 @@ impl Fetcher {
         let metadata = operator
             .stat(&file_path.to_string_lossy())
             .await
-            .with_context(|_| error::GetMetadataFromMinioSnafu)?;
+            .with_context(|_| error::GetMetadataFromSftpSnafu)?;
 
         if metadata.is_dir() {
             return Err(Error::FetchingDirectory);

@@ -108,11 +108,10 @@ impl Downloader {
                 }
             };
             let mut progress = Progress::from(transfer_status.clone());
-            progress.set_filename(
-                self.filename
-                    .file_name()
-                    .map_or_else(|| "index.html", |s| s.to_str().unwrap_or("index.html")),
-            );
+            progress.set_filename(self.filename.file_name().map_or_else(
+                || caracal_base::FALLBACK_FILENAME,
+                |s| s.to_str().unwrap_or(caracal_base::FALLBACK_FILENAME),
+            ));
             Ok(Some((transfer_status, progress)))
         } else {
             Ok(None)
@@ -126,11 +125,10 @@ impl Downloader {
             recv.await
                 .map(|status| {
                     let mut progress = Progress::from(status);
-                    progress.set_filename(
-                        self.filename
-                            .file_name()
-                            .map_or_else(|| "index.html", |s| s.to_str().unwrap_or("index.html")),
-                    );
+                    progress.set_filename(self.filename.file_name().map_or_else(
+                        || caracal_base::FALLBACK_FILENAME,
+                        |s| s.to_str().unwrap_or(caracal_base::FALLBACK_FILENAME),
+                    ));
                     progress
                 })
                 .ok()

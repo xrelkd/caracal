@@ -26,6 +26,13 @@ pub enum Error {
     #[snafu(display("Error occurs while running lifecycle manager, error: {source}"))]
     LifecycleManager { source: sigfinn::Error },
 
+    #[snafu(display("{source}"))]
+    Profile { source: caracal_cli::profile::Error },
+
     #[snafu(display("No URL is provided"))]
     NoUrl,
+}
+
+impl From<caracal_cli::profile::Error> for Error {
+    fn from(source: caracal_cli::profile::Error) -> Self { Self::Profile { source } }
 }
