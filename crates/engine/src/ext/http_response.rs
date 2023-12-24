@@ -9,25 +9,21 @@ pub trait HttpResponseExt {
 impl HttpResponseExt for reqwest::Response {
     fn filename(&self) -> Option<PathBuf> {
         for token in self.headers().get_all(header::CONTENT_DISPOSITION) {
-            if let Ok(kv) = token.to_str().map(str::to_ascii_uppercase) {
-                if let Some((key, value)) = kv.find('=').map(|idx| {
-                    let key = kv[0..idx].trim().to_lowercase();
-                    let mut value = kv[idx + 1..].trim();
-                    if value.starts_with('"') && value.ends_with('"') && value.len() > 1 {
-                        value = &value[1..value.len() - 1];
-                    }
-                    (key, value.to_string())
-                }) {
-                    if key == "filename*" {
-                        let mut parts = value.split("utf-8''");
-                        if let Some(part) = parts.next() {
-                            return urlencoding::decode(part)
-                                .ok()
-                                .map(|s| PathBuf::from(s.to_string()));
+            if let Ok(kv) = token.to_str() {
+                let content_disposition = mailparse::parse_content_disposition(kv);
+                if let Some(value) = content_disposition.params.get("filename*") {
+                    let mut parts = value.split("UTF-8''");
+                    let _ = parts.next();
+                    if let Some(part) = parts.next() {
+                        if let Ok(s) = urlencoding::decode(part) {
+                            if !s.is_empty() {
+                                return Some(PathBuf::from(s.to_string()));
+                            }
                         }
-                    } else if key == "filename" {
-                        return Some(PathBuf::from(value));
                     }
+                }
+                if let Some(value) = content_disposition.params.get("filename") {
+                    return Some(PathBuf::from(value));
                 }
             }
         }

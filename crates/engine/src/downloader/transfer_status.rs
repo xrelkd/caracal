@@ -18,7 +18,8 @@ impl TransferStatus {
     }
 
     pub fn unknown_length() -> Self {
-        let chunks = HashMap::from([(0, Chunk { start: 0, end: 0, received: 0 })]);
+        let chunks =
+            HashMap::from([(0, Chunk { start: 0, end: 0, received: 0, is_completed: false })]);
         Self { content_length: 0, chunks }
     }
 
@@ -32,13 +33,24 @@ impl TransferStatus {
         let _unused = self.chunks.get_mut(&id).map(|chunk| chunk.received = received);
     }
 
-    pub fn is_completed(&self) -> bool { self.remaining() == 0 }
+    pub fn mark_chunk_completed(&mut self, id: u64) {
+        let _unused = self.chunks.get_mut(&id).map(|chunk| chunk.is_completed = true);
+    }
+
+    pub fn is_completed(&self) -> bool { self.chunks.values().all(|chunk| chunk.is_completed) }
 
     pub fn total_received(&self) -> u64 { self.chunks.values().map(|chunk| chunk.received).sum() }
 
     pub const fn content_length(&self) -> u64 { self.content_length }
 
-    pub fn remaining(&self) -> u64 { self.content_length - self.total_received() }
+    pub fn remaining(&self) -> u64 {
+        let total_received = self.total_received();
+        if self.content_length < total_received {
+            0
+        } else {
+            self.content_length - total_received
+        }
+    }
 
     pub fn split(&mut self) -> Option<(Chunk, Chunk)> {
         if self.is_completed() {
@@ -114,7 +126,7 @@ impl Iterator for InitialChunks {
         } else {
             let prev_start = self.start;
             self.start += self.chunk_size.min(self.end - self.start + 1);
-            Some(Chunk { start: prev_start, end: self.start - 1, received: 0 })
+            Some(Chunk { start: prev_start, end: self.start - 1, received: 0, is_completed: false })
         }
     }
 }

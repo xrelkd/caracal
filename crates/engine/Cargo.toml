@@ -28,6 +28,7 @@ tokio = { version = "1", features = [
 tokio-stream = { version = "0.1", features = ["net"] }
 
 http = "1"
+mailparse = "0.14"
 reqwest = { version = "0.11", default-features = false, features = [
   "json",
   "rustls",

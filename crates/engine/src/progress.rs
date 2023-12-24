@@ -35,7 +35,7 @@ impl Progress {
     }
 
     #[must_use]
-    pub fn is_completed(&self) -> bool { self.remaining() == 0 }
+    pub fn is_completed(&self) -> bool { self.chunks.iter().all(ProgressChunk::is_completed) }
 
     #[must_use]
     pub fn total_received(&self) -> u64 { self.chunks.iter().map(|chunk| chunk.received).sum() }
@@ -68,8 +68,12 @@ impl From<TransferStatus> for Progress {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct ProgressChunk {
     pub start: u64,
+
     pub end: u64,
+
     pub received: u64,
+
+    pub is_completed: bool,
 }
 
 impl ProgressChunk {
@@ -77,13 +81,18 @@ impl ProgressChunk {
 
     pub const fn remaining(&self) -> u64 {
         let len = self.len();
-        debug_assert!(len >= self.received);
-        len - self.received
+        if len >= self.received {
+            len - self.received
+        } else {
+            0
+        }
     }
 
-    pub const fn is_completed(&self) -> bool { self.remaining() == 0 }
+    pub const fn is_completed(&self) -> bool { self.is_completed }
 }
 
 impl From<Chunk> for ProgressChunk {
-    fn from(Chunk { start, end, received }: Chunk) -> Self { Self { start, end, received } }
+    fn from(Chunk { start, end, received, is_completed }: Chunk) -> Self {
+        Self { start, end, received, is_completed }
+    }
 }
