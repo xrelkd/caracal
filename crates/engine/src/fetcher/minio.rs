@@ -67,7 +67,8 @@ impl Fetcher {
     }
 
     pub async fn fetch_bytes(&self, start: u64, end: u64) -> Result<ByteStream> {
-        let reader = self.operator.reader(self.filename.as_str()).await.unwrap();
+        let reader =
+            self.operator.reader(self.filename.as_str()).await.context(error::CreateReaderSnafu)?;
         Ok(ByteStream::new(reader, start, end))
     }
 
