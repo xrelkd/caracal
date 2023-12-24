@@ -36,7 +36,7 @@ impl Fetcher {
             .root("/")
             .endpoint(endpoint.to_string().as_str())
             .user(user.to_string().as_str())
-            .key(dbg!(identity_file.to_string().as_str()))
+            .key(identity_file.to_string().as_str())
             .known_hosts_strategy("Accept");
         let file_path = PathBuf::from(file_path.to_string());
 
