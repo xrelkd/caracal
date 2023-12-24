@@ -1,7 +1,8 @@
 mod fs;
 mod http;
+mod minio;
 
-use std::path::PathBuf;
+use std::{fmt, path::PathBuf};
 
 use bytes::Bytes;
 
@@ -18,6 +19,7 @@ pub struct Metadata {
 pub enum Fetcher {
     FileSystem(fs::Fetcher),
     Http(http::Fetcher),
+    Minio(minio::Fetcher),
 }
 
 impl Fetcher {
@@ -29,10 +31,34 @@ impl Fetcher {
         Self::Http(http::Fetcher::new(client, url))
     }
 
+    pub fn new_minio<S, T, U, V, W>(
+        endpoint_url: S,
+        access_key: T,
+        secret_key: U,
+        bucket: V,
+        filename: W,
+    ) -> Result<Self>
+    where
+        S: fmt::Display,
+        T: fmt::Display,
+        U: fmt::Display,
+        V: fmt::Display,
+        W: fmt::Display,
+    {
+        Ok(Self::Minio(minio::Fetcher::new(
+            endpoint_url,
+            access_key,
+            secret_key,
+            bucket,
+            filename,
+        )?))
+    }
+
     pub async fn fetch_metadata(&self) -> Result<Metadata> {
         match self {
             Self::FileSystem(fetcher) => Ok(fetcher.fetch_metadata()),
             Self::Http(fetcher) => fetcher.fetch_metadata().await,
+            Self::Minio(fetcher) => fetcher.fetch_metadata().await,
         }
     }
 
@@ -41,6 +67,7 @@ impl Fetcher {
         match self {
             Self::FileSystem(client) => Ok(ByteStream::FileSystem(client.fetch_bytes(start, end))),
             Self::Http(client) => client.fetch_bytes(start, end).await.map(ByteStream::Http),
+            Self::Minio(client) => client.fetch_bytes(start, end).await.map(ByteStream::Minio),
         }
     }
 
@@ -48,6 +75,7 @@ impl Fetcher {
         match self {
             Self::FileSystem(client) => Ok(ByteStream::FileSystem(client.fetch_all())),
             Self::Http(client) => client.fetch_all().await.map(ByteStream::Http),
+            Self::Minio(client) => client.fetch_all().await.map(ByteStream::Minio),
         }
     }
 }
@@ -55,6 +83,7 @@ impl Fetcher {
 pub enum ByteStream {
     FileSystem(fs::ByteStream),
     Http(http::ByteStream),
+    Minio(minio::ByteStream),
 }
 
 impl ByteStream {
@@ -62,6 +91,7 @@ impl ByteStream {
         match self {
             Self::FileSystem(stream) => stream.bytes().await,
             Self::Http(stream) => stream.bytes().await,
+            Self::Minio(stream) => stream.bytes().await,
         }
     }
 }

@@ -1,6 +1,6 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
-use snafu::ResultExt;
+use snafu::{OptionExt, ResultExt};
 use tokio::fs::OpenOptions;
 
 pub use crate::error::Error;
@@ -9,19 +9,33 @@ use crate::{
     error,
     ext::UrlExt,
     fetcher::Fetcher,
+    minio::MinioAlias,
 };
 
 #[derive(Clone, Debug)]
 pub struct Factory {
     http_client: reqwest::Client,
+
     default_worker_number: u64,
+
     minimum_chunk_size: u64,
+
+    minio_aliases: HashMap<String, MinioAlias>,
 }
 
 impl Factory {
     #[must_use]
-    pub fn new(default_worker_number: u64, minimum_chunk_size: u64) -> Self {
-        Self { http_client: reqwest::Client::new(), default_worker_number, minimum_chunk_size }
+    pub fn new(
+        default_worker_number: u64,
+        minimum_chunk_size: u64,
+        minio_aliases: HashMap<String, MinioAlias>,
+    ) -> Self {
+        Self {
+            http_client: reqwest::Client::new(),
+            default_worker_number,
+            minimum_chunk_size,
+            minio_aliases,
+        }
     }
 
     /// # Errors
@@ -29,6 +43,25 @@ impl Factory {
         let source = match new_task.url.scheme() {
             "http" | "https" => Fetcher::new_http(self.http_client.clone(), new_task.url.clone()),
             "file" => Fetcher::new_file(new_task.url.clone()).await?,
+            "minio" => {
+                let minio_path = new_task
+                    .url
+                    .minio_path()
+                    .with_context(|| error::InvalidMinioUrlSnafu { url: new_task.url.clone() })?;
+
+                let alias = self
+                    .minio_aliases
+                    .get(&minio_path.alias)
+                    .context(error::MinioAliasNotFoundSnafu { alias: minio_path.alias.clone() })?;
+
+                Fetcher::new_minio(
+                    &alias.endpoint_url,
+                    &alias.access_key,
+                    &alias.secret_key,
+                    minio_path.bucket,
+                    minio_path.object,
+                )?
+            }
             scheme => return Err(Error::UnsupportedScheme { scheme: scheme.to_string() }),
         };
 
