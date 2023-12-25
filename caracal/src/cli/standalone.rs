@@ -85,7 +85,7 @@ fn create_task_future(
                 Ok(d) => d,
                 Err(error) => {
                     eprintln!("{error}");
-                    return sigfinn::ExitStatus::Failure(Error::Downloader {
+                    return sigfinn::ExitStatus::Error(Error::Downloader {
                         url: Box::new(url),
                         error,
                     });
@@ -94,10 +94,7 @@ fn create_task_future(
 
             if let Err(error) = downloader.start().await {
                 tracing::error!("{error}");
-                return sigfinn::ExitStatus::Failure(Error::Downloader {
-                    url: Box::new(url),
-                    error,
-                });
+                return sigfinn::ExitStatus::Error(Error::Downloader { url: Box::new(url), error });
             }
 
             let mut shutdown = shutdown.into_stream();
@@ -147,7 +144,7 @@ fn create_task_future(
                 Ok(_) => sigfinn::ExitStatus::Success,
                 Err(error) => {
                     tracing::error!("{error}");
-                    sigfinn::ExitStatus::Failure(Error::Downloader { url: Box::new(url), error })
+                    sigfinn::ExitStatus::Error(Error::Downloader { url: Box::new(url), error })
                 }
             }
         }
