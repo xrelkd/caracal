@@ -8,6 +8,9 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
 pub enum Error {
+    #[snafu(display("Connection timed out"))]
+    ConnectionTimedOut,
+
     #[snafu(display("Fetching directory is not supported"))]
     FetchingDirectory,
 
@@ -19,9 +22,6 @@ pub enum Error {
 
     #[snafu(display("Hostname is not a provided"))]
     HostnameNotProvided,
-
-    #[snafu(display("Could not fetch the length of resource"))]
-    NoLength,
 
     #[snafu(display("Resource not found, URL: {url}"))]
     NotFound { url: reqwest::Url },

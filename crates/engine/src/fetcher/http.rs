@@ -1,6 +1,6 @@
 use bytes::Bytes;
 use reqwest::{header, StatusCode};
-use snafu::{OptionExt, ResultExt};
+use snafu::ResultExt;
 
 use crate::{
     error,
@@ -13,37 +13,25 @@ use crate::{
 pub struct Fetcher {
     client: reqwest::Client,
     url: reqwest::Url,
+    metadata: Metadata,
 }
 
 impl Fetcher {
-    pub const fn new(client: reqwest::Client, url: reqwest::Url) -> Self { Self { client, url } }
-
-    pub async fn fetch_metadata(&self) -> Result<Metadata> {
-        let resp =
-            self.client.head(self.url.clone()).send().await.context(error::FetchHttpHeaderSnafu)?;
+    pub async fn new(client: reqwest::Client, url: reqwest::Url) -> Result<Self> {
+        let resp = client.head(url.clone()).send().await.context(error::FetchHttpHeaderSnafu)?;
         tracing::debug!("Response code: {}", resp.status());
         tracing::debug!("Received HEAD response: {:?}", resp.headers());
 
-        if resp.status().is_success() {
-            let len_str = resp
-                .headers()
-                .get(header::CONTENT_LENGTH)
-                .context(error::NoLengthSnafu)?
-                .to_str()
-                .ok()
-                .context(error::NoLengthSnafu)?;
-            let length = len_str.parse::<u64>().with_context(|_| {
-                error::ParseLengthFromHttpHeaderSnafu { value: len_str.to_string() }
-            })?;
-            if length == 0 {
-                return Err(Error::NoLength);
-            }
-            let filename = resp.filename().unwrap_or_else(|| self.url.guess_filename());
-            Ok(Metadata { length, filename })
+        let metadata = if resp.status().is_success() {
+            let length = resp.headers().get(header::CONTENT_LENGTH).map_or(0, |len_str| {
+                len_str.to_str().map_or(0, |len_str| len_str.parse::<u64>().unwrap_or_default())
+            });
+
+            let filename = resp.filename().unwrap_or_else(|| url.guess_filename());
+            Metadata { length, filename }
         } else {
-            let resp = self
-                .client
-                .get(self.url.clone())
+            let resp = client
+                .get(url.clone())
                 .header(header::RANGE, "0-0")
                 .send()
                 .await
@@ -53,20 +41,21 @@ impl Fetcher {
             if resp_status.is_success() {
                 tracing::debug!("Received GET 1B response: {:?}", resp.headers());
 
-                let length = resp.content_length().context(error::NoLengthSnafu)?;
-                if length == 0 {
-                    return Err(Error::NoLength);
-                }
-                let file_name = resp.filename().unwrap_or_else(|| self.url.guess_filename());
-                Ok(Metadata { length, filename: file_name })
+                let length = resp.content_length().unwrap_or(0);
+                let filename = resp.filename().unwrap_or_else(|| url.guess_filename());
+                Metadata { length, filename }
             } else {
-                match resp_status {
-                    StatusCode::NOT_FOUND => Err(Error::NotFound { url: self.url.clone() }),
+                return match resp_status {
+                    StatusCode::NOT_FOUND => Err(Error::NotFound { url: url.clone() }),
                     _ => Err(Error::UnknownHttpError { status_code: resp_status }),
-                }
+                };
             }
-        }
+        };
+
+        Ok(Self { client, url, metadata })
     }
+
+    pub fn fetch_metadata(&self) -> Metadata { self.metadata.clone() }
 
     pub async fn fetch_bytes(&mut self, start: u64, end: u64) -> Result<ByteStream> {
         let resp = self

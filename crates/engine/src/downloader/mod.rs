@@ -218,8 +218,9 @@ impl Downloader {
         let mut worker_event_senders = HashMap::new();
         let mut join_set = JoinSet::new();
         for id in 0..worker_number {
-            let (worker_op_sender, worker_op_receiver) = mpsc::unbounded_channel::<WorkerEvent>();
-            drop(worker_event_senders.insert(id, worker_op_sender));
+            let (worker_event_sender, worker_event_receiver) =
+                mpsc::unbounded_channel::<WorkerEvent>();
+            drop(worker_event_senders.insert(id, worker_event_sender));
 
             let worker = Worker {
                 id,
@@ -228,7 +229,7 @@ impl Downloader {
                 file_path: file_path.clone(),
                 chunk_receiver: chunk_receiver.clone(),
                 progress_updater: ProgressUpdater::from(event_sender.clone()),
-                worker_op_receiver,
+                worker_op_receiver: worker_event_receiver,
             };
             let _handle = join_set.spawn(worker.serve());
         }

@@ -21,6 +21,7 @@ pub async fn run<P>(
     urls: Vec<reqwest::Url>,
     output_directory: Option<P>,
     worker_number: Option<u16>,
+    connection_timeout: Option<Duration>,
     downloader_factory: DownloaderFactory,
 ) -> Result<(), Error>
 where
@@ -57,6 +58,7 @@ where
             directory_path: output_directory.clone(),
             filename: None,
             worker_number: worker_number.map(u64::from),
+            connection_timeout,
         };
 
         let progress_bar = multi_progress.add(ProgressBar::new(0));
