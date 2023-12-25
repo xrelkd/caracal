@@ -30,7 +30,7 @@ impl Fetcher {
         let metadata = operator
             .stat(&file_path.to_string_lossy())
             .await
-            .with_context(|_| error::GetMetadataFromMinioSnafu)?;
+            .with_context(|_| error::GetMetadataFromFileSystemSnafu)?;
 
         if metadata.is_dir() {
             return Err(Error::FetchingDirectory);

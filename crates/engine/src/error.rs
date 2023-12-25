@@ -11,6 +11,9 @@ pub enum Error {
     #[snafu(display("Connection timed out"))]
     ConnectionTimedOut,
 
+    #[snafu(display("Destination file `{}` already exists", file_path.display()))]
+    DestinationFileExists { file_path: PathBuf },
+
     #[snafu(display("Fetching directory is not supported"))]
     FetchingDirectory,
 
@@ -91,6 +94,9 @@ pub enum Error {
 
     #[snafu(display("Error occurs while getting metadata from MinIO, error: {source}"))]
     GetMetadataFromMinio { source: opendal::Error },
+
+    #[snafu(display("Error occurs while getting metadata from file system, error: {source}"))]
+    GetMetadataFromFileSystem { source: opendal::Error },
 
     #[snafu(display("MinIO alias `{alias}` not found"))]
     MinioAliasNotFound { alias: String },
