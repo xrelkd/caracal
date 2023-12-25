@@ -63,7 +63,7 @@ impl Factory {
         if metadata.length == 0 {
             let filename = new_task.filename.unwrap_or_else(|| new_task.url.guess_filename());
             let full_path = [&new_task.directory_path, &filename].into_iter().collect::<PathBuf>();
-            if tokio::fs::try_exists(&full_path).await.is_ok() {
+            if tokio::fs::try_exists(&full_path).await.unwrap_or(false) {
                 return Err(Error::DestinationFileExists { file_path: full_path.clone() });
             }
             let sink = OpenOptions::new()
