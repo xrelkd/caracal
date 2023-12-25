@@ -14,10 +14,12 @@ pub struct Fetcher {
     operator: Operator,
 
     filename: String,
+
+    metadata: Metadata,
 }
 
 impl Fetcher {
-    pub fn new<S, T, U, V, W>(
+    pub async fn new<S, T, U, V, W>(
         endpoint_url: S,
         access_key: T,
         secret_key: U,
@@ -25,12 +27,13 @@ impl Fetcher {
         filename: W,
     ) -> Result<Self>
     where
-        S: fmt::Display,
-        T: fmt::Display,
-        U: fmt::Display,
-        V: fmt::Display,
-        W: fmt::Display,
+        S: fmt::Display + Send + Sync,
+        T: fmt::Display + Send + Sync,
+        U: fmt::Display + Send + Sync,
+        V: fmt::Display + Send + Sync,
+        W: fmt::Display + Send + Sync,
     {
+        let filename = filename.to_string();
         let mut builder = services::S3::default();
         let _ = builder
             .region("auto")
@@ -42,29 +45,28 @@ impl Fetcher {
         let operator =
             Operator::new(builder).with_context(|_| error::BuildOpenDALOperatorSnafu)?.finish();
 
-        Ok(Self { operator, filename: filename.to_string() })
-    }
+        let metadata =
+            operator.stat(&filename).await.with_context(|_| error::GetMetadataFromMinioSnafu)?;
 
-    pub async fn fetch_metadata(&self) -> Result<Metadata> {
-        let metadata = self
-            .operator
-            .stat(&self.filename)
-            .await
-            .with_context(|_| error::GetMetadataFromMinioSnafu)?;
-
-        Ok(Metadata {
-            length: metadata.content_length(),
-            filename: metadata.content_disposition().map_or_else(
-                || {
-                    self.filename.split('/').collect::<Vec<_>>().last().map_or_else(
-                        || PathBuf::from(caracal_base::FALLBACK_FILENAME),
-                        PathBuf::from,
-                    )
-                },
-                PathBuf::from,
-            ),
+        Ok(Self {
+            operator,
+            filename: filename.to_string(),
+            metadata: Metadata {
+                length: metadata.content_length(),
+                filename: metadata.content_disposition().map_or_else(
+                    || {
+                        filename.split('/').collect::<Vec<_>>().last().map_or_else(
+                            || PathBuf::from(caracal_base::FALLBACK_FILENAME),
+                            PathBuf::from,
+                        )
+                    },
+                    PathBuf::from,
+                ),
+            },
         })
     }
+
+    pub fn fetch_metadata(&self) -> Metadata { self.metadata.clone() }
 
     pub async fn fetch_bytes(&self, start: u64, end: u64) -> Result<ByteStream> {
         let reader =
@@ -73,7 +75,7 @@ impl Fetcher {
     }
 
     pub async fn fetch_all(&self) -> Result<ByteStream> {
-        let length = self.fetch_metadata().await?.length;
+        let length = self.fetch_metadata().length;
         self.fetch_bytes(0, length - 1).await
     }
 }

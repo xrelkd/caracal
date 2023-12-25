@@ -30,8 +30,8 @@ impl Fetcher {
         Ok(Self::FileSystem(fs::Fetcher::new(url).await?))
     }
 
-    pub const fn new_http(client: reqwest::Client, url: reqwest::Url) -> Self {
-        Self::Http(http::Fetcher::new(client, url))
+    pub async fn new_http(client: reqwest::Client, url: reqwest::Url) -> Result<Self> {
+        Ok(Self::Http(http::Fetcher::new(client, url).await?))
     }
 
     pub async fn new_sftp<S, T, U, V>(
@@ -49,7 +49,7 @@ impl Fetcher {
         Ok(Self::Sftp(sftp::Fetcher::new(endpoint, user, identity_file, file_path).await?))
     }
 
-    pub fn new_minio<S, T, U, V, W>(
+    pub async fn new_minio<S, T, U, V, W>(
         endpoint_url: S,
         access_key: T,
         secret_key: U,
@@ -57,27 +57,23 @@ impl Fetcher {
         filename: W,
     ) -> Result<Self>
     where
-        S: fmt::Display,
-        T: fmt::Display,
-        U: fmt::Display,
-        V: fmt::Display,
-        W: fmt::Display,
+        S: fmt::Display + Send + Sync,
+        T: fmt::Display + Send + Sync,
+        U: fmt::Display + Send + Sync,
+        V: fmt::Display + Send + Sync,
+        W: fmt::Display + Send + Sync,
     {
-        Ok(Self::Minio(minio::Fetcher::new(
-            endpoint_url,
-            access_key,
-            secret_key,
-            bucket,
-            filename,
-        )?))
+        Ok(Self::Minio(
+            minio::Fetcher::new(endpoint_url, access_key, secret_key, bucket, filename).await?,
+        ))
     }
 
-    pub async fn fetch_metadata(&self) -> Result<Metadata> {
+    pub fn fetch_metadata(&self) -> Metadata {
         match self {
-            Self::FileSystem(fetcher) => Ok(fetcher.fetch_metadata()),
-            Self::Http(fetcher) => fetcher.fetch_metadata().await,
-            Self::Minio(fetcher) => fetcher.fetch_metadata().await,
-            Self::Sftp(fetcher) => Ok(fetcher.fetch_metadata()),
+            Self::FileSystem(fetcher) => fetcher.fetch_metadata(),
+            Self::Http(fetcher) => fetcher.fetch_metadata(),
+            Self::Minio(fetcher) => fetcher.fetch_metadata(),
+            Self::Sftp(fetcher) => fetcher.fetch_metadata(),
         }
     }
 
