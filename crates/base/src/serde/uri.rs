@@ -7,11 +7,11 @@ use serde::{
 };
 
 /// # Errors
-pub fn serialize<S>(url: &http::Uri, s: S) -> Result<S::Ok, S::Error>
+pub fn serialize<S>(uri: &http::Uri, s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    s.serialize_str(url.to_string().as_str())
+    s.serialize_str(uri.to_string().as_str())
 }
 
 /// # Errors

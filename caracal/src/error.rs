@@ -20,8 +20,8 @@ pub enum Error {
     #[snafu(display("Error occurs while interacting with server, error: {error}"))]
     Operation { error: String },
 
-    #[snafu(display("Error occurs while downloading {url}, error: {error}"))]
-    Downloader { url: Box<reqwest::Url>, error: caracal_engine::Error },
+    #[snafu(display("Error occurs while downloading {uri}, error: {error}"))]
+    Downloader { uri: Box<http::Uri>, error: caracal_engine::Error },
 
     #[snafu(display("Error occurs while running lifecycle manager, error: {source}"))]
     LifecycleManager { source: sigfinn::Error },
@@ -29,8 +29,8 @@ pub enum Error {
     #[snafu(display("{source}"))]
     Profile { source: caracal_cli::profile::Error },
 
-    #[snafu(display("No URL is provided"))]
-    NoUrl,
+    #[snafu(display("No URI is provided"))]
+    NoUri,
 }
 
 impl From<caracal_cli::profile::Error> for Error {

@@ -60,7 +60,7 @@ pub struct Cli {
     #[arg(long = "timeout", short = 'T', help = "Set the network timeout to seconds")]
     connection_timeout: Option<u64>,
 
-    urls: Vec<reqwest::Url>,
+    uris: Vec<http::Uri>,
 }
 
 #[derive(Subcommand)]
@@ -88,7 +88,7 @@ impl Cli {
             output_directory,
             concurrent_connections,
             connection_timeout,
-            urls,
+            uris,
         } = self;
 
         match commands {
@@ -157,7 +157,7 @@ impl Cli {
                     }
 
                     standalone::run(
-                        urls,
+                        uris,
                         output_directory,
                         concurrent_connections,
                         connection_timeout.map(Duration::from_secs),

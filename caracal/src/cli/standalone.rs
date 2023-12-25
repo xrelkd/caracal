@@ -18,7 +18,7 @@ enum Event {
 }
 
 pub async fn run<P>(
-    urls: Vec<reqwest::Url>,
+    uris: Vec<http::Uri>,
     output_directory: Option<P>,
     worker_number: Option<u16>,
     connection_timeout: Option<Duration>,
@@ -27,8 +27,8 @@ pub async fn run<P>(
 where
     P: AsRef<Path> + Send,
 {
-    if urls.is_empty() {
-        return Err(Error::NoUrl);
+    if uris.is_empty() {
+        return Err(Error::NoUri);
     }
 
     let output_directory = if let Some(output_directory) = output_directory {
@@ -52,9 +52,9 @@ where
 
     let lifecycle_manager = LifecycleManager::<Error>::new();
 
-    for (idx, url) in urls.iter().enumerate() {
+    for (idx, uri) in uris.into_iter().enumerate() {
         let task = NewTask {
-            url: url.clone(),
+            uri,
             directory_path: output_directory.clone(),
             filename: None,
             worker_number: worker_number.map(u64::from),
@@ -80,13 +80,12 @@ fn create_task_future(
 ) -> impl FnOnce(sigfinn::Shutdown) -> Pin<Box<dyn Future<Output = ExitStatus<Error>> + Send>> {
     move |shutdown| {
         async move {
-            let url = task.url.clone();
-            let mut downloader = match factory.create_new_task(task).await {
+            let mut downloader = match factory.create_new_task(&task).await {
                 Ok(d) => d,
                 Err(error) => {
                     eprintln!("{error}");
                     return sigfinn::ExitStatus::Error(Error::Downloader {
-                        url: Box::new(url),
+                        uri: Box::new(task.uri),
                         error,
                     });
                 }
@@ -94,7 +93,10 @@ fn create_task_future(
 
             if let Err(error) = downloader.start().await {
                 tracing::error!("{error}");
-                return sigfinn::ExitStatus::Error(Error::Downloader { url: Box::new(url), error });
+                return sigfinn::ExitStatus::Error(Error::Downloader {
+                    uri: Box::new(task.uri),
+                    error,
+                });
             }
 
             let mut shutdown = shutdown.into_stream();
@@ -144,7 +146,7 @@ fn create_task_future(
                 Ok(_) => sigfinn::ExitStatus::Success,
                 Err(error) => {
                     tracing::error!("{error}");
-                    sigfinn::ExitStatus::Error(Error::Downloader { url: Box::new(url), error })
+                    sigfinn::ExitStatus::Error(Error::Downloader { uri: Box::new(task.uri), error })
                 }
             }
         }

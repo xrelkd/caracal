@@ -20,14 +20,14 @@ pub enum Error {
     #[snafu(display("The chunk size is invalid, value: {value}"))]
     BadChunkSize { value: u64 },
 
-    #[snafu(display("URL {url} is not a valid MinIO URL"))]
-    InvalidMinioUrl { url: reqwest::Url },
+    #[snafu(display("URI {uri} is not a valid MinIO URL"))]
+    InvalidMinioUrl { uri: http::Uri },
 
     #[snafu(display("Hostname is not a provided"))]
     HostnameNotProvided,
 
-    #[snafu(display("Resource not found, URL: {url}"))]
-    NotFound { url: reqwest::Url },
+    #[snafu(display("Resource not found, URI: {uri}"))]
+    NotFound { uri: http::Uri },
 
     #[snafu(display("The scheme `{scheme}` is not supported"))]
     UnsupportedScheme { scheme: String },

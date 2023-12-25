@@ -1,3 +1,5 @@
+extern crate http as hyper_http;
+
 mod downloader;
 mod error;
 mod ext;

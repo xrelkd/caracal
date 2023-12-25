@@ -1,4 +1,4 @@
 mod http_response;
-mod url;
+mod uri;
 
-pub use self::{http_response::HttpResponseExt, url::UrlExt};
+pub use self::{http_response::HttpResponseExt, uri::UriExt};

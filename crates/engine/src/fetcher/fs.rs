@@ -19,10 +19,10 @@ pub struct Fetcher {
 }
 
 impl Fetcher {
-    pub async fn new(url: reqwest::Url) -> Result<Self> {
+    pub async fn new(uri: http::Uri) -> Result<Self> {
         let mut builder = services::Fs::default();
         let _ = builder.root("/");
-        let file_path = PathBuf::from(url.path());
+        let file_path = PathBuf::from(uri.path());
 
         let operator =
             Operator::new(builder).with_context(|_| error::BuildOpenDALOperatorSnafu)?.finish();
