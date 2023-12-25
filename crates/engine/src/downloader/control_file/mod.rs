@@ -18,13 +18,13 @@ pub struct ControlFile {
 
     file_path: PathBuf,
 
-    url: reqwest::Url,
+    uri: http::Uri,
 }
 
 impl ControlFile {
     pub async fn new<P>(
         file_path: P,
-        url: reqwest::Url,
+        uri: http::Uri,
     ) -> Result<(Self, Option<TransferStatus>), Error>
     where
         P: AsRef<Path> + Send,
@@ -43,13 +43,13 @@ impl ControlFile {
             .await
             .context(error::CreateControlFileSnafu { file_path: file_path.clone() })?;
 
-        Ok((Self { file, file_path, url }, transfer_status))
+        Ok((Self { file, file_path, uri }, transfer_status))
     }
 
     pub async fn update_progress(&mut self, transfer_status: &TransferStatus) -> Result<(), Error> {
         let control = v1::Control {
             schema: 1,
-            uris: vec![self.url.to_string()],
+            uris: vec![self.uri.to_string()],
             content_length: Some(transfer_status.content_length),
             chunks: transfer_status.chunks().into_iter().map(Into::into).collect(),
         };

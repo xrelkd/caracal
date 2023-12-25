@@ -7,6 +7,7 @@ mod sftp;
 use std::{fmt, path::PathBuf};
 
 use bytes::Bytes;
+use hyper_http::Uri;
 
 use crate::error::Result;
 
@@ -26,12 +27,12 @@ pub enum Fetcher {
 }
 
 impl Fetcher {
-    pub async fn new_file(url: reqwest::Url) -> Result<Self> {
-        Ok(Self::FileSystem(fs::Fetcher::new(url).await?))
+    pub async fn new_file(uri: Uri) -> Result<Self> {
+        Ok(Self::FileSystem(fs::Fetcher::new(uri).await?))
     }
 
-    pub async fn new_http(client: reqwest::Client, url: reqwest::Url) -> Result<Self> {
-        Ok(Self::Http(http::Fetcher::new(client, url).await?))
+    pub async fn new_http(client: reqwest::Client, uri: Uri) -> Result<Self> {
+        Ok(Self::Http(http::Fetcher::new(client, uri).await?))
     }
 
     pub async fn new_sftp<S, T, U, V>(

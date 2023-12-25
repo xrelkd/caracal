@@ -36,7 +36,7 @@ pub struct Downloader {
     transfer_status: TransferStatus,
     sink: File,
     source: Fetcher,
-    url: reqwest::Url,
+    uri: http::Uri,
     filename: PathBuf,
     handle: DownloaderHandle,
 }
@@ -59,7 +59,7 @@ impl Downloader {
                 ))
             } else {
                 let (control_file, transfer_status) =
-                    ControlFile::new(&self.filename, self.url.clone()).await?;
+                    ControlFile::new(&self.filename, self.uri.clone()).await?;
                 if let Some(transfer_status) = transfer_status {
                     self.transfer_status = transfer_status;
                 }

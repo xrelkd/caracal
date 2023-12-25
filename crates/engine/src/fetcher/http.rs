@@ -5,20 +5,21 @@ use snafu::ResultExt;
 use crate::{
     error,
     error::{Error, Result},
-    ext::{HttpResponseExt, UrlExt},
+    ext::{HttpResponseExt, UriExt},
     fetcher::Metadata,
 };
 
 #[derive(Clone, Debug)]
 pub struct Fetcher {
     client: reqwest::Client,
-    url: reqwest::Url,
+    uri: http::Uri,
     metadata: Metadata,
 }
 
 impl Fetcher {
-    pub async fn new(client: reqwest::Client, url: reqwest::Url) -> Result<Self> {
-        let resp = client.head(url.clone()).send().await.context(error::FetchHttpHeaderSnafu)?;
+    pub async fn new(client: reqwest::Client, uri: http::Uri) -> Result<Self> {
+        let resp =
+            client.head(uri.to_string()).send().await.context(error::FetchHttpHeaderSnafu)?;
         tracing::debug!("Response code: {}", resp.status());
         tracing::debug!("Received HEAD response: {:?}", resp.headers());
 
@@ -27,11 +28,11 @@ impl Fetcher {
                 len_str.to_str().map_or(0, |len_str| len_str.parse::<u64>().unwrap_or_default())
             });
 
-            let filename = resp.filename().unwrap_or_else(|| url.guess_filename());
+            let filename = resp.filename().unwrap_or_else(|| uri.guess_filename());
             Metadata { length, filename }
         } else {
             let resp = client
-                .get(url.clone())
+                .get(uri.to_string())
                 .header(header::RANGE, "0-0")
                 .send()
                 .await
@@ -42,17 +43,17 @@ impl Fetcher {
                 tracing::debug!("Received GET 1B response: {:?}", resp.headers());
 
                 let length = resp.content_length().unwrap_or(0);
-                let filename = resp.filename().unwrap_or_else(|| url.guess_filename());
+                let filename = resp.filename().unwrap_or_else(|| uri.guess_filename());
                 Metadata { length, filename }
             } else {
                 return match resp_status {
-                    StatusCode::NOT_FOUND => Err(Error::NotFound { url: url.clone() }),
+                    StatusCode::NOT_FOUND => Err(Error::NotFound { uri: uri.clone() }),
                     _ => Err(Error::UnknownHttpError { status_code: resp_status }),
                 };
             }
         };
 
-        Ok(Self { client, url, metadata })
+        Ok(Self { client, uri, metadata })
     }
 
     pub fn fetch_metadata(&self) -> Metadata { self.metadata.clone() }
@@ -60,7 +61,7 @@ impl Fetcher {
     pub async fn fetch_bytes(&mut self, start: u64, end: u64) -> Result<ByteStream> {
         let resp = self
             .client
-            .get(self.url.clone())
+            .get(self.uri.to_string())
             .header(header::RANGE, format!("bytes={start}-{end}"))
             .send()
             .await
@@ -70,7 +71,7 @@ impl Fetcher {
 
     pub async fn fetch_all(&mut self) -> Result<ByteStream> {
         self.client
-            .get(self.url.clone())
+            .get(self.uri.to_string())
             .send()
             .await
             .context(error::FetchRangeFromHttpSnafu)

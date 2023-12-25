@@ -9,7 +9,7 @@ pub use crate::error::Error;
 use crate::{
     downloader::{Downloader, TransferStatus},
     error,
-    ext::UrlExt,
+    ext::UriExt,
     fetcher::Fetcher,
     minio::MinioAlias,
     ssh::SshConfig,
@@ -45,9 +45,9 @@ impl Default for Factory {
 
 impl Factory {
     /// # Errors
-    pub async fn create_new_task(&self, new_task: NewTask) -> Result<Downloader, Error> {
+    pub async fn create_new_task(&self, new_task: &NewTask) -> Result<Downloader, Error> {
         let source = {
-            let source_fut = self.create_fetcher(&new_task).boxed();
+            let source_fut = self.create_fetcher(new_task).boxed();
             let timeout =
                 tokio::time::sleep(new_task.connection_timeout.unwrap_or(self.connection_timeout));
 
@@ -61,7 +61,8 @@ impl Factory {
 
         let metadata = source.fetch_metadata();
         if metadata.length == 0 {
-            let filename = new_task.filename.unwrap_or_else(|| new_task.url.guess_filename());
+            let filename =
+                new_task.filename.clone().unwrap_or_else(|| new_task.uri.guess_filename());
             let full_path = [&new_task.directory_path, &filename].into_iter().collect::<PathBuf>();
             if tokio::fs::try_exists(&full_path).await.unwrap_or(false) {
                 return Err(Error::DestinationFileExists { file_path: full_path.clone() });
@@ -82,12 +83,12 @@ impl Factory {
                 transfer_status,
                 sink,
                 source,
-                url: new_task.url.clone(),
+                uri: new_task.uri.clone(),
                 filename: full_path,
                 handle: None,
             })
         } else {
-            let filename = new_task.filename.unwrap_or_else(|| metadata.filename.clone());
+            let filename = new_task.filename.clone().unwrap_or_else(|| metadata.filename.clone());
             let full_path = [&new_task.directory_path, &filename].into_iter().collect::<PathBuf>();
             if tokio::fs::try_exists(&full_path).await.unwrap_or(false)
                 && !tokio::fs::try_exists(ControlFile::file_path(&full_path)).await.unwrap_or(false)
@@ -121,7 +122,7 @@ impl Factory {
                 transfer_status,
                 sink,
                 source,
-                url: new_task.url.clone(),
+                uri: new_task.uri.clone(),
                 filename: full_path,
                 handle: None,
             })
@@ -129,25 +130,25 @@ impl Factory {
     }
 
     async fn create_fetcher(&self, new_task: &NewTask) -> Result<Fetcher, Error> {
-        match new_task.url.scheme() {
-            "http" | "https" => {
-                Fetcher::new_http(self.http_client.clone(), new_task.url.clone()).await
+        match new_task.uri.scheme_str() {
+            Some("file") | None => Fetcher::new_file(new_task.uri.clone()).await,
+            Some("http" | "https") => {
+                Fetcher::new_http(self.http_client.clone(), new_task.uri.clone()).await
             }
-            "file" => Fetcher::new_file(new_task.url.clone()).await,
-            "sftp" => {
-                let endpoint = new_task.url.host_str().context(error::HostnameNotProvidedSnafu)?;
-                let file_path = new_task.url.path();
+            Some("sftp") => {
+                let endpoint = new_task.uri.host().context(error::HostnameNotProvidedSnafu)?;
+                let file_path = new_task.uri.path();
                 let SshConfig { endpoint, user, identity_file } = self
                     .ssh_servers
                     .get(endpoint)
                     .context(error::SshConfigNotFoundSnafu { endpoint: endpoint.to_string() })?;
                 Fetcher::new_sftp(endpoint, user, identity_file, file_path).await
             }
-            "minio" => {
+            Some("minio") => {
                 let minio_path = new_task
-                    .url
+                    .uri
                     .minio_path()
-                    .with_context(|| error::InvalidMinioUrlSnafu { url: new_task.url.clone() })?;
+                    .with_context(|| error::InvalidMinioUrlSnafu { uri: new_task.uri.clone() })?;
 
                 let alias = self
                     .minio_aliases
@@ -163,14 +164,14 @@ impl Factory {
                 )
                 .await
             }
-            scheme => Err(Error::UnsupportedScheme { scheme: scheme.to_string() }),
+            Some(scheme) => Err(Error::UnsupportedScheme { scheme: scheme.to_string() }),
         }
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct NewTask {
-    pub url: reqwest::Url,
+    pub uri: http::Uri,
 
     pub filename: Option<PathBuf>,
 
