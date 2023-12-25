@@ -7,7 +7,7 @@ mod progress;
 pub mod ssh;
 
 pub use self::{
-    downloader::{Downloader, Factory, NewTask},
+    downloader::{Downloader, DownloaderFactory, NewTask},
     error::Error,
     progress::Progress,
 };

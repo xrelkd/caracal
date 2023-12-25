@@ -1,6 +1,6 @@
-use std::{collections::HashMap, future::Future, path::Path, pin::Pin, time::Duration};
+use std::{future::Future, path::Path, pin::Pin, sync::Arc, time::Duration};
 
-use caracal_engine::{minio::MinioAlias, ssh::SshConfig, Factory, NewTask};
+use caracal_engine::{DownloaderFactory, NewTask};
 use futures::{FutureExt, StreamExt};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use sigfinn::{ExitStatus, LifecycleManager};
@@ -12,8 +12,6 @@ const PROGRESS_STYLE_TEMPLATE: &str = "{spinner:.green} [{elapsed_precise}] [{ms
                                        [{wide_bar:.cyan/blue}] {binary_bytes_per_sec} {percent}% \
                                        {bytes}/{total_bytes} ({eta})";
 
-const CHUNK_SIZE: u64 = 100 * 1024;
-
 enum Event {
     Shutdown,
     UpdateProgress,
@@ -22,10 +20,8 @@ enum Event {
 pub async fn run<P>(
     urls: Vec<reqwest::Url>,
     output_directory: Option<P>,
-    default_worker_number: u16,
     worker_number: Option<u16>,
-    minio_aliases: HashMap<String, MinioAlias>,
-    ssh_servers: HashMap<String, SshConfig>,
+    downloader_factory: DownloaderFactory,
 ) -> Result<(), Error>
 where
     P: AsRef<Path> + Send,
@@ -47,8 +43,7 @@ where
         return Err(Error::OutputDirectoryPathIsFile { output_directory });
     }
 
-    let factory =
-        Factory::new(u64::from(default_worker_number), CHUNK_SIZE, minio_aliases, ssh_servers);
+    let downloader_factory = Arc::new(downloader_factory);
     let multi_progress = MultiProgress::new();
     let sty = ProgressStyle::with_template(PROGRESS_STYLE_TEMPLATE)
         .expect("valid template")
@@ -56,7 +51,7 @@ where
 
     let lifecycle_manager = LifecycleManager::<Error>::new();
 
-    for url in urls {
+    for (idx, url) in urls.iter().enumerate() {
         let task = NewTask {
             url: url.clone(),
             directory_path: output_directory.clone(),
@@ -67,8 +62,10 @@ where
         let progress_bar = multi_progress.add(ProgressBar::new(0));
         progress_bar.set_style(sty.clone());
 
-        let _handle = lifecycle_manager
-            .spawn(format!("{url}"), create_task_future(task, factory.clone(), progress_bar));
+        let _handle = lifecycle_manager.spawn(
+            format!("Downloader {idx}"),
+            create_task_future(task, downloader_factory.clone(), progress_bar),
+        );
     }
 
     lifecycle_manager.serve().await.context(error::LifecycleManagerSnafu)?
@@ -76,7 +73,7 @@ where
 
 fn create_task_future(
     task: NewTask,
-    factory: Factory,
+    factory: Arc<DownloaderFactory>,
     progress_bar: ProgressBar,
 ) -> impl FnOnce(sigfinn::Shutdown) -> Pin<Box<dyn Future<Output = ExitStatus<Error>> + Send>> {
     move |shutdown| {

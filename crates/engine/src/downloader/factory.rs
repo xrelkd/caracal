@@ -15,34 +15,30 @@ use crate::{
 
 #[derive(Clone, Debug)]
 pub struct Factory {
-    http_client: reqwest::Client,
+    pub http_client: reqwest::Client,
 
-    default_worker_number: u64,
+    pub default_worker_number: u64,
 
-    minimum_chunk_size: u64,
+    pub minimum_chunk_size: u64,
 
-    minio_aliases: HashMap<String, MinioAlias>,
+    pub minio_aliases: HashMap<String, MinioAlias>,
 
-    ssh_servers: HashMap<String, SshConfig>,
+    pub ssh_servers: HashMap<String, SshConfig>,
+}
+
+impl Default for Factory {
+    fn default() -> Self {
+        Self {
+            http_client: reqwest::Client::new(),
+            default_worker_number: 5,
+            minimum_chunk_size: 100 * 1024,
+            minio_aliases: HashMap::new(),
+            ssh_servers: HashMap::new(),
+        }
+    }
 }
 
 impl Factory {
-    #[must_use]
-    pub fn new(
-        default_worker_number: u64,
-        minimum_chunk_size: u64,
-        minio_aliases: HashMap<String, MinioAlias>,
-        ssh_servers: HashMap<String, SshConfig>,
-    ) -> Self {
-        Self {
-            http_client: reqwest::Client::new(),
-            default_worker_number,
-            minimum_chunk_size,
-            minio_aliases,
-            ssh_servers,
-        }
-    }
-
     /// # Errors
     pub async fn create_new_task(&self, new_task: NewTask) -> Result<Downloader, Error> {
         let source = match new_task.url.scheme() {
