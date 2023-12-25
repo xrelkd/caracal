@@ -18,7 +18,7 @@ use tokio::{
 
 pub use self::{
     chunk::Chunk,
-    factory::{Factory, NewTask},
+    factory::{Factory as DownloaderFactory, NewTask},
     transfer_status::TransferStatus,
 };
 use self::{
