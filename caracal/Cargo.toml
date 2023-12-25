@@ -21,7 +21,7 @@ serde      = { version = "1", features = ["derive"] }
 toml       = "0.8"
 
 futures = "0.3"
-sigfinn = "0.1"
+sigfinn = "0.2"
 tokio   = { version = "1", features = ["rt-multi-thread", "sync"] }
 
 reqwest = { version = "0.11", default-features = false, features = ["stream"] }
