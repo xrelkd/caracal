@@ -29,21 +29,7 @@ impl ControlFile {
     where
         P: AsRef<Path> + Send,
     {
-        let file_path = file_path.as_ref();
-        let file_name = PathBuf::from(format!(
-            "{name}.{suffix}",
-            name = file_path
-                .file_name()
-                .expect("file_name is available; qed")
-                .to_str()
-                .expect("file_name is available; qed"),
-            suffix = caracal_base::CONTROL_FILE_SUFFIX
-        ));
-        let file_path = if let Some(parent) = file_path.parent() {
-            [parent, &file_name].into_iter().collect()
-        } else {
-            file_name
-        };
+        let file_path = Self::file_path(file_path);
 
         let transfer_status = tokio::fs::read(&file_path).await.map_or(None, |contents| {
             serde_json::from_slice::<v1::Control>(&contents).ok().map(TransferStatus::from)
@@ -108,6 +94,27 @@ impl ControlFile {
                 "Error occurs while removing control file `{}`, error: {err}",
                 self.file_path.display()
             );
+        }
+    }
+
+    pub fn file_path<P>(file_path: P) -> PathBuf
+    where
+        P: AsRef<Path>,
+    {
+        let file_path = file_path.as_ref();
+        let file_name = file_path
+            .file_name()
+            .expect("file_name is available; qed")
+            .to_str()
+            .expect("file_name is available; qed");
+        let file_name = PathBuf::from(format!(
+            "{file_name}.{suffix}",
+            suffix = caracal_base::CONTROL_FILE_SUFFIX
+        ));
+        if let Some(parent) = file_path.parent() {
+            [parent, &file_name].into_iter().collect()
+        } else {
+            file_name
         }
     }
 }

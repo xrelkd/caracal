@@ -4,6 +4,7 @@ use futures::{future, FutureExt};
 use snafu::{OptionExt, ResultExt};
 use tokio::fs::OpenOptions;
 
+use super::control_file::ControlFile;
 pub use crate::error::Error;
 use crate::{
     downloader::{Downloader, TransferStatus},
@@ -62,6 +63,9 @@ impl Factory {
         if metadata.length == 0 {
             let filename = new_task.filename.unwrap_or_else(|| new_task.url.guess_filename());
             let full_path = [&new_task.directory_path, &filename].into_iter().collect::<PathBuf>();
+            if tokio::fs::try_exists(&full_path).await.is_ok() {
+                return Err(Error::DestinationFileExists { file_path: full_path.clone() });
+            }
             let sink = OpenOptions::new()
                 .create(true)
                 .write(true)
@@ -85,6 +89,12 @@ impl Factory {
         } else {
             let filename = new_task.filename.unwrap_or_else(|| metadata.filename.clone());
             let full_path = [&new_task.directory_path, &filename].into_iter().collect::<PathBuf>();
+            if tokio::fs::try_exists(&full_path).await.unwrap_or(false)
+                && !tokio::fs::try_exists(ControlFile::file_path(&full_path)).await.unwrap_or(false)
+            {
+                return Err(Error::DestinationFileExists { file_path: full_path.clone() });
+            }
+
             let sink = OpenOptions::new()
                 .create(true)
                 .write(true)
