@@ -6,7 +6,7 @@ use caracal_cli::{
     profile,
     profile::{Profile, ProfileItem},
 };
-use caracal_engine::{minio::MinioAlias, ssh::SshConfig};
+use caracal_engine::{minio::MinioAlias, ssh::SshConfig, DownloaderFactory};
 use clap::{CommandFactory, Parser, Subcommand};
 use snafu::ResultExt;
 use tokio::runtime::Runtime;
@@ -16,6 +16,8 @@ use crate::{
     error::{self, Error},
     shadow,
 };
+
+const MINIMUM_CHUNK_SIZE: u64 = 100 * 1024;
 
 #[derive(Parser)]
 #[command(
@@ -153,10 +155,16 @@ impl Cli {
                     standalone::run(
                         urls,
                         output_directory,
-                        config.downloader.http.concurrent_connections,
                         concurrent_connections,
-                        minio_aliases,
-                        ssh_servers,
+                        DownloaderFactory {
+                            default_worker_number: u64::from(
+                                config.downloader.http.concurrent_connections,
+                            ),
+                            minimum_chunk_size: MINIMUM_CHUNK_SIZE,
+                            minio_aliases,
+                            ssh_servers,
+                            ..DownloaderFactory::default()
+                        },
                     )
                     .await
                 }
