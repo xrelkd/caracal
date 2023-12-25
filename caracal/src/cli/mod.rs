@@ -1,6 +1,6 @@
 mod standalone;
 
-use std::{collections::HashMap, io::Write, path::PathBuf};
+use std::{collections::HashMap, io::Write, path::PathBuf, time::Duration};
 
 use caracal_cli::{
     profile,
@@ -57,6 +57,9 @@ pub struct Cli {
     )]
     concurrent_connections: Option<u16>,
 
+    #[arg(long = "timeout", short = 'T', help = "Set the network timeout to seconds")]
+    connection_timeout: Option<u64>,
+
     urls: Vec<reqwest::Url>,
 }
 
@@ -84,6 +87,7 @@ impl Cli {
             config_file,
             output_directory,
             concurrent_connections,
+            connection_timeout,
             urls,
         } = self;
 
@@ -156,6 +160,7 @@ impl Cli {
                         urls,
                         output_directory,
                         concurrent_connections,
+                        connection_timeout.map(Duration::from_secs),
                         DownloaderFactory {
                             default_worker_number: u64::from(
                                 config.downloader.http.concurrent_connections,
