@@ -36,6 +36,9 @@ pkgs.mkShell {
     clang-tools
 
     shellcheck
+
+    libgit2
+    pkg-config
   ];
 
   shellHook = ''

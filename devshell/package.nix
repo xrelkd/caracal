@@ -4,6 +4,8 @@
 , rustPlatform
 , protobuf
 , installShellFiles
+, libgit2
+, pkg-config
 }:
 
 rustPlatform.buildRustPackage {
@@ -20,6 +22,9 @@ rustPlatform.buildRustPackage {
     protobuf
 
     installShellFiles
+
+    libgit2
+    pkg-config
   ];
 
   postInstall = ''

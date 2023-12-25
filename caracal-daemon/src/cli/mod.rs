@@ -4,10 +4,17 @@ use clap::{CommandFactory, Parser, Subcommand};
 use snafu::ResultExt;
 use tokio::runtime::Runtime;
 
-use crate::{config::Config, error, error::Error};
+use crate::{config::Config, error, error::Error, shadow};
 
 #[derive(Parser)]
-#[command(name = caracal_base::DAEMON_PROGRAM_NAME, author, version, about, long_about = None)]
+#[command(
+    name = caracal_base::DAEMON_PROGRAM_NAME,
+    author,
+    version,
+    long_version = shadow::CLAP_LONG_VERSION,
+    about,
+    long_about = None
+)]
 pub struct Cli {
     #[command(subcommand)]
     commands: Option<Commands>,

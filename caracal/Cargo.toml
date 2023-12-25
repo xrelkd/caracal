@@ -30,11 +30,15 @@ clap          = { version = "4", features = ["derive", "env"] }
 clap_complete = "4"
 http          = "1"
 indicatif     = "0.17"
+shadow-rs     = "0.25"
 snafu         = "0.7"
 
 caracal-base   = { path = "../crates/base" }
 caracal-cli    = { path = "../crates/cli" }
 caracal-engine = { path = "../crates/engine" }
+
+[build-dependencies]
+shadow-rs = "0.25"
 
 [lints]
 workspace = true
