@@ -61,7 +61,10 @@ impl Profile {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum ProfileItem {
+    #[serde(rename = "MinIO")]
     Minio(Minio),
+
+    #[serde(rename = "SSH")]
     Ssh(Ssh),
 }
 
