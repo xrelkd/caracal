@@ -2380,9 +2380,9 @@ checksum = "45bb67a18fa91266cc7807181f62f9178a6873bfad7dc788c42e6430db40184f"
 
 [[package]]
 name = "sigfinn"
-version = "0.1.1"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19ccc3278dafd66473c654456b52f3d356df5c5d0ce149b39268ff59654afbcc"
+checksum = "4b56d8d2e5afd3a3ca29e98bbcb4de595db4101b988a2990c0f014e42599b464"
 dependencies = [
  "futures",
  "snafu",
