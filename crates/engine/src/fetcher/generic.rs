@@ -1,6 +1,6 @@
 use std::io::SeekFrom;
 
-use bytes::{Bytes, BytesMut};
+use bytes::BytesMut;
 use snafu::ResultExt;
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 
@@ -12,14 +12,15 @@ pub struct ByteStream {
     reader: opendal::Reader,
     start: u64,
     end: u64,
+    buffer: BytesMut,
 }
 
 impl ByteStream {
-    pub const fn new(reader: opendal::Reader, start: u64, end: u64) -> Self {
-        Self { reader, start, end }
+    pub fn new(reader: opendal::Reader, start: u64, end: u64) -> Self {
+        Self { reader, start, end, buffer: BytesMut::new() }
     }
 
-    pub async fn bytes(&mut self) -> Result<Option<Bytes>> {
+    pub async fn bytes(&mut self) -> Result<Option<&[u8]>> {
         if self.start > self.end {
             return Ok(None);
         }
@@ -27,26 +28,35 @@ impl ByteStream {
         let _ =
             self.reader.seek(SeekFrom::Start(self.start)).await.context(error::SeekReaderSnafu)?;
 
-        let mut buf = self.new_buffer();
-        let n = self.reader.read_exact(buf.as_mut()).await.context(error::ReadFromReaderSnafu)?;
+        self.prepare_buffer();
+
+        let n = self
+            .reader
+            .read_exact(self.buffer.as_mut())
+            .await
+            .context(error::ReadFromReaderSnafu)?;
 
         if n == 0 {
             Ok(None)
         } else {
             self.start += n as u64;
-            Ok(Some(buf.freeze()))
+            Ok(Some(self.buffer.as_ref()))
         }
     }
 
     #[allow(unsafe_code)]
     #[inline]
-    fn new_buffer(&self) -> BytesMut {
+    fn prepare_buffer(&mut self) {
         let capacity = MAX_BUFFER_SIZE
             .min(usize::try_from(self.end - self.start + 1).unwrap_or(MAX_BUFFER_SIZE));
-        let mut buf = BytesMut::with_capacity(capacity);
-        unsafe {
-            buf.set_len(capacity);
+
+        let current_capacity = self.buffer.capacity();
+        if current_capacity < capacity {
+            self.buffer.reserve(capacity - current_capacity);
         }
-        buf
+
+        unsafe {
+            self.buffer.set_len(capacity);
+        }
     }
 }

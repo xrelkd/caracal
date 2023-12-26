@@ -22,7 +22,7 @@ pub struct Worker {
     pub file_path: PathBuf,
     pub chunk_receiver: async_channel::Receiver<Chunk>,
     pub progress_updater: ProgressUpdater,
-    pub worker_op_receiver: mpsc::UnboundedReceiver<WorkerEvent>,
+    pub worker_event_receiver: mpsc::UnboundedReceiver<WorkerEvent>,
 }
 
 impl Worker {
@@ -34,7 +34,7 @@ impl Worker {
             file_path,
             chunk_receiver,
             progress_updater,
-            mut worker_op_receiver,
+            mut worker_event_receiver,
         } = self;
 
         while let Ok(chunk) = chunk_receiver.recv().await {
@@ -51,11 +51,11 @@ impl Worker {
 
             loop {
                 let new_bytes = stream.bytes();
-                let new_op = worker_op_receiver.recv();
+                let new_event = worker_event_receiver.recv();
                 futures::pin_mut!(new_bytes);
-                futures::pin_mut!(new_op);
+                futures::pin_mut!(new_event);
 
-                match future::select(new_bytes, new_op).await {
+                match future::select(new_bytes, new_event).await {
                     future::Either::Left((Ok(Some(bytes)), _)) => {
                         {
                             let mut sink = sink.lock().await;
@@ -65,7 +65,7 @@ impl Worker {
                                 .with_context(|_| error::SeekFileSnafu {
                                     file_path: file_path.clone(),
                                 })?;
-                            sink.write_all(&bytes).await.with_context(|_| {
+                            sink.write_all(bytes).await.with_context(|_| {
                                 error::WriteFileSnafu { file_path: file_path.clone() }
                             })?;
                             drop(sink);

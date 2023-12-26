@@ -166,17 +166,17 @@ impl Downloader {
 
         loop {
             let new_bytes = stream.bytes();
-            let new_op = event_receiver.recv();
+            let new_event = event_receiver.recv();
             futures::pin_mut!(new_bytes);
-            futures::pin_mut!(new_op);
+            futures::pin_mut!(new_event);
 
-            match future::select(new_bytes, new_op).await {
+            match future::select(new_bytes, new_event).await {
                 future::Either::Left((Ok(Some(bytes)), _)) => {
                     let _ = sink
                         .seek(SeekFrom::Start(received))
                         .await
                         .with_context(|_| error::SeekFileSnafu { file_path: file_path.clone() })?;
-                    sink.write_all(&bytes)
+                    sink.write_all(bytes)
                         .await
                         .with_context(|_| error::WriteFileSnafu { file_path: file_path.clone() })?;
                     received += bytes.len() as u64;
@@ -229,7 +229,7 @@ impl Downloader {
                 file_path: file_path.clone(),
                 chunk_receiver: chunk_receiver.clone(),
                 progress_updater: ProgressUpdater::from(event_sender.clone()),
-                worker_op_receiver: worker_event_receiver,
+                worker_event_receiver,
             };
             let _handle = join_set.spawn(worker.serve());
         }
@@ -286,7 +286,7 @@ impl Downloader {
                             sink: sink.clone(),
                             source: source.clone(),
                             file_path: file_path.clone(),
-                            worker_op_receiver: worker_event_receiver,
+                            worker_event_receiver,
                         };
 
                         join_set.spawn(worker.serve())

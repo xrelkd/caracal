@@ -6,7 +6,6 @@ mod sftp;
 
 use std::{fmt, path::PathBuf};
 
-use bytes::Bytes;
 use hyper_http::Uri;
 
 use crate::error::Result;
@@ -106,7 +105,7 @@ pub enum ByteStream {
 }
 
 impl ByteStream {
-    pub async fn bytes(&mut self) -> Result<Option<Bytes>> {
+    pub async fn bytes(&mut self) -> Result<Option<&[u8]>> {
         match self {
             Self::Http(stream) => stream.bytes().await,
             Self::Generic(stream) => stream.bytes().await,

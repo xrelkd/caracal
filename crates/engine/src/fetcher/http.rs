@@ -80,14 +80,24 @@ impl Fetcher {
 }
 
 #[derive(Debug)]
-pub struct ByteStream(reqwest::Response);
+pub struct ByteStream {
+    response: reqwest::Response,
+    buffer: Bytes,
+}
 
 impl ByteStream {
-    pub async fn bytes(&mut self) -> Result<Option<Bytes>> {
-        self.0.chunk().await.context(error::FetchBytesFromHttpSnafu)
+    pub async fn bytes(&mut self) -> Result<Option<&[u8]>> {
+        match self.response.chunk().await.context(error::FetchBytesFromHttpSnafu) {
+            Ok(Some(mut bytes)) => {
+                std::mem::swap(&mut self.buffer, &mut bytes);
+                Ok(Some(self.buffer.as_ref()))
+            }
+            Ok(None) => Ok(None),
+            Err(err) => Err(err),
+        }
     }
 }
 
 impl From<reqwest::Response> for ByteStream {
-    fn from(response: reqwest::Response) -> Self { Self(response) }
+    fn from(response: reqwest::Response) -> Self { Self { response, buffer: Bytes::new() } }
 }
