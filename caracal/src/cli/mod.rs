@@ -127,7 +127,7 @@ impl Cli {
                 None => {
                     let mut minio_aliases = HashMap::new();
                     let mut ssh_servers = HashMap::new();
-                    for profile_file in config.profile_files {
+                    for profile_file in config.profile_files() {
                         for profile_item in Profile::load(profile_file).await?.profiles {
                             match profile_item {
                                 ProfileItem::Ssh(profile::Ssh {
