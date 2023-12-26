@@ -190,7 +190,10 @@ impl Downloader {
                     summary = Summary::Completed { transfer_status };
                     break;
                 }
-                future::Either::Left((Err(_err), _)) => break,
+                future::Either::Left((Err(err), _)) => {
+                    tracing::warn!("{err}");
+                    break;
+                }
                 future::Either::Right((Some(Event::GetProgress(sender)), _)) => {
                     drop(sender.send(transfer_status.clone()));
                 }
