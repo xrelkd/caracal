@@ -24,13 +24,7 @@ impl Default for HttpConfig {
 }
 
 impl HttpConfig {
-    pub fn default_user_agent() -> String {
-        format!(
-            "{}/{}",
-            caracal_base::PROJECT_NAME_WITH_INITIAL_CAPITAL,
-            caracal_base::PROJECT_VERSION
-        )
-    }
+    pub fn default_user_agent() -> String { caracal_base::DEFAULT_HTTP_USER_AGENT.to_string() }
 
     pub const fn default_concurrent_connections() -> u16 { 5 }
 }
