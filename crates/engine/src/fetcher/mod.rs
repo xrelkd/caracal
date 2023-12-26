@@ -4,7 +4,10 @@ mod http;
 mod minio;
 mod sftp;
 
-use std::{fmt, path::PathBuf};
+use std::{
+    fmt,
+    path::{Path, PathBuf},
+};
 
 use hyper_http::Uri;
 
@@ -26,8 +29,11 @@ pub enum Fetcher {
 }
 
 impl Fetcher {
-    pub async fn new_file(uri: Uri) -> Result<Self> {
-        Ok(Self::FileSystem(fs::Fetcher::new(uri).await?))
+    pub async fn new_file<P>(file_path: P) -> Result<Self>
+    where
+        P: AsRef<Path> + Send + Sync,
+    {
+        Ok(Self::FileSystem(fs::Fetcher::new(file_path).await?))
     }
 
     pub async fn new_http(client: reqwest::Client, uri: Uri) -> Result<Self> {

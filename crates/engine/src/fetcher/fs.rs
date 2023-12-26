@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use opendal::{services, Operator};
 use snafu::ResultExt;
@@ -19,10 +19,13 @@ pub struct Fetcher {
 }
 
 impl Fetcher {
-    pub async fn new(uri: http::Uri) -> Result<Self> {
+    pub async fn new<P>(file_path: P) -> Result<Self>
+    where
+        P: AsRef<Path> + Send + Sync,
+    {
         let mut builder = services::Fs::default();
         let _ = builder.root("/");
-        let file_path = PathBuf::from(uri.path());
+        let file_path = file_path.as_ref().to_path_buf();
 
         let operator =
             Operator::new(builder).with_context(|_| error::BuildOpenDALOperatorSnafu)?.finish();

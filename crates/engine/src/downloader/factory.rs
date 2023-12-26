@@ -131,7 +131,7 @@ impl Factory {
 
     async fn create_fetcher(&self, new_task: &NewTask) -> Result<Fetcher, Error> {
         match new_task.uri.scheme_str() {
-            Some("file") | None => Fetcher::new_file(new_task.uri.clone()).await,
+            Some("file") | None => Fetcher::new_file(new_task.uri.path()).await,
             Some("http" | "https") => {
                 Fetcher::new_http(self.http_client.clone(), new_task.uri.clone()).await
             }
