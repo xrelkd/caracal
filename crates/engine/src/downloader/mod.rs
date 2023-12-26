@@ -197,7 +197,11 @@ impl Downloader {
                 future::Either::Right((Some(Event::GetProgress(sender)), _)) => {
                     drop(sender.send(transfer_status.clone()));
                 }
-                future::Either::Right((..)) => break,
+                future::Either::Right((Some(Event::Stop), _)) => {
+                    summary = Summary::Partial { transfer_status };
+                    break;
+                }
+                future::Either::Right(_) => {}
             }
         }
 
