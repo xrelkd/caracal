@@ -135,6 +135,8 @@ fn create_task_future(
 
             match downloader.join().await {
                 Ok(Some((_transfer_status, progress))) => {
+                    progress_bar.set_position(progress.total_received());
+                    progress_bar.set_length(progress.content_length());
                     progress_bar.finish_with_message(format!(
                         "{}/{} {}",
                         progress.completed_chunk_count(),
