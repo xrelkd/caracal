@@ -24,12 +24,10 @@ impl ByteStream {
             return Ok(None);
         }
 
-        let capacity = MAX_BUFFER_SIZE
-            .min(usize::try_from(self.end - self.start + 1).unwrap_or(MAX_BUFFER_SIZE));
-        let mut buf = BytesMut::zeroed(capacity);
-
         let _ =
             self.reader.seek(SeekFrom::Start(self.start)).await.context(error::SeekReaderSnafu)?;
+
+        let mut buf = self.new_buffer();
         let n = self.reader.read_exact(buf.as_mut()).await.context(error::ReadFromReaderSnafu)?;
 
         if n == 0 {
@@ -38,5 +36,17 @@ impl ByteStream {
             self.start += n as u64;
             Ok(Some(buf.freeze()))
         }
+    }
+
+    #[allow(unsafe_code)]
+    #[inline]
+    fn new_buffer(&self) -> BytesMut {
+        let capacity = MAX_BUFFER_SIZE
+            .min(usize::try_from(self.end - self.start + 1).unwrap_or(MAX_BUFFER_SIZE));
+        let mut buf = BytesMut::with_capacity(capacity);
+        unsafe {
+            buf.set_len(capacity);
+        }
+        buf
     }
 }
