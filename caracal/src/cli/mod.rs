@@ -2,11 +2,12 @@ mod standalone;
 
 use std::{collections::HashMap, io::Write, path::PathBuf, time::Duration};
 
+use caracal_base::profile::{minio::MinioAlias, ssh::SshConfig};
 use caracal_cli::{
     profile,
     profile::{Profile, ProfileItem},
 };
-use caracal_engine::{minio::MinioAlias, ssh::SshConfig, DownloaderFactory};
+use caracal_engine::DownloaderFactory;
 use clap::{CommandFactory, Parser, Subcommand};
 use snafu::ResultExt;
 use tokio::runtime::Runtime;
