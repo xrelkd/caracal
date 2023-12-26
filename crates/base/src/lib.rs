@@ -30,6 +30,8 @@ lazy_static! {
             pre: semver::Prerelease::EMPTY,
             build: semver::BuildMetadata::EMPTY
         });
+    pub static ref DEFAULT_HTTP_USER_AGENT: String =
+        format!("{PROJECT_NAME_WITH_INITIAL_CAPITAL}/{PROJECT_VERSION}");
 }
 
 pub const PROJECT_NAME: &str = "caracal";

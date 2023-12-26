@@ -20,6 +20,9 @@ pub enum Error {
     #[snafu(display("Error occurs while interacting with server, error: {error}"))]
     Operation { error: String },
 
+    #[snafu(display("Error occurs while initializing downloader factory, error: {source}"))]
+    InitializeDownloader { source: caracal_engine::Error },
+
     #[snafu(display("Error occurs while downloading {uri}, error: {error}"))]
     Downloader { uri: Box<http::Uri>, error: caracal_engine::Error },
 
