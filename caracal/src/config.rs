@@ -1,5 +1,9 @@
-use std::path::{Path, PathBuf};
+use std::{
+    borrow::Cow,
+    path::{Path, PathBuf},
+};
 
+use resolve_path::PathResolveExt as _;
 use serde::{Deserialize, Serialize};
 use snafu::{ResultExt, Snafu};
 
@@ -55,6 +59,13 @@ impl Config {
                 Self::default()
             }
         }
+    }
+
+    pub fn profile_files(&self) -> Vec<PathBuf> {
+        self.profile_files
+            .iter()
+            .filter_map(|path| path.try_resolve().map(Cow::into_owned).ok())
+            .collect()
     }
 }
 
