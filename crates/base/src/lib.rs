@@ -1,4 +1,5 @@
 pub mod config;
+pub mod profile;
 pub mod serde;
 pub mod utils;
 

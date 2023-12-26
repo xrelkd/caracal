@@ -1,19 +1,17 @@
 use core::fmt;
 use std::{collections::HashMap, path::PathBuf, time::Duration};
 
+use caracal_base::profile::{minio::MinioAlias, ssh::SshConfig};
 use futures::{future, FutureExt};
 use snafu::{OptionExt, ResultExt};
 use tokio::fs::OpenOptions;
 
-use super::control_file::ControlFile;
 pub use crate::error::Error;
 use crate::{
-    downloader::{Downloader, TransferStatus},
+    downloader::{control_file::ControlFile, Downloader, TransferStatus},
     error,
     ext::UriExt,
     fetcher::Fetcher,
-    minio::MinioAlias,
-    ssh::SshConfig,
 };
 
 #[derive(Clone, Debug)]

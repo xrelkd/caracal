@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::minio::MinioPath;
+use caracal_base::profile::minio::MinioPath;
 
 pub trait UriExt {
     const FALLBACK_FILENAME: &'static str = caracal_base::FALLBACK_FILENAME;
