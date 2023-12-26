@@ -1,3 +1,4 @@
+use core::fmt;
 use std::{collections::HashMap, path::PathBuf, time::Duration};
 
 use futures::{future, FutureExt};
@@ -16,10 +17,10 @@ use crate::{
 };
 
 #[derive(Clone, Debug)]
-pub struct Factory {
-    pub http_client: reqwest::Client,
-
+pub struct Builder {
     pub default_worker_number: u64,
+
+    pub http_user_agent: Option<String>,
 
     pub minimum_chunk_size: u64,
 
@@ -30,11 +31,76 @@ pub struct Factory {
     pub connection_timeout: Duration,
 }
 
-impl Default for Factory {
+impl Builder {
+    pub fn new() -> Self { Self::default() }
+
+    pub const fn default_worker_number(mut self, default_worker_number: u64) -> Self {
+        self.default_worker_number = default_worker_number;
+        self
+    }
+
+    pub const fn minimum_chunk_size(mut self, minimum_chunk_size: u64) -> Self {
+        self.minimum_chunk_size = minimum_chunk_size;
+        self
+    }
+
+    pub fn minio_aliases(mut self, minio_aliases: HashMap<String, MinioAlias>) -> Self {
+        self.minio_aliases = minio_aliases;
+        self
+    }
+
+    pub const fn connection_timeout(mut self, connection_timeout: Duration) -> Self {
+        self.connection_timeout = connection_timeout;
+        self
+    }
+
+    pub fn ssh_servers(mut self, ssh_servers: HashMap<String, SshConfig>) -> Self {
+        self.ssh_servers = ssh_servers;
+        self
+    }
+
+    pub fn http_user_agent<S>(mut self, user_agent: S) -> Self
+    where
+        S: fmt::Display,
+    {
+        self.http_user_agent = Some(user_agent.to_string());
+        self
+    }
+
+    pub fn build(self) -> Result<Factory, Error> {
+        let Self {
+            http_user_agent,
+            default_worker_number,
+            minio_aliases,
+            ssh_servers,
+            minimum_chunk_size,
+            connection_timeout,
+        } = self;
+
+        let http_client = reqwest::Client::builder()
+            .user_agent(
+                http_user_agent
+                    .unwrap_or_else(|| caracal_base::DEFAULT_HTTP_USER_AGENT.to_string()),
+            )
+            .build()
+            .context(error::BuildHttpClientSnafu)?;
+
+        Ok(Factory {
+            http_client,
+            default_worker_number,
+            minimum_chunk_size,
+            minio_aliases,
+            ssh_servers,
+            connection_timeout,
+        })
+    }
+}
+
+impl Default for Builder {
     fn default() -> Self {
         Self {
-            http_client: reqwest::Client::new(),
             default_worker_number: 5,
+            http_user_agent: None,
             minimum_chunk_size: 100 * 1024,
             minio_aliases: HashMap::new(),
             ssh_servers: HashMap::new(),
@@ -43,7 +109,26 @@ impl Default for Factory {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct Factory {
+    http_client: reqwest::Client,
+
+    default_worker_number: u64,
+
+    minimum_chunk_size: u64,
+
+    minio_aliases: HashMap<String, MinioAlias>,
+
+    ssh_servers: HashMap<String, SshConfig>,
+
+    connection_timeout: Duration,
+}
+
 impl Factory {
+    #[inline]
+    #[must_use]
+    pub fn builder() -> Builder { Builder::default() }
+
     /// # Errors
     pub async fn create_new_task(&self, new_task: &NewTask) -> Result<Downloader, Error> {
         let source = {
