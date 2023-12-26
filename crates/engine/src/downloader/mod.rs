@@ -31,7 +31,7 @@ use crate::{error, error::Error, fetcher::Fetcher, Progress};
 type DownloaderHandle = Option<(mpsc::UnboundedSender<Event>, JoinHandle<Result<Summary, Error>>)>;
 
 pub struct Downloader {
-    use_simple: bool,
+    use_single_worker: bool,
     worker_number: u64,
     transfer_status: TransferStatus,
     sink: File,
@@ -49,8 +49,8 @@ impl Downloader {
                 error::CloneFileInstanceSnafu { file_path: self.filename.clone() }
             })?;
             let (event_sender, event_receiver) = mpsc::unbounded_channel::<Event>();
-            let join_handle = if self.use_simple {
-                tokio::spawn(Self::serve_simple(
+            let join_handle = if self.use_single_worker {
+                tokio::spawn(Self::serve_with_single_worker(
                     self.transfer_status.clone(),
                     sink_cloned,
                     self.source.clone(),
@@ -63,7 +63,7 @@ impl Downloader {
                 if let Some(transfer_status) = transfer_status {
                     self.transfer_status = transfer_status;
                 }
-                tokio::spawn(Self::serve(
+                tokio::spawn(Self::serve_with_multiple_workers(
                     self.worker_number,
                     self.transfer_status.clone(),
                     Arc::new(Mutex::new(sink_cloned)),
@@ -149,7 +149,7 @@ impl Downloader {
         }
     }
 
-    async fn serve_simple(
+    async fn serve_with_single_worker(
         mut transfer_status: TransferStatus,
         mut sink: File,
         mut source: Fetcher,
@@ -209,7 +209,7 @@ impl Downloader {
     }
 
     #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
-    async fn serve(
+    async fn serve_with_multiple_workers(
         worker_number: u64,
         mut transfer_status: TransferStatus,
         sink: Arc<Mutex<File>>,

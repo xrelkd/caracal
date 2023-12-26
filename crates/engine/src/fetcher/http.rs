@@ -56,6 +56,9 @@ impl Fetcher {
         Ok(Self { client, uri, metadata })
     }
 
+    #[inline]
+    pub const fn supports_range_request(&self) -> bool { self.metadata.length != 0 }
+
     pub fn fetch_metadata(&self) -> Metadata { self.metadata.clone() }
 
     pub async fn fetch_bytes(&mut self, start: u64, end: u64) -> Result<ByteStream> {

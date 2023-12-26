@@ -143,34 +143,7 @@ impl Factory {
         };
 
         let metadata = source.fetch_metadata();
-        if metadata.length == 0 {
-            let filename =
-                new_task.filename.clone().unwrap_or_else(|| new_task.uri.guess_filename());
-            let full_path = [&new_task.directory_path, &filename].into_iter().collect::<PathBuf>();
-            if tokio::fs::try_exists(&full_path).await.unwrap_or(false) {
-                return Err(Error::DestinationFileExists { file_path: full_path.clone() });
-            }
-            let sink = OpenOptions::new()
-                .create(true)
-                .write(true)
-                .open(&full_path)
-                .await
-                .with_context(|_| error::CreateFileSnafu { file_path: filename.clone() })?;
-            sink.set_len(0)
-                .await
-                .with_context(|_| error::ResizeFileSnafu { file_path: filename.clone() })?;
-            let transfer_status = TransferStatus::unknown_length();
-            Ok(Downloader {
-                use_simple: true,
-                worker_number: 1,
-                transfer_status,
-                sink,
-                source,
-                uri: new_task.uri.clone(),
-                filename: full_path,
-                handle: None,
-            })
-        } else {
+        if source.supports_range_request() {
             let filename = new_task.filename.clone().unwrap_or_else(|| metadata.filename.clone());
             let full_path = [&new_task.directory_path, &filename].into_iter().collect::<PathBuf>();
             if tokio::fs::try_exists(&full_path).await.unwrap_or(false)
@@ -197,11 +170,42 @@ impl Factory {
                     if worker_number == 0 { self.default_worker_number } else { worker_number };
                 (metadata.length / worker_number, worker_number)
             };
+
             let transfer_status = TransferStatus::new(metadata.length, chunk_size)?;
 
             Ok(Downloader {
-                use_simple: false,
+                use_single_worker: false,
                 worker_number,
+                transfer_status,
+                sink,
+                source,
+                uri: new_task.uri.clone(),
+                filename: full_path,
+                handle: None,
+            })
+        } else {
+            let filename =
+                new_task.filename.clone().unwrap_or_else(|| new_task.uri.guess_filename());
+            let full_path = [&new_task.directory_path, &filename].into_iter().collect::<PathBuf>();
+            if tokio::fs::try_exists(&full_path).await.unwrap_or(false) {
+                return Err(Error::DestinationFileExists { file_path: full_path.clone() });
+            }
+
+            let sink = OpenOptions::new()
+                .create(true)
+                .write(true)
+                .open(&full_path)
+                .await
+                .with_context(|_| error::CreateFileSnafu { file_path: filename.clone() })?;
+            sink.set_len(0)
+                .await
+                .with_context(|_| error::ResizeFileSnafu { file_path: filename.clone() })?;
+
+            let transfer_status = TransferStatus::unknown_length();
+
+            Ok(Downloader {
+                use_single_worker: true,
+                worker_number: 1,
                 transfer_status,
                 sink,
                 source,

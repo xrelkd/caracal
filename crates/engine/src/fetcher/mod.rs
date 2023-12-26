@@ -74,12 +74,20 @@ impl Fetcher {
         ))
     }
 
+    #[inline]
+    pub const fn supports_range_request(&self) -> bool {
+        match self {
+            Self::Http(client) => client.supports_range_request(),
+            Self::FileSystem(_) | Self::Minio(_) | Self::Sftp(_) => true,
+        }
+    }
+
     pub fn fetch_metadata(&self) -> Metadata {
         match self {
-            Self::FileSystem(fetcher) => fetcher.fetch_metadata(),
-            Self::Http(fetcher) => fetcher.fetch_metadata(),
-            Self::Minio(fetcher) => fetcher.fetch_metadata(),
-            Self::Sftp(fetcher) => fetcher.fetch_metadata(),
+            Self::FileSystem(client) => client.fetch_metadata(),
+            Self::Http(client) => client.fetch_metadata(),
+            Self::Minio(client) => client.fetch_metadata(),
+            Self::Sftp(client) => client.fetch_metadata(),
         }
     }
 
