@@ -156,20 +156,23 @@ impl Cli {
                         }
                     }
 
+                    let downloader_factory = DownloaderFactory::builder()
+                        .http_user_agent(config.downloader.http.user_agent)
+                        .default_worker_number(u64::from(
+                            config.downloader.http.concurrent_connections,
+                        ))
+                        .minimum_chunk_size(MINIMUM_CHUNK_SIZE)
+                        .ssh_servers(ssh_servers)
+                        .minio_aliases(minio_aliases)
+                        .build()
+                        .context(error::InitializeDownloaderSnafu)?;
+
                     standalone::run(
                         uris,
                         output_directory,
                         concurrent_connections,
                         connection_timeout.map(Duration::from_secs),
-                        DownloaderFactory {
-                            default_worker_number: u64::from(
-                                config.downloader.http.concurrent_connections,
-                            ),
-                            minimum_chunk_size: MINIMUM_CHUNK_SIZE,
-                            minio_aliases,
-                            ssh_servers,
-                            ..DownloaderFactory::default()
-                        },
+                        downloader_factory,
                     )
                     .await
                 }
