@@ -202,6 +202,9 @@ impl Worker {
             }
         }
 
+        // close event receiver
+        drop(event_receiver);
+
         // we do not care the result, drop it.
         drop(timer.await);
     }
