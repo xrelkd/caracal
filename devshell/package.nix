@@ -4,8 +4,6 @@
 , rustPlatform
 , protobuf
 , installShellFiles
-, libgit2
-, pkg-config
 }:
 
 rustPlatform.buildRustPackage {
@@ -22,9 +20,6 @@ rustPlatform.buildRustPackage {
     protobuf
 
     installShellFiles
-
-    libgit2
-    pkg-config
   ];
 
   postInstall = ''
@@ -40,7 +35,6 @@ rustPlatform.buildRustPackage {
     description = "File downloader written in Rust Programming Language";
     homepage = "https://github.com/xrelkd/caracal";
     license = licenses.gpl3Only;
-    platforms = platforms.linux;
     maintainers = with maintainers; [ xrelkd ];
     mainProgram = "caracal";
   };
