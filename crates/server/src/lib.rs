@@ -106,7 +106,7 @@ fn create_grpc_local_socket_server_future(
                     .await
                     .context(error::CreateUnixListenerSnafu { socket_path: local_socket.clone() })
                 {
-                    return ExitStatus::Failure(err);
+                    return ExitStatus::FatalError(err);
                 }
             }
 
@@ -114,7 +114,7 @@ fn create_grpc_local_socket_server_future(
                 .context(error::CreateUnixListenerSnafu { socket_path: local_socket.clone() })
             {
                 Ok(uds) => UnixListenerStream::new(uds),
-                Err(err) => return ExitStatus::Failure(err),
+                Err(err) => return ExitStatus::FatalError(err),
             };
 
             // TODO: put task_scheduler into grpc service
@@ -140,7 +140,7 @@ fn create_grpc_local_socket_server_future(
                     tracing::info!("gRPC local socket server is shut down gracefully");
                     ExitStatus::Success
                 }
-                Err(err) => ExitStatus::Failure(err),
+                Err(err) => ExitStatus::Error(err),
             }
         }
         .boxed()
@@ -174,7 +174,7 @@ fn create_grpc_http_server_future(
                     tracing::info!("gRPC HTTP server is shut down gracefully");
                     ExitStatus::Success
                 }
-                Err(err) => ExitStatus::Failure(err),
+                Err(err) => ExitStatus::Error(err),
             }
         }
         .boxed()
@@ -219,7 +219,7 @@ where
                     tracing::info!("Metrics server is shut down gracefully");
                     ExitStatus::Success
                 }
-                Err(err) => ExitStatus::Failure(Error::from(err)),
+                Err(err) => ExitStatus::Error(Error::from(err)),
             }
         }
         .boxed()
