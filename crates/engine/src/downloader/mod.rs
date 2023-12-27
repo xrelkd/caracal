@@ -63,16 +63,16 @@ impl Downloader {
                 if let Some(transfer_status) = transfer_status {
                     self.transfer_status = transfer_status;
                 }
-                tokio::spawn(Self::serve_with_multiple_workers(
-                    self.worker_number,
-                    self.transfer_status.clone(),
-                    Arc::new(Mutex::new(sink_cloned)),
-                    self.source.clone(),
-                    self.filename.clone(),
-                    event_sender.clone(),
+                tokio::spawn(Self::serve_with_multiple_workers(ServeWithMultipleWorkerOptions {
+                    worker_number: self.worker_number,
+                    transfer_status: self.transfer_status.clone(),
+                    sink: Arc::new(Mutex::new(sink_cloned)),
+                    source: self.source.clone(),
+                    file_path: self.filename.clone(),
+                    event_sender: event_sender.clone(),
                     event_receiver,
                     control_file,
-                ))
+                }))
             };
             self.handle = Some((event_sender, join_handle));
         }
@@ -208,16 +208,18 @@ impl Downloader {
         Ok(summary)
     }
 
-    #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+    #[allow(clippy::too_many_lines)]
     async fn serve_with_multiple_workers(
-        worker_number: u64,
-        mut transfer_status: TransferStatus,
-        sink: Arc<Mutex<File>>,
-        source: Fetcher,
-        file_path: PathBuf,
-        event_sender: mpsc::UnboundedSender<Event>,
-        mut event_receiver: mpsc::UnboundedReceiver<Event>,
-        mut control_file: ControlFile,
+        ServeWithMultipleWorkerOptions {
+            worker_number,
+            mut transfer_status,
+            sink,
+            source,
+            file_path,
+            event_sender,
+            mut event_receiver,
+            mut control_file,
+        }: ServeWithMultipleWorkerOptions,
     ) -> Result<Summary, Error> {
         tracing::debug!("Start downloader with {worker_number} connection(s)");
         let (chunk_sender, chunk_receiver) = async_channel::unbounded::<Chunk>();
@@ -354,6 +356,17 @@ impl Downloader {
 
         Ok(summary)
     }
+}
+
+struct ServeWithMultipleWorkerOptions {
+    worker_number: u64,
+    transfer_status: TransferStatus,
+    sink: Arc<Mutex<File>>,
+    source: Fetcher,
+    file_path: PathBuf,
+    event_sender: mpsc::UnboundedSender<Event>,
+    event_receiver: mpsc::UnboundedReceiver<Event>,
+    control_file: ControlFile,
 }
 
 enum Event {
