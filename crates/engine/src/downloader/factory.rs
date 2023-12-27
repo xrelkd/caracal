@@ -1,9 +1,9 @@
-use core::fmt;
-use std::{collections::HashMap, path::PathBuf, time::Duration};
+use std::{collections::HashMap, fmt, path::PathBuf, time::Duration};
 
 use caracal_base::profile::{minio::MinioAlias, ssh::SshConfig};
 use futures::{future, FutureExt};
 use snafu::{OptionExt, ResultExt};
+use time::OffsetDateTime;
 use tokio::fs::OpenOptions;
 
 pub use crate::error::Error;
@@ -12,6 +12,7 @@ use crate::{
     error,
     ext::UriExt,
     fetcher::Fetcher,
+    Priority,
 };
 
 #[derive(Clone, Debug)]
@@ -267,4 +268,8 @@ pub struct NewTask {
     pub worker_number: Option<u64>,
 
     pub connection_timeout: Option<Duration>,
+
+    pub priority: Priority,
+
+    pub creation_timestamp: OffsetDateTime,
 }

@@ -1,6 +1,6 @@
 use std::{future::Future, path::Path, pin::Pin, sync::Arc, time::Duration};
 
-use caracal_engine::{DownloaderFactory, NewTask};
+use caracal_engine::{DownloaderFactory, NewTask, Priority};
 use futures::{FutureExt, StreamExt};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use sigfinn::{ExitStatus, LifecycleManager};
@@ -59,6 +59,8 @@ where
             filename: None,
             worker_number: worker_number.map(u64::from),
             connection_timeout,
+            priority: Priority::Normal,
+            creation_timestamp: time::OffsetDateTime::now_utc(),
         };
 
         let progress_bar = multi_progress.add(ProgressBar::new(0));
@@ -114,7 +116,7 @@ fn create_task_future(
                         break;
                     }
                     Event::UpdateProgress => {
-                        if let Some(progress) = downloader.progress().await {
+                        if let Some(progress) = downloader.scrape_status().await {
                             progress_bar.set_position(progress.total_received());
                             progress_bar.set_length(progress.content_length());
                             progress_bar.set_message(format!(

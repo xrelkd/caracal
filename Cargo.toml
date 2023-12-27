@@ -19,6 +19,8 @@ members = [
   "crates/cli",
   "crates/engine",
   "crates/metrics",
+  "crates/proto",
+  "crates/server",
 ]
 
 [workspace.lints.rust]

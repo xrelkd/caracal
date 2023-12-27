@@ -1,6 +1,6 @@
 [package]
-name                 = "caracal-engine"
-description          = "Caracal engine"
+name                 = "caracal-server"
+description          = "Caracal server"
 version.workspace    = true
 authors.workspace    = true
 homepage.workspace   = true
@@ -17,8 +17,9 @@ tracing = "0.1"
 serde      = { version = "1", features = ["derive"] }
 serde_json = "1"
 
-async-channel = "2"
+async-trait = "0.1"
 futures = "0.3"
+sigfinn = "0.1"
 tokio = { version = "1", features = [
   "fs",
   "macros",
@@ -27,24 +28,19 @@ tokio = { version = "1", features = [
 ] }
 tokio-stream = { version = "0.1", features = ["net"] }
 
-http = "1"
-mailparse = "0.14"
-reqwest = { version = "0.11", default-features = false, features = [
-  "json",
-  "rustls",
-  "rustls-tls",
-  "stream",
-] }
-opendal = { version = "0.43", features = [
-  "rustls",
-  "services-fs",
-  "services-http",
-  "services-s3",
-  "services-sftp",
-] }
+tonic = { version = "0.10", features = ["gzip"] }
 
-bytes = "1"
+zbus = { version = "3", default-features = false, features = ["tokio"] }
+
+hex = "0.4"
 humansize = "2"
+lazy_static = "1"
+mime = "0.3"
+notify-rust = "4"
+parking_lot = "0.12"
+prometheus = "0.13"
+regex = "1"
+semver = "1"
 snafu = "0.7"
 time = { version = "0.3", features = [
   "formatting",
@@ -52,10 +48,11 @@ time = { version = "0.3", features = [
   "parsing",
   "serde",
 ] }
-urlencoding = "2"
-uuid = { version = "1", features = ["serde", "v4", "v5"] }
 
-caracal-base = { path = "../base" }
+caracal-base    = { path = "../base" }
+caracal-engine  = { path = "../engine" }
+caracal-metrics = { path = "../metrics" }
+caracal-proto   = { path = "../proto" }
 
 [lints]
 workspace = true
