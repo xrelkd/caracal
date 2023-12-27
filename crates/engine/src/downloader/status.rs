@@ -64,7 +64,8 @@ impl DownloaderStatus {
         self.filename = filename.to_string();
     }
 
-    pub fn concurrent_number(&self) -> usize { self.concurrent_number }
+    #[must_use]
+    pub const fn concurrent_number(&self) -> usize { self.concurrent_number }
 }
 
 impl Default for DownloaderStatus {

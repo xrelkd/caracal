@@ -96,7 +96,8 @@ impl TransferStatus {
         }
     }
 
-    pub fn concurrent_number(&self) -> usize { self.concurrent_number }
+    #[must_use]
+    pub const fn concurrent_number(&self) -> usize { self.concurrent_number }
 
     pub fn update_concurrent_number(&mut self, concurrent_number: usize) {
         self.concurrent_number = concurrent_number;
