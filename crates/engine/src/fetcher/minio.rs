@@ -68,14 +68,17 @@ impl Fetcher {
 
     pub fn fetch_metadata(&self) -> Metadata { self.metadata.clone() }
 
-    pub async fn fetch_bytes(&self, start: u64, end: u64) -> Result<ByteStream> {
-        let reader =
-            self.operator.reader(self.filename.as_str()).await.context(error::CreateReaderSnafu)?;
-        Ok(ByteStream::new(reader, start, end))
-    }
-
     pub async fn fetch_all(&self) -> Result<ByteStream> {
         let length = self.fetch_metadata().length;
         self.fetch_bytes(0, length - 1).await
+    }
+
+    pub async fn fetch_bytes(&self, start: u64, end: u64) -> Result<ByteStream> {
+        self.operator
+            .reader_with(self.filename.as_str())
+            .range(start..=end)
+            .await
+            .map(ByteStream::from)
+            .context(error::CreateReaderSnafu)
     }
 }

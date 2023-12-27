@@ -57,11 +57,11 @@ impl Fetcher {
     }
 
     pub async fn fetch_bytes(&mut self, start: u64, end: u64) -> Result<ByteStream> {
-        let reader = self
-            .operator
-            .reader(&self.file_path.to_string_lossy())
+        self.operator
+            .reader_with(&self.file_path.to_string_lossy())
+            .range(start..=end)
             .await
-            .context(error::CreateReaderSnafu)?;
-        Ok(ByteStream::new(reader, start, end))
+            .map(ByteStream::from)
+            .context(error::CreateReaderSnafu)
     }
 }
