@@ -3,15 +3,26 @@ use std::fmt;
 use crate::downloader::{Chunk, TransferStatus};
 
 #[derive(Clone, Debug)]
-pub struct Progress {
+pub struct DownloaderStatus {
     filename: String,
+
     content_length: u64,
+
     chunks: Vec<ProgressChunk>,
+
+    concurrent_number: usize,
 }
 
-impl Progress {
+impl DownloaderStatus {
     #[must_use]
-    pub fn new() -> Self { Self { filename: String::new(), content_length: 0, chunks: Vec::new() } }
+    pub fn new() -> Self {
+        Self {
+            filename: String::new(),
+            content_length: 0,
+            chunks: Vec::new(),
+            concurrent_number: 0,
+        }
+    }
 
     #[must_use]
     pub fn chunks(&self) -> Vec<ProgressChunk> { self.chunks.clone() }
@@ -52,16 +63,23 @@ impl Progress {
     {
         self.filename = filename.to_string();
     }
+
+    pub fn concurrent_number(&self) -> usize { self.concurrent_number }
 }
 
-impl Default for Progress {
+impl Default for DownloaderStatus {
     fn default() -> Self { Self::new() }
 }
 
-impl From<TransferStatus> for Progress {
+impl From<TransferStatus> for DownloaderStatus {
     fn from(status: TransferStatus) -> Self {
         let chunks = status.chunks().into_iter().map(ProgressChunk::from).collect();
-        Self { filename: String::new(), content_length: status.content_length(), chunks }
+        Self {
+            filename: String::new(),
+            content_length: status.content_length(),
+            chunks,
+            concurrent_number: status.concurrent_number(),
+        }
     }
 }
 

@@ -2,6 +2,7 @@ mod chunk;
 mod control_file;
 mod factory;
 mod progress_updater;
+mod status;
 mod transfer_status;
 mod worker;
 
@@ -19,6 +20,7 @@ use tokio::{
 pub use self::{
     chunk::Chunk,
     factory::{Factory as DownloaderFactory, NewTask},
+    status::DownloaderStatus,
     transfer_status::TransferStatus,
 };
 use self::{
@@ -26,7 +28,7 @@ use self::{
     progress_updater::ProgressUpdater,
     worker::{Worker, WorkerEvent},
 };
-use crate::{error, error::Error, fetcher::Fetcher, Progress};
+use crate::{error, error::Error, fetcher::Fetcher};
 
 type DownloaderHandle = Option<(mpsc::UnboundedSender<Event>, JoinHandle<Result<Summary, Error>>)>;
 
@@ -100,14 +102,14 @@ impl Downloader {
     pub async fn resume(&mut self) -> Result<(), Error> { self.start().await }
 
     /// # Errors
-    pub async fn join(mut self) -> Result<Option<(TransferStatus, Progress)>, Error> {
+    pub async fn join(mut self) -> Result<Option<(TransferStatus, DownloaderStatus)>, Error> {
         if let Some((_event_sender, join_handle)) = self.handle.take() {
             let transfer_status = match join_handle.await.context(error::JoinTaskSnafu)?? {
                 Summary::Completed { transfer_status } | Summary::Partial { transfer_status } => {
                     transfer_status
                 }
             };
-            let mut progress = Progress::from(transfer_status.clone());
+            let mut progress = DownloaderStatus::from(transfer_status.clone());
             progress.set_filename(self.filename.file_name().map_or_else(
                 || caracal_base::FALLBACK_FILENAME,
                 |s| s.to_str().unwrap_or(caracal_base::FALLBACK_FILENAME),
@@ -118,13 +120,13 @@ impl Downloader {
         }
     }
 
-    pub async fn progress(&self) -> Option<Progress> {
+    pub async fn scrape_status(&self) -> Option<DownloaderStatus> {
         if let Some((event_sender, _join_handle)) = self.handle.as_ref() {
             let (send, recv) = oneshot::channel();
-            drop(event_sender.send(Event::GetProgress(send)));
+            drop(event_sender.send(Event::GetStatus(send)));
             recv.await
                 .map(|status| {
-                    let mut progress = Progress::from(status);
+                    let mut progress = DownloaderStatus::from(status);
                     progress.set_filename(self.filename.file_name().map_or_else(
                         || caracal_base::FALLBACK_FILENAME,
                         |s| s.to_str().unwrap_or(caracal_base::FALLBACK_FILENAME),
@@ -194,7 +196,7 @@ impl Downloader {
                     tracing::warn!("{err}");
                     break;
                 }
-                future::Either::Right((Some(Event::GetProgress(sender)), _)) => {
+                future::Either::Right((Some(Event::GetStatus(sender)), _)) => {
                     drop(sender.send(transfer_status.clone()));
                 }
                 future::Either::Right((Some(Event::Stop), _)) => {
@@ -246,6 +248,7 @@ impl Downloader {
         for chunk in transfer_status.chunks() {
             drop(chunk_sender.send(chunk).await);
         }
+        transfer_status.update_concurrent_number(worker_event_senders.len());
 
         let mut next_worker_id = worker_number;
         let mut chunk_to_worker = HashMap::new();
@@ -255,6 +258,7 @@ impl Downloader {
             match event {
                 Event::ChunkTransferStarted { worker_id, chunk_start } => {
                     let _unused = chunk_to_worker.insert(chunk_start, worker_id);
+                    transfer_status.update_concurrent_number(worker_event_senders.len());
                 }
                 Event::ChunkTransferCompleted { chunk_start, worker_id: _worker_id } => {
                     let _unused = chunk_to_worker.remove(&chunk_start);
@@ -274,7 +278,7 @@ impl Downloader {
                 } => {
                     transfer_status.update_progress(start, received);
                 }
-                Event::GetProgress(sender) => drop(sender.send(transfer_status.clone())),
+                Event::GetStatus(sender) => drop(sender.send(transfer_status.clone())),
                 Event::Stop => {
                     control_file.update_progress(&transfer_status).await?;
                     control_file.flush().await?;
@@ -313,11 +317,12 @@ impl Downloader {
                         let _ = chunk_sender.send(new_chunk).await;
                         let _ = chunk_sender.send(origin_chunk).await;
                     }
+                    transfer_status.update_concurrent_number(worker_event_senders.len());
                 }
                 Event::RemoveWorker => {
                     if let Some((origin_chunk, new_chunk)) = transfer_status.freeze() {
                         if let Some(worker_id) = chunk_to_worker.get(&origin_chunk.start) {
-                            if let Some(worker) = worker_event_senders.get(worker_id) {
+                            if let Some(worker) = worker_event_senders.remove(worker_id) {
                                 let (sender, wait) = oneshot::channel();
                                 drop(worker.send(WorkerEvent::Remove(sender)));
                                 let _ = wait.await;
@@ -325,6 +330,7 @@ impl Downloader {
                         }
                         let _ = chunk_sender.send(new_chunk).await;
                     }
+                    transfer_status.update_concurrent_number(worker_event_senders.len());
                 }
             }
         }
@@ -371,7 +377,7 @@ struct ServeWithMultipleWorkerOptions {
 
 enum Event {
     Stop,
-    GetProgress(oneshot::Sender<TransferStatus>),
+    GetStatus(oneshot::Sender<TransferStatus>),
     AddWorker,
     RemoveWorker,
     UpdateChunkTranserProgress { worker_id: u64, start: u64, end: u64, received: u64 },

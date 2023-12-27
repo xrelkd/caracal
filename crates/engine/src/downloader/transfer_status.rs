@@ -7,6 +7,8 @@ pub struct TransferStatus {
     pub content_length: u64,
 
     pub chunks: HashMap<u64, Chunk>,
+
+    pub concurrent_number: usize,
 }
 
 impl TransferStatus {
@@ -14,13 +16,13 @@ impl TransferStatus {
         let chunks = InitialChunks::new(0, content_length - 1, chunk_size)?
             .map(|chunk| (chunk.start, chunk))
             .collect();
-        Ok(Self { content_length, chunks })
+        Ok(Self { content_length, chunks, concurrent_number: 1 })
     }
 
     pub fn unknown_length() -> Self {
         let chunks =
             HashMap::from([(0, Chunk { start: 0, end: 0, received: 0, is_completed: false })]);
-        Self { content_length: 0, chunks }
+        Self { content_length: 0, chunks, concurrent_number: 1 }
     }
 
     pub fn chunks(&self) -> Vec<Chunk> {
@@ -92,6 +94,12 @@ impl TransferStatus {
                 None
             }
         }
+    }
+
+    pub fn concurrent_number(&self) -> usize { self.concurrent_number }
+
+    pub fn update_concurrent_number(&mut self, concurrent_number: usize) {
+        self.concurrent_number = concurrent_number;
     }
 }
 

@@ -45,6 +45,6 @@ impl From<Control> for TransferStatus {
             .into_iter()
             .map(|chunk| (chunk.start, downloader::Chunk::from(chunk)))
             .collect::<HashMap<_, _>>();
-        Self { content_length, chunks }
+        Self { content_length, chunks, concurrent_number: 0 }
     }
 }
