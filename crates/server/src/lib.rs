@@ -188,20 +188,15 @@ fn create_task_scheduler_future(
     move |shutdown_signal| {
         async move {
             shutdown_signal.await;
-            let result = task_scheduler.shutdown();
-            drop(task_scheduler_worker.await);
-            match result {
-                Ok(()) => {
-                    tracing::info!("Task scheduler is shut down gracefully");
-                    ExitStatus::Success
-                }
-                Err(err) => {
-                    tracing::warn!(
-                        "Error occurred while shutting down Task scheduler, error: {err}"
-                    );
-                    ExitStatus::Success
-                }
+            match task_scheduler.shutdown() {
+                Ok(()) => tracing::info!("Task scheduler is shut down gracefully"),
+                Err(err) => tracing::warn!(
+                    "Error occurred while shutting down Task scheduler, error: {err}"
+                ),
             }
+            drop(task_scheduler_worker.await);
+
+            ExitStatus::Success
         }
         .boxed()
     }
