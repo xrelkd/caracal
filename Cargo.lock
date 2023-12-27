@@ -508,7 +508,7 @@ dependencies = [
  "resolve-path",
  "serde",
  "shadow-rs",
- "sigfinn 0.2.0",
+ "sigfinn",
  "snafu",
  "time",
  "tokio",
@@ -647,7 +647,7 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
- "sigfinn 0.1.1",
+ "sigfinn",
  "snafu",
  "time",
  "tokio",
@@ -1581,7 +1581,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
- "socket2 0.5.5",
+ "socket2 0.4.10",
  "tokio",
  "tower-service",
  "tracing",
@@ -3125,18 +3125,6 @@ name = "shell-escape"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "45bb67a18fa91266cc7807181f62f9178a6873bfad7dc788c42e6430db40184f"
-
-[[package]]
-name = "sigfinn"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19ccc3278dafd66473c654456b52f3d356df5c5d0ce149b39268ff59654afbcc"
-dependencies = [
- "futures",
- "snafu",
- "tokio",
- "tracing",
-]
 
 [[package]]
 name = "sigfinn"
