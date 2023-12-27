@@ -1,6 +1,6 @@
 [package]
-name                 = "clipcat-metrics"
-description          = "Clipcat metrics utilities"
+name                 = "caracal-metrics"
+description          = "Caracal metrics utilities"
 version.workspace    = true
 authors.workspace    = true
 homepage.workspace   = true
