@@ -13,6 +13,9 @@ pub enum Error {
 
     #[snafu(display("{source}"))]
     Profile { source: caracal_cli::profile::Error },
+
+    #[snafu(display("Could not get current directory, error: {source}"))]
+    GetCurrentDirectory { source: std::io::Error },
 }
 
 impl From<caracal_cli::profile::Error> for Error {

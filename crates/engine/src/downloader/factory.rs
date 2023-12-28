@@ -1,6 +1,9 @@
 use std::{collections::HashMap, fmt, path::PathBuf, time::Duration};
 
-use caracal_base::profile::{minio::MinioAlias, ssh::SshConfig};
+use caracal_base::{
+    profile::{minio::MinioAlias, ssh::SshConfig},
+    Priority,
+};
 use futures::{future, FutureExt};
 use snafu::{OptionExt, ResultExt};
 use time::OffsetDateTime;
@@ -12,7 +15,6 @@ use crate::{
     error,
     ext::UriExt,
     fetcher::Fetcher,
-    Priority,
 };
 
 #[derive(Clone, Debug)]
@@ -69,7 +71,7 @@ impl Builder {
     pub fn build(self) -> Result<Factory, Error> {
         let Self {
             http_user_agent,
-            default_worker_number,
+            default_worker_number: default_concurrent_number,
             minio_aliases,
             ssh_servers,
             minimum_chunk_size,
@@ -86,7 +88,7 @@ impl Builder {
 
         Ok(Factory {
             http_client,
-            default_worker_number,
+            default_concurrent_number,
             minimum_chunk_size,
             minio_aliases,
             ssh_servers,
@@ -112,7 +114,7 @@ impl Default for Builder {
 pub struct Factory {
     http_client: reqwest::Client,
 
-    default_worker_number: u64,
+    default_concurrent_number: u64,
 
     minimum_chunk_size: u64,
 
@@ -166,10 +168,14 @@ impl Factory {
             let (chunk_size, worker_number) = if metadata.length <= self.minimum_chunk_size {
                 (metadata.length, 1)
             } else {
-                let worker_number = new_task.worker_number.unwrap_or(self.default_worker_number);
-                let worker_number =
-                    if worker_number == 0 { self.default_worker_number } else { worker_number };
-                (metadata.length / worker_number, worker_number)
+                let concurrent_number =
+                    new_task.concurrent_number.unwrap_or(self.default_concurrent_number);
+                let concurrent_number = if concurrent_number == 0 {
+                    self.default_concurrent_number
+                } else {
+                    concurrent_number
+                };
+                (metadata.length / concurrent_number, concurrent_number)
             };
 
             let transfer_status = TransferStatus::new(metadata.length, chunk_size)?;
@@ -265,7 +271,7 @@ pub struct NewTask {
 
     pub directory_path: PathBuf,
 
-    pub worker_number: Option<u64>,
+    pub concurrent_number: Option<u64>,
 
     pub connection_timeout: Option<Duration>,
 

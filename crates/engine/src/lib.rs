@@ -9,18 +9,5 @@ mod task_scheduler;
 pub use self::{
     downloader::{Downloader, DownloaderFactory, DownloaderStatus, NewTask},
     error::Error,
-    task_scheduler::TaskScheduler,
+    task_scheduler::{TaskScheduler, TaskStatus},
 };
-
-#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
-pub enum Priority {
-    Lowest = 0,
-
-    Low = 1,
-    #[default]
-    Normal = 2,
-
-    High = 3,
-
-    Highest = 4,
-}

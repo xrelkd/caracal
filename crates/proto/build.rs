@@ -10,7 +10,7 @@ fn prost_config() -> Config {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     tonic_build::configure().compile_with_config(
         prost_config(),
-        &["proto/system.proto"],
+        &["proto/System.proto", "proto/Task.proto", "proto/Uuid.proto"],
         &["proto/"],
     )?;
     Ok(())

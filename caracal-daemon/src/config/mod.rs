@@ -127,11 +127,15 @@ impl Config {
         let dbus = caracal_server::config::DBusConfig::from(self.dbus);
         let metrics = caracal_server::config::MetricsConfig::from(self.metrics);
         let task_scheduler = caracal_server::config::TaskSchedulerConfig {
-            concurrent_number: self.task_scheduler.concurrent_number,
             http: caracal_server::config::HttpConfig {
                 user_agent: self.downloader.http.user_agent,
                 concurrent_connections: self.downloader.http.concurrent_connections,
             },
+            concurrent_number: self.task_scheduler.concurrent_number,
+            default_output_directory: self
+                .downloader
+                .default_output_directory
+                .unwrap_or(std::env::current_dir().context(error::GetCurrentDirectorySnafu)?),
         };
 
         Ok(caracal_server::Config {

@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package caracal;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+import "Uuid.proto";
+
+service Task {
+  rpc AddUri(AddUriRequest) returns (AddUriResponse);
+  rpc Pause(PauseTaskRequest) returns (PauseTaskResponse);
+  rpc PauseAll(google.protobuf.Empty) returns (PauseAllTasksResponse);
+  rpc Resume(ResumeTaskRequest) returns (ResumeTaskResponse);
+  rpc ResumeAll(google.protobuf.Empty) returns (ResumeAllTasksResponse);
+  rpc Remove(RemoveTaskRequest) returns (RemoveTaskResponse);
+
+  rpc GetTaskStatus(GetTaskStatusRequest) returns (GetTaskStatusResponse);
+}
+
+enum Priority {
+  LOWEST = 0;
+  LOW = 1;
+  NORMAL = 2;
+  HIGH = 3;
+  HIGHEST = 4;
+}
+
+enum TaskState {
+  PENDING = 0;
+  DOWNLOADING = 1;
+  PAUSED = 2;
+  CANCELED = 3;
+  COMPLETED = 4;
+}
+
+message TaskMetadata {
+  .caracal.Uuid id = 1;
+  string file_path = 2;
+  Priority priority = 3;
+  optional uint64 size = 4;
+  .google.protobuf.Timestamp creation_timestamp = 5;
+}
+
+message Chunk {
+  uint64 start = 1;
+  uint64 end = 2;
+  uint64 received = 3;
+}
+
+message AddUriRequest {
+  bool start_immediately = 1;
+  string uri = 2;
+  optional string output_directory = 3;
+  optional string filename = 4;
+  optional Priority priority = 5;
+  optional uint64 connection_timeout = 6;
+  optional uint64 concurrent_number = 7;
+}
+message AddUriResponse { .caracal.Uuid task_id = 1; }
+
+message PauseTaskRequest { .caracal.Uuid task_id = 1; }
+message PauseTaskResponse { bool ok = 1; }
+
+message PauseAllTasksResponse { repeated .caracal.Uuid task_ids = 1; }
+
+message ResumeTaskRequest { .caracal.Uuid task_id = 1; }
+message ResumeTaskResponse { bool ok = 1; }
+
+message ResumeAllTasksResponse { repeated .caracal.Uuid task_ids = 1; }
+
+message RemoveTaskRequest { .caracal.Uuid task_id = 1; }
+message RemoveTaskResponse { bool ok = 1; }
+
+message GetTaskStatusRequest { .caracal.Uuid task_id = 1; }
+message GetTaskStatusResponse {
+  TaskMetadata metadata = 1;
+  TaskState state = 2;
+  uint64 received_bytes = 3;
+  uint64 total_length = 4;
+  repeated Chunk chunks = 5;
+}

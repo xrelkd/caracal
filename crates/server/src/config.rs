@@ -26,6 +26,8 @@ pub struct TaskSchedulerConfig {
     pub http: HttpConfig,
 
     pub concurrent_number: usize,
+
+    pub default_output_directory: PathBuf,
 }
 
 #[derive(Clone, Debug)]
