@@ -4,7 +4,10 @@ use caracal_proto as proto;
 use tonic::Request;
 use uuid::Uuid;
 
-use crate::{error::AddUriError, Client};
+use crate::{
+    error::{AddUriError, PauseTaskError},
+    Client,
+};
 
 #[async_trait]
 pub trait Task {
@@ -13,6 +16,8 @@ pub trait Task {
         create_task: model::CreateTask,
         start_immediately: bool,
     ) -> Result<Uuid, AddUriError>;
+
+    async fn pause(&self, task_id: Uuid) -> Result<bool, PauseTaskError>;
 }
 
 #[async_trait]
@@ -47,5 +52,17 @@ impl Task for Client {
 
         Uuid::try_from(task_id.ok_or(AddUriError::InvalidResponse)?)
             .map_err(|_| AddUriError::InvalidResponse)
+    }
+
+    async fn pause(&self, task_id: Uuid) -> Result<bool, PauseTaskError> {
+        let proto::PauseTaskResponse { ok } =
+            proto::TaskClient::with_interceptor(self.channel.clone(), self.interceptor.clone())
+                .pause(Request::new(proto::PauseTaskRequest {
+                    task_id: Some(proto::Uuid::from(task_id)),
+                }))
+                .await
+                .map_err(|source| PauseTaskError::Status { source })?
+                .into_inner();
+        Ok(ok)
     }
 }
