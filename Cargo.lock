@@ -598,6 +598,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "caracal-grpc-client"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "caracal-base",
+ "caracal-proto",
+ "http 1.0.0",
+ "prost-types",
+ "semver",
+ "snafu",
+ "tokio",
+ "tonic",
+ "tower",
+ "tracing",
+]
+
+[[package]]
 name = "caracal-metrics"
 version = "0.1.0"
 dependencies = [
