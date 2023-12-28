@@ -26,6 +26,7 @@ mod proto {
     tonic::include_proto!("caracal");
 }
 
+use caracal_base::model;
 use snafu::ResultExt;
 
 pub use self::{
@@ -42,7 +43,7 @@ pub use self::{
     utils::{datetime_to_timestamp, timestamp_to_datetime},
 };
 
-impl From<Priority> for caracal_base::Priority {
+impl From<Priority> for model::Priority {
     fn from(value: Priority) -> Self {
         match value {
             Priority::Lowest => Self::Lowest,
@@ -54,19 +55,19 @@ impl From<Priority> for caracal_base::Priority {
     }
 }
 
-impl From<caracal_base::Priority> for Priority {
-    fn from(value: caracal_base::Priority) -> Self {
+impl From<model::Priority> for Priority {
+    fn from(value: model::Priority) -> Self {
         match value {
-            caracal_base::Priority::Lowest => Self::Lowest,
-            caracal_base::Priority::Low => Self::Low,
-            caracal_base::Priority::Normal => Self::Normal,
-            caracal_base::Priority::High => Self::High,
-            caracal_base::Priority::Highest => Self::Highest,
+            model::Priority::Lowest => Self::Lowest,
+            model::Priority::Low => Self::Low,
+            model::Priority::Normal => Self::Normal,
+            model::Priority::High => Self::High,
+            model::Priority::Highest => Self::Highest,
         }
     }
 }
 
-impl From<TaskState> for caracal_base::TaskState {
+impl From<TaskState> for model::TaskState {
     fn from(value: TaskState) -> Self {
         match value {
             TaskState::Pending => Self::Pending,
@@ -78,14 +79,14 @@ impl From<TaskState> for caracal_base::TaskState {
     }
 }
 
-impl From<caracal_base::TaskState> for TaskState {
-    fn from(value: caracal_base::TaskState) -> Self {
+impl From<model::TaskState> for TaskState {
+    fn from(value: model::TaskState) -> Self {
         match value {
-            caracal_base::TaskState::Pending => Self::Pending,
-            caracal_base::TaskState::Downloading => Self::Downloading,
-            caracal_base::TaskState::Paused => Self::Paused,
-            caracal_base::TaskState::Completed => Self::Completed,
-            caracal_base::TaskState::Canceled => Self::Canceled,
+            model::TaskState::Pending => Self::Pending,
+            model::TaskState::Downloading => Self::Downloading,
+            model::TaskState::Paused => Self::Paused,
+            model::TaskState::Completed => Self::Completed,
+            model::TaskState::Canceled => Self::Canceled,
         }
     }
 }
