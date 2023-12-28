@@ -1,8 +1,12 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Default, Serialize)]
 pub struct DownloaderConfig {
     pub http: HttpConfig,
+
+    pub default_output_directory: Option<PathBuf>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
