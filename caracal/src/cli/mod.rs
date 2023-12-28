@@ -114,6 +114,12 @@ pub enum Commands {
         #[arg(help = "Task ID")]
         id: Uuid,
     },
+
+    #[clap(about = "Resume a task")]
+    ResumeTask {
+        #[arg(help = "Task ID")]
+        id: Uuid,
+    },
 }
 
 impl Default for Cli {
@@ -121,6 +127,7 @@ impl Default for Cli {
 }
 
 impl Cli {
+    #[allow(clippy::too_many_lines)]
     pub fn run(self) -> Result<(), Error> {
         let Self {
             commands,
@@ -194,10 +201,15 @@ impl Cli {
                     drop(client);
                     Ok(())
                 }
-
                 Some(Commands::PauseTask { id }) => {
                     let client = create_grpc_client(&config).await?;
                     let _ = client.pause(id).await?;
+                    drop(client);
+                    Ok(())
+                }
+                Some(Commands::ResumeTask { id }) => {
+                    let client = create_grpc_client(&config).await?;
+                    let _ = client.resume(id).await?;
                     drop(client);
                     Ok(())
                 }
