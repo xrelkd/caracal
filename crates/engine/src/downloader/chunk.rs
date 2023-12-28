@@ -1,5 +1,3 @@
-pub use crate::error::Error;
-
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Chunk {
     pub start: u64,
