@@ -1,4 +1,5 @@
 pub mod config;
+pub mod model;
 pub mod profile;
 pub mod serde;
 pub mod utils;
@@ -60,38 +61,4 @@ pub static ref PROJECT_CONFIG_DIR: PathBuf = ProjectDirs::from("", PROJECT_NAME,
             .expect("Creating `ProjectDirs` should always success")
             .config_dir()
             .to_path_buf();
-}
-
-#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
-pub enum Priority {
-    Lowest = 1,
-
-    Low = 2,
-    #[default]
-    Normal = 3,
-
-    High = 4,
-
-    Highest = 5,
-}
-
-impl From<i32> for Priority {
-    fn from(value: i32) -> Self {
-        match value {
-            1 => Self::Lowest,
-            2 => Self::Low,
-            4 => Self::High,
-            5 => Self::Highest,
-            _ => Self::Normal,
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum TaskState {
-    Pending,
-    Downloading,
-    Paused,
-    Canceled,
-    Completed,
 }
