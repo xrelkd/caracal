@@ -49,7 +49,7 @@ impl proto::Task for TaskService {
         let new_task = model::CreateTask {
             uri,
             filename: filename.map(PathBuf::from),
-            directory_path: output_directory
+            output_directory: output_directory
                 .map_or_else(|| self.default_output_directory.clone(), PathBuf::from),
             concurrent_number,
             connection_timeout: connection_timeout.map(Duration::from_secs),
