@@ -3,7 +3,12 @@ mod error;
 mod grpc;
 mod metrics;
 
-use std::{future::Future, net::SocketAddr, path::PathBuf, pin::Pin};
+use std::{
+    future::Future,
+    net::SocketAddr,
+    path::{Path, PathBuf},
+    pin::Pin,
+};
 
 use caracal_engine::{DownloaderFactory, TaskScheduler};
 use futures::FutureExt;
@@ -36,6 +41,7 @@ pub async fn serve_with_shutdown(
     }: Config,
 ) -> Result<()> {
     let lifecycle_manager = LifecycleManager::<Error>::new();
+    let default_output_directory = task_scheduler.default_output_directory;
 
     let (task_scheduler, task_scheduler_worker) = {
         let downloader_factory = DownloaderFactory::builder()
@@ -61,6 +67,7 @@ pub async fn serve_with_shutdown(
                 grpc_listen_address,
                 grpc_access_token.clone(),
                 task_scheduler.clone(),
+                default_output_directory.clone(),
             ),
         );
     }
@@ -72,6 +79,7 @@ pub async fn serve_with_shutdown(
                 grpc_local_socket,
                 grpc_access_token,
                 task_scheduler.clone(),
+                default_output_directory,
             ),
         );
     }
@@ -93,11 +101,16 @@ pub async fn serve_with_shutdown(
     }
 }
 
-fn create_grpc_local_socket_server_future(
+fn create_grpc_local_socket_server_future<P>(
     local_socket: PathBuf,
     grpc_access_token: Option<String>,
     task_scheduler: TaskScheduler,
-) -> impl FnOnce(Shutdown) -> Pin<Box<dyn Future<Output = ExitStatus<Error>> + Send>> {
+    default_output_directory: P,
+) -> impl FnOnce(Shutdown) -> Pin<Box<dyn Future<Output = ExitStatus<Error>> + Send>>
+where
+    P: AsRef<Path>,
+{
+    let default_output_directory = default_output_directory.as_ref().to_path_buf();
     move |signal| {
         async move {
             tracing::info!("Listen Caracal gRPC endpoint on {}", local_socket.display());
@@ -117,14 +130,15 @@ fn create_grpc_local_socket_server_future(
                 Err(err) => return ExitStatus::FatalError(err),
             };
 
-            // TODO: put task_scheduler into grpc service
-            drop(task_scheduler);
-
             let interceptor = grpc::Interceptor::new(grpc_access_token);
             let result = tonic::transport::Server::builder()
                 .add_service(caracal_proto::SystemServer::with_interceptor(
                     grpc::SystemService::new(),
                     interceptor.clone(),
+                ))
+                .add_service(caracal_proto::TaskServer::with_interceptor(
+                    grpc::TaskService::new(task_scheduler, default_output_directory),
+                    interceptor,
                 ))
                 .serve_with_incoming_shutdown(uds_stream, signal)
                 .await
@@ -147,23 +161,29 @@ fn create_grpc_local_socket_server_future(
     }
 }
 
-fn create_grpc_http_server_future(
+fn create_grpc_http_server_future<P>(
     listen_address: SocketAddr,
     grpc_access_token: Option<String>,
     task_scheduler: TaskScheduler,
-) -> impl FnOnce(Shutdown) -> Pin<Box<dyn Future<Output = ExitStatus<Error>> + Send>> {
+    default_output_directory: P,
+) -> impl FnOnce(Shutdown) -> Pin<Box<dyn Future<Output = ExitStatus<Error>> + Send>>
+where
+    P: AsRef<Path>,
+{
+    let default_output_directory = default_output_directory.as_ref().to_path_buf();
     move |signal| {
         async move {
             tracing::info!("Listen Caracal gRPC endpoint on {listen_address}");
-
-            // TODO: put task_scheduler into grpc service
-            drop(task_scheduler);
 
             let interceptor = grpc::Interceptor::new(grpc_access_token);
             let result = tonic::transport::Server::builder()
                 .add_service(caracal_proto::SystemServer::with_interceptor(
                     grpc::SystemService::new(),
                     interceptor.clone(),
+                ))
+                .add_service(caracal_proto::TaskServer::with_interceptor(
+                    grpc::TaskService::new(task_scheduler, default_output_directory),
+                    interceptor,
                 ))
                 .serve_with_shutdown(listen_address, signal)
                 .await
