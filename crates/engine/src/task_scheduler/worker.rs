@@ -4,6 +4,7 @@ use std::{
     time::Duration,
 };
 
+use caracal_base::Priority;
 use futures::{future, FutureExt};
 use tokio::sync::mpsc;
 use uuid::Uuid;
@@ -11,7 +12,7 @@ use uuid::Uuid;
 use crate::{
     downloader::DownloaderFactory,
     task_scheduler::{Event, TaskState, TaskStatus},
-    Downloader, NewTask, Priority,
+    Downloader, NewTask,
 };
 
 #[derive(Debug)]
