@@ -1,6 +1,7 @@
 use std::{future::Future, path::Path, pin::Pin, sync::Arc, time::Duration};
 
-use caracal_engine::{DownloaderFactory, NewTask, Priority};
+use caracal_base::Priority;
+use caracal_engine::{DownloaderFactory, NewTask};
 use futures::{FutureExt, StreamExt};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use sigfinn::{ExitStatus, LifecycleManager};
@@ -20,7 +21,7 @@ enum Event {
 pub async fn run<P>(
     uris: Vec<http::Uri>,
     output_directory: Option<P>,
-    worker_number: Option<u16>,
+    concurrent_number: Option<u16>,
     connection_timeout: Option<Duration>,
     downloader_factory: DownloaderFactory,
 ) -> Result<(), Error>
@@ -57,7 +58,7 @@ where
             uri,
             directory_path: output_directory.clone(),
             filename: None,
-            worker_number: worker_number.map(u64::from),
+            concurrent_number: concurrent_number.map(u64::from),
             connection_timeout,
             priority: Priority::Normal,
             creation_timestamp: time::OffsetDateTime::now_utc(),
