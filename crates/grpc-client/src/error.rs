@@ -34,12 +34,15 @@ pub enum Error {
 #[derive(Debug)]
 pub enum AddUriError {
     Status { source: tonic::Status },
+
+    InvalidResponse,
 }
 
 impl fmt::Display for AddUriError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Status { source } => source.fmt(f),
+            Self::InvalidResponse => f.write_str("invalid response"),
         }
     }
 }

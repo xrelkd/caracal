@@ -29,7 +29,7 @@ impl Client {
     {
         tracing::info!("Connect to server via endpoint `{grpc_endpoint}`");
         let scheme = grpc_endpoint.scheme();
-        if scheme == Some(&http::uri::Scheme::HTTP) {
+        if scheme == Some(&http::uri::Scheme::HTTP) || scheme == Some(&http::uri::Scheme::HTTPS) {
             Self::connect_http(grpc_endpoint, access_token).await
         } else {
             Self::connect_local_socket(grpc_endpoint.path(), access_token).await
