@@ -21,7 +21,7 @@ pub struct CreateTask {
 
     pub filename: Option<PathBuf>,
 
-    pub directory_path: PathBuf,
+    pub output_directory: PathBuf,
 
     pub concurrent_number: Option<u64>,
 
