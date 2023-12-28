@@ -5,7 +5,7 @@ use tonic::Request;
 use uuid::Uuid;
 
 use crate::{
-    error::{AddUriError, PauseTaskError, RemoveTaskError, ResumeTaskError},
+    error::{AddUriError, PauseTaskError, RemoveTaskError, ResumeAllTasksError, ResumeTaskError},
     Client,
 };
 
@@ -22,6 +22,8 @@ pub trait Task {
     async fn resume(&self, task_id: Uuid) -> Result<bool, ResumeTaskError>;
 
     async fn remove(&self, task_id: Uuid) -> Result<bool, RemoveTaskError>;
+
+    async fn resume_all(&self) -> Result<Vec<Uuid>, ResumeAllTasksError>;
 }
 
 #[async_trait]
@@ -92,5 +94,26 @@ impl Task for Client {
                 .map_err(|source| RemoveTaskError::Status { source })?
                 .into_inner();
         Ok(ok)
+    }
+
+    async fn resume_all(&self) -> Result<Vec<Uuid>, ResumeAllTasksError> {
+        let proto::ResumeAllTasksResponse { task_ids } =
+            proto::TaskClient::with_interceptor(self.channel.clone(), self.interceptor.clone())
+                .resume_all(Request::new(()))
+                .await
+                .map_err(|source| ResumeAllTasksError::Status { source })?
+                .into_inner();
+
+        let task_ids = {
+            let mut ret = Vec::with_capacity(task_ids.len());
+            for task_id in task_ids {
+                ret.push(
+                    Uuid::try_from(task_id).map_err(|_| ResumeAllTasksError::InvalidResponse)?,
+                );
+            }
+            ret
+        };
+
+        Ok(task_ids)
     }
 }
