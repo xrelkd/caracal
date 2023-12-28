@@ -147,7 +147,8 @@ impl Factory {
         let metadata = source.fetch_metadata();
         if source.supports_range_request() {
             let filename = new_task.filename.clone().unwrap_or_else(|| metadata.filename.clone());
-            let full_path = [&new_task.directory_path, &filename].into_iter().collect::<PathBuf>();
+            let full_path =
+                [&new_task.output_directory, &filename].into_iter().collect::<PathBuf>();
             if tokio::fs::try_exists(&full_path).await.unwrap_or(false)
                 && !tokio::fs::try_exists(ControlFile::file_path(&full_path)).await.unwrap_or(false)
             {
@@ -192,7 +193,8 @@ impl Factory {
         } else {
             let filename =
                 new_task.filename.clone().unwrap_or_else(|| new_task.uri.guess_filename());
-            let full_path = [&new_task.directory_path, &filename].into_iter().collect::<PathBuf>();
+            let full_path =
+                [&new_task.output_directory, &filename].into_iter().collect::<PathBuf>();
             if tokio::fs::try_exists(&full_path).await.unwrap_or(false) {
                 return Err(Error::DestinationFileExists { file_path: full_path.clone() });
             }

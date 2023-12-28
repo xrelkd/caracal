@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use caracal_base::profile::minio::MinioPath;
 
-use super::PathExt;
+use crate::ext::PathExt;
 
 pub trait UriExt {
     fn guess_filename(&self) -> PathBuf;
