@@ -5,7 +5,7 @@ use tonic::Request;
 use uuid::Uuid;
 
 use crate::{
-    error::{AddUriError, PauseTaskError, ResumeTaskError},
+    error::{AddUriError, PauseTaskError, RemoveTaskError, ResumeTaskError},
     Client,
 };
 
@@ -20,6 +20,8 @@ pub trait Task {
     async fn pause(&self, task_id: Uuid) -> Result<bool, PauseTaskError>;
 
     async fn resume(&self, task_id: Uuid) -> Result<bool, ResumeTaskError>;
+
+    async fn remove(&self, task_id: Uuid) -> Result<bool, RemoveTaskError>;
 }
 
 #[async_trait]
@@ -76,6 +78,18 @@ impl Task for Client {
                 }))
                 .await
                 .map_err(|source| ResumeTaskError::Status { source })?
+                .into_inner();
+        Ok(ok)
+    }
+
+    async fn remove(&self, task_id: Uuid) -> Result<bool, RemoveTaskError> {
+        let proto::RemoveTaskResponse { ok } =
+            proto::TaskClient::with_interceptor(self.channel.clone(), self.interceptor.clone())
+                .remove(Request::new(proto::RemoveTaskRequest {
+                    task_id: Some(proto::Uuid::from(task_id)),
+                }))
+                .await
+                .map_err(|source| RemoveTaskError::Status { source })?
                 .into_inner();
         Ok(ok)
     }
