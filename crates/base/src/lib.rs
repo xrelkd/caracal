@@ -86,3 +86,12 @@ impl From<i32> for Priority {
         }
     }
 }
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum TaskState {
+    Pending,
+    Downloading,
+    Paused,
+    Canceled,
+    Completed,
+}
