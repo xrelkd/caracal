@@ -56,7 +56,7 @@ where
     for (idx, uri) in uris.into_iter().enumerate() {
         let task = model::CreateTask {
             uri,
-            directory_path: output_directory.clone(),
+            output_directory: output_directory.clone(),
             filename: None,
             concurrent_number: concurrent_number.map(u64::from),
             connection_timeout,

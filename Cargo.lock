@@ -498,6 +498,7 @@ dependencies = [
  "caracal-base",
  "caracal-cli",
  "caracal-engine",
+ "caracal-grpc-client",
  "clap",
  "clap_complete",
  "futures",

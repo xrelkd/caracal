@@ -30,12 +30,28 @@ pub enum Error {
     LifecycleManager { source: sigfinn::Error },
 
     #[snafu(display("{source}"))]
-    Profile { source: caracal_cli::profile::Error },
+    Config {
+        #[snafu(source(from(crate::config::Error, Box::new)))]
+        source: Box<crate::config::Error>,
+    },
+
+    #[snafu(display("{source}"))]
+    Client { source: caracal_grpc_client::Error },
 
     #[snafu(display("No URI is provided"))]
     NoUri,
 }
 
-impl From<caracal_cli::profile::Error> for Error {
-    fn from(source: caracal_cli::profile::Error) -> Self { Self::Profile { source } }
+impl From<crate::config::Error> for Error {
+    fn from(source: crate::config::Error) -> Self { Self::Config { source: Box::new(source) } }
+}
+
+impl From<caracal_grpc_client::Error> for Error {
+    fn from(source: caracal_grpc_client::Error) -> Self { Self::Client { source } }
+}
+
+impl From<caracal_grpc_client::error::AddUriError> for Error {
+    fn from(error: caracal_grpc_client::error::AddUriError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
 }
