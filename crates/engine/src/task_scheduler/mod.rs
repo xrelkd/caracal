@@ -2,7 +2,7 @@ mod error;
 mod event;
 mod worker;
 
-use caracal_base::{Priority, TaskState};
+use caracal_base::model;
 use snafu::OptionExt;
 use time::OffsetDateTime;
 use tokio::{
@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 pub use self::error::{Error, Result};
 use self::{event::Event, worker::Worker};
-use crate::{downloader::DownloaderFactory, DownloaderStatus, NewTask};
+use crate::{downloader::DownloaderFactory, DownloaderStatus};
 
 #[derive(Clone, Debug)]
 pub struct TaskScheduler {
@@ -39,7 +39,11 @@ impl TaskScheduler {
     }
 
     /// # Errors
-    pub async fn add_uri(&self, new_task: NewTask, start_immediately: bool) -> Result<Uuid> {
+    pub async fn add_uri(
+        &self,
+        new_task: model::CreateTask,
+        start_immediately: bool,
+    ) -> Result<Uuid> {
         let (sender, receiver) = oneshot::channel();
         if self.event_sender.send(Event::AddUri { new_task, start_immediately, sender }).is_err() {
             return Err(Error::TaskSchedulerClosed);
@@ -185,9 +189,9 @@ pub struct TaskStatus {
 
     pub status: DownloaderStatus,
 
-    pub state: TaskState,
+    pub state: model::TaskState,
 
-    pub priority: Priority,
+    pub priority: model::Priority,
 
     pub creation_timestamp: OffsetDateTime,
 }

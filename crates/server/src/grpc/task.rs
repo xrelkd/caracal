@@ -3,7 +3,7 @@ use std::{
     time::Duration,
 };
 
-use caracal_base::Priority;
+use caracal_base::model;
 use caracal_engine::{TaskScheduler, TaskStatus};
 use caracal_proto as proto;
 use time::OffsetDateTime;
@@ -46,15 +46,17 @@ impl proto::Task for TaskService {
         let uri = uri
             .parse::<http::Uri>()
             .map_err(|err| tonic::Status::invalid_argument(err.to_string()))?;
-        let new_task = caracal_engine::NewTask {
+        let new_task = model::CreateTask {
             uri,
             filename: filename.map(PathBuf::from),
-            directory_path: output_directory
+            output_directory: output_directory
                 .map_or_else(|| self.default_output_directory.clone(), PathBuf::from),
             concurrent_number,
             connection_timeout: connection_timeout.map(Duration::from_secs),
-            priority: priority.map_or(Priority::Normal, |v| {
-                Priority::from(proto::Priority::try_from(v).unwrap_or(proto::Priority::Normal))
+            priority: priority.map_or(model::Priority::Normal, |v| {
+                model::Priority::from(
+                    proto::Priority::try_from(v).unwrap_or(proto::Priority::Normal),
+                )
             }),
             creation_timestamp: OffsetDateTime::now_utc(),
         };
@@ -175,7 +177,7 @@ impl proto::Task for TaskService {
                     priority: i32::from(proto::Priority::from(priority)),
                     creation_timestamp: Some(proto::datetime_to_timestamp(&creation_timestamp)),
                     size: Some(status.content_length()),
-                    file_path: status.filename().to_string(),
+                    file_path: status.file_path().to_str().unwrap_or_default().to_string(),
                 }),
                 state: i32::from(proto::TaskState::from(state)),
                 received_bytes: status.total_received(),

@@ -40,9 +40,10 @@ time = { version = "0.3", features = [
   "serde",
 ] }
 
-caracal-base   = { path = "../crates/base" }
-caracal-cli    = { path = "../crates/cli" }
-caracal-engine = { path = "../crates/engine" }
+caracal-base        = { path = "../crates/base" }
+caracal-cli         = { path = "../crates/cli" }
+caracal-engine      = { path = "../crates/engine" }
+caracal-grpc-client = { path = "../crates/grpc-client" }
 
 [build-dependencies]
 shadow-rs = "0.25"

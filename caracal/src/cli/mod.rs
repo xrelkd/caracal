@@ -1,20 +1,20 @@
 mod standalone;
 
-use std::{collections::HashMap, io::Write, path::PathBuf, time::Duration};
+use std::{io::Write, path::PathBuf, time::Duration};
 
-use caracal_base::profile::{minio::MinioAlias, ssh::SshConfig};
-use caracal_cli::{
-    profile,
-    profile::{Profile, ProfileItem},
-};
+use caracal_base::{model, model::Priority};
 use caracal_engine::DownloaderFactory;
+use caracal_grpc_client as grpc;
+use caracal_grpc_client::Task as _;
 use clap::{CommandFactory, Parser, Subcommand};
 use snafu::ResultExt;
+use time::OffsetDateTime;
 use tokio::runtime::Runtime;
 
 use crate::{
-    config::Config,
-    error::{self, Error},
+    config::{self, Config},
+    error,
+    error::Error,
     shadow,
 };
 
@@ -74,6 +74,39 @@ pub enum Commands {
 
     #[clap(about = "Output default configuration")]
     DefaultConfig,
+
+    #[clap(about = "Add URI to daemon")]
+    AddUri {
+        #[arg(long = "pause", help = "Add new URI but not start immediately")]
+        pause: bool,
+
+        #[arg(
+            long = "priority",
+            default_value = "normal",
+            help = "Set the priority, available values: \"lowest\", \"low\", \"normal\", \
+                    \"high\", \"highest\""
+        )]
+        priority: Priority,
+
+        #[arg(
+            long = "output-directory",
+            short = 'D',
+            help = "The directory to store the downloaded files"
+        )]
+        output_directory: Option<PathBuf>,
+
+        #[arg(
+            long = "num-connections",
+            short = 'n',
+            help = "Specify an alternative number of connections"
+        )]
+        concurrent_connections: Option<u16>,
+
+        #[arg(long = "timeout", short = 'T', help = "Set the network timeout to seconds")]
+        connection_timeout: Option<u64>,
+
+        uris: Vec<http::Uri>,
+    },
 }
 
 impl Default for Cli {
@@ -125,38 +158,38 @@ impl Cli {
 
         Runtime::new().context(error::InitializeTokioRuntimeSnafu)?.block_on(async move {
             match commands {
-                None => {
-                    let mut minio_aliases = HashMap::new();
-                    let mut ssh_servers = HashMap::new();
-                    for profile_file in config.profile_files() {
-                        for profile_item in Profile::load(profile_file).await?.profiles {
-                            match profile_item {
-                                ProfileItem::Ssh(profile::Ssh {
-                                    name,
-                                    endpoint,
-                                    user,
-                                    identity_file,
-                                }) => {
-                                    let config = SshConfig {
-                                        endpoint,
-                                        user,
-                                        identity_file: identity_file.to_string_lossy().to_string(),
-                                    };
-                                    drop(ssh_servers.insert(name, config));
-                                }
-                                ProfileItem::Minio(profile::Minio {
-                                    name,
-                                    endpoint_url,
-                                    access_key,
-                                    secret_key,
-                                }) => {
-                                    let alias = MinioAlias { endpoint_url, access_key, secret_key };
-                                    drop(minio_aliases.insert(name, alias));
-                                }
-                            }
-                        }
+                Some(Commands::AddUri {
+                    pause,
+                    priority,
+                    output_directory,
+                    connection_timeout,
+                    concurrent_connections,
+                    uris,
+                }) => {
+                    let client = create_grpc_client(&config).await?;
+                    let start_immediately = !pause;
+                    let output_directory = output_directory.clone().unwrap_or(
+                        std::env::current_dir().context(error::GetCurrentDirectorySnafu)?,
+                    );
+                    for uri in uris {
+                        let create_task = model::CreateTask {
+                            uri,
+                            filename: None,
+                            output_directory: output_directory.clone(),
+                            connection_timeout: connection_timeout.map(Duration::from_secs),
+                            concurrent_number: concurrent_connections.map(u64::from),
+                            priority,
+                            creation_timestamp: OffsetDateTime::now_utc(),
+                        };
+                        let task_id = client.add_uri(create_task, start_immediately).await?;
+                        println!("{task_id}");
                     }
-
+                    drop(client);
+                    Ok(())
+                }
+                None => {
+                    let config::Profiles { ssh_servers, minio_aliases } =
+                        config.load_profiles().await.context(error::ConfigSnafu)?;
                     let downloader_factory = DownloaderFactory::builder()
                         .http_user_agent(config.downloader.http.user_agent)
                         .default_worker_number(u64::from(
@@ -181,6 +214,12 @@ impl Cli {
             }
         })
     }
+}
+
+async fn create_grpc_client(config: &Config) -> Result<grpc::Client, Error> {
+    let server_endpoint = config.daemon.server_endpoint.clone();
+    let access_token = config.daemon.access_token();
+    Ok(grpc::Client::new(server_endpoint, access_token).await?)
 }
 
 #[cfg(test)]

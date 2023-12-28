@@ -2,20 +2,16 @@ use std::path::PathBuf;
 
 use caracal_base::profile::minio::MinioPath;
 
-pub trait UriExt {
-    const FALLBACK_FILENAME: &'static str = caracal_base::FALLBACK_FILENAME;
+use crate::ext::PathExt;
 
+pub trait UriExt {
     fn guess_filename(&self) -> PathBuf;
 
     fn minio_path(&self) -> Option<MinioPath>;
 }
 
 impl UriExt for http::Uri {
-    fn guess_filename(&self) -> PathBuf {
-        PathBuf::from(self.path())
-            .file_name()
-            .map_or_else(|| PathBuf::from(Self::FALLBACK_FILENAME), PathBuf::from)
-    }
+    fn guess_filename(&self) -> PathBuf { PathBuf::from(self.path()).file_name_or_fallback() }
 
     fn minio_path(&self) -> Option<MinioPath> {
         if self.scheme_str() != Some("minio") {

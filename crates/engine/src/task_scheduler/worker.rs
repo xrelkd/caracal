@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use caracal_base::{Priority, TaskState};
+use caracal_base::model;
 use futures::{future, FutureExt};
 use tokio::sync::mpsc;
 use uuid::Uuid;
@@ -12,7 +12,7 @@ use uuid::Uuid;
 use crate::{
     downloader::DownloaderFactory,
     task_scheduler::{Event, TaskStatus},
-    Downloader, NewTask,
+    Downloader,
 };
 
 #[derive(Debug)]
@@ -182,7 +182,7 @@ impl Worker {
                 }
                 Event::ResumeTask { task_id, sender } => {
                     let task_id = if paused_tasks.remove(&task_id) {
-                        let NewTask { priority, creation_timestamp, .. } =
+                        let model::CreateTask { priority, creation_timestamp, .. } =
                             tasks.get(&task_id).expect("task must exist");
                         pending_tasks.push(PendingTask {
                             priority: *priority,
@@ -198,7 +198,7 @@ impl Worker {
                 }
                 Event::ResumeAllTasks => {
                     for task_id in paused_tasks.drain() {
-                        let NewTask { priority, creation_timestamp, .. } =
+                        let model::CreateTask { priority, creation_timestamp, .. } =
                             tasks.get(&task_id).expect("task must exist");
                         pending_tasks.push(PendingTask {
                             priority: *priority,
@@ -211,15 +211,15 @@ impl Worker {
                 Event::GetTaskStatus { task_id, sender } => {
                     let task_status = tasks.get(&task_id).and_then(|task| {
                         let state = if canceled_tasks.contains(&task_id) {
-                            TaskState::Canceled
+                            model::TaskState::Canceled
                         } else if downloading_tasks.contains_key(&task_id) {
-                            TaskState::Downloading
+                            model::TaskState::Downloading
                         } else if completed_tasks.contains(&task_id) {
-                            TaskState::Completed
+                            model::TaskState::Completed
                         } else if paused_tasks.contains(&task_id) {
-                            TaskState::Paused
+                            model::TaskState::Paused
                         } else {
-                            TaskState::Pending
+                            model::TaskState::Pending
                         };
                         download_progresses.get(&task_id).cloned().map(|status| TaskStatus {
                             id: task_id,
@@ -283,7 +283,7 @@ impl Worker {
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct PendingTask {
-    pub priority: Priority,
+    pub priority: model::Priority,
 
     pub timestamp: Reverse<time::OffsetDateTime>,
 

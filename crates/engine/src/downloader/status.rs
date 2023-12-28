@@ -1,10 +1,13 @@
-use std::fmt;
+use std::path::{Path, PathBuf};
 
-use crate::downloader::{Chunk, TransferStatus};
+use crate::{
+    downloader::{Chunk, TransferStatus},
+    ext::PathExt,
+};
 
 #[derive(Clone, Debug)]
 pub struct DownloaderStatus {
-    filename: String,
+    file_path: PathBuf,
 
     content_length: u64,
 
@@ -17,7 +20,7 @@ impl DownloaderStatus {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            filename: String::new(),
+            file_path: PathBuf::new(),
             content_length: 0,
             chunks: Vec::new(),
             concurrent_number: 0,
@@ -45,23 +48,31 @@ impl DownloaderStatus {
         }
     }
 
+    #[inline]
     #[must_use]
     pub fn is_completed(&self) -> bool { self.chunks.iter().all(ProgressChunk::is_completed) }
 
+    #[inline]
     #[must_use]
     pub fn total_received(&self) -> u64 { self.chunks.iter().map(|chunk| chunk.received).sum() }
 
+    #[inline]
     #[must_use]
     pub const fn content_length(&self) -> u64 { self.content_length }
 
+    #[inline]
     #[must_use]
-    pub fn filename(&self) -> &str { self.filename.as_str() }
+    pub fn filename(&self) -> PathBuf { self.file_path.file_name_or_fallback() }
 
-    pub fn set_filename<S>(&mut self, filename: S)
+    #[inline]
+    #[must_use]
+    pub fn file_path(&self) -> &Path { &self.file_path }
+
+    pub fn set_file_path<P>(&mut self, file_path: P)
     where
-        S: fmt::Display,
+        P: AsRef<Path>,
     {
-        self.filename = filename.to_string();
+        self.file_path = file_path.as_ref().to_path_buf();
     }
 
     #[must_use]
@@ -76,7 +87,7 @@ impl From<TransferStatus> for DownloaderStatus {
     fn from(status: TransferStatus) -> Self {
         let chunks = status.chunks().into_iter().map(ProgressChunk::from).collect();
         Self {
-            filename: String::new(),
+            file_path: PathBuf::new(),
             content_length: status.content_length(),
             chunks,
             concurrent_number: status.concurrent_number(),

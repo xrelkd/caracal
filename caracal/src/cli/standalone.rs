@@ -1,7 +1,7 @@
 use std::{future::Future, path::Path, pin::Pin, sync::Arc, time::Duration};
 
-use caracal_base::Priority;
-use caracal_engine::{DownloaderFactory, NewTask};
+use caracal_base::model;
+use caracal_engine::DownloaderFactory;
 use futures::{FutureExt, StreamExt};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use sigfinn::{ExitStatus, LifecycleManager};
@@ -54,13 +54,13 @@ where
     let lifecycle_manager = LifecycleManager::<Error>::new();
 
     for (idx, uri) in uris.into_iter().enumerate() {
-        let task = NewTask {
+        let task = model::CreateTask {
             uri,
-            directory_path: output_directory.clone(),
+            output_directory: output_directory.clone(),
             filename: None,
             concurrent_number: concurrent_number.map(u64::from),
             connection_timeout,
-            priority: Priority::Normal,
+            priority: model::Priority::Normal,
             creation_timestamp: time::OffsetDateTime::now_utc(),
         };
 
@@ -77,7 +77,7 @@ where
 }
 
 fn create_task_future(
-    task: NewTask,
+    task: model::CreateTask,
     factory: Arc<DownloaderFactory>,
     progress_bar: ProgressBar,
 ) -> impl FnOnce(sigfinn::Shutdown) -> Pin<Box<dyn Future<Output = ExitStatus<Error>> + Send>> {
@@ -124,7 +124,7 @@ fn create_task_future(
                                 "{}/{} {}",
                                 progress.completed_chunk_count(),
                                 progress.total_chunk_count(),
-                                progress.filename()
+                                progress.filename().display()
                             ));
                             if progress.is_completed() {
                                 break;
@@ -144,7 +144,7 @@ fn create_task_future(
                         "{}/{} {}",
                         progress.completed_chunk_count(),
                         progress.total_chunk_count(),
-                        progress.filename()
+                        progress.filename().display()
                     ));
                     sigfinn::ExitStatus::Success
                 }
