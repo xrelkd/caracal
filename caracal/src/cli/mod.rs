@@ -10,6 +10,7 @@ use clap::{CommandFactory, Parser, Subcommand};
 use snafu::ResultExt;
 use time::OffsetDateTime;
 use tokio::runtime::Runtime;
+use uuid::Uuid;
 
 use crate::{
     config::{self, Config},
@@ -107,6 +108,12 @@ pub enum Commands {
 
         uris: Vec<http::Uri>,
     },
+
+    #[clap(about = "Pause a task")]
+    PauseTask {
+        #[arg(help = "Task ID")]
+        id: Uuid,
+    },
 }
 
 impl Default for Cli {
@@ -184,6 +191,13 @@ impl Cli {
                         let task_id = client.add_uri(create_task, start_immediately).await?;
                         println!("{task_id}");
                     }
+                    drop(client);
+                    Ok(())
+                }
+
+                Some(Commands::PauseTask { id }) => {
+                    let client = create_grpc_client(&config).await?;
+                    let _ = client.pause(id).await?;
                     drop(client);
                     Ok(())
                 }

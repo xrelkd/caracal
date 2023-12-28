@@ -517,6 +517,7 @@ dependencies = [
  "tracing",
  "tracing-journald",
  "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]

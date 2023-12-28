@@ -55,3 +55,9 @@ impl From<caracal_grpc_client::error::AddUriError> for Error {
         Self::Operation { error: error.to_string() }
     }
 }
+
+impl From<caracal_grpc_client::error::PauseTaskError> for Error {
+    fn from(error: caracal_grpc_client::error::PauseTaskError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
