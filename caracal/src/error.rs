@@ -67,3 +67,9 @@ impl From<caracal_grpc_client::error::ResumeTaskError> for Error {
         Self::Operation { error: error.to_string() }
     }
 }
+
+impl From<caracal_grpc_client::error::RemoveTaskError> for Error {
+    fn from(error: caracal_grpc_client::error::RemoveTaskError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}

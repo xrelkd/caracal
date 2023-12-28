@@ -120,6 +120,12 @@ pub enum Commands {
         #[arg(help = "Task ID")]
         id: Uuid,
     },
+
+    #[clap(about = "Resume a task")]
+    RemoveTask {
+        #[arg(help = "Task ID")]
+        id: Uuid,
+    },
 }
 
 impl Default for Cli {
@@ -210,6 +216,12 @@ impl Cli {
                 Some(Commands::ResumeTask { id }) => {
                     let client = create_grpc_client(&config).await?;
                     let _ = client.resume(id).await?;
+                    drop(client);
+                    Ok(())
+                }
+                Some(Commands::RemoveTask { id }) => {
+                    let client = create_grpc_client(&config).await?;
+                    let _ = client.remove(id).await?;
                     drop(client);
                     Ok(())
                 }
