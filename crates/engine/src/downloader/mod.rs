@@ -18,9 +18,7 @@ use tokio::{
 };
 
 pub use self::{
-    chunk::Chunk,
-    factory::{Factory as DownloaderFactory, NewTask},
-    status::DownloaderStatus,
+    chunk::Chunk, factory::Factory as DownloaderFactory, status::DownloaderStatus,
     transfer_status::TransferStatus,
 };
 use self::{
@@ -39,7 +37,7 @@ pub struct Downloader {
     sink: File,
     source: Fetcher,
     uri: http::Uri,
-    filename: PathBuf,
+    file_path: PathBuf,
     handle: DownloaderHandle,
 }
 
@@ -48,7 +46,7 @@ impl Downloader {
     pub async fn start(&mut self) -> Result<(), Error> {
         if self.handle.is_none() {
             let sink_cloned = self.sink.try_clone().await.with_context(|_| {
-                error::CloneFileInstanceSnafu { file_path: self.filename.clone() }
+                error::CloneFileInstanceSnafu { file_path: self.file_path.clone() }
             })?;
             let (event_sender, event_receiver) = mpsc::unbounded_channel::<Event>();
             let join_handle = if self.use_single_worker {
@@ -56,12 +54,12 @@ impl Downloader {
                     self.transfer_status.clone(),
                     sink_cloned,
                     self.source.clone(),
-                    self.filename.clone(),
+                    self.file_path.clone(),
                     event_receiver,
                 ))
             } else {
                 let (control_file, transfer_status) =
-                    ControlFile::new(&self.filename, self.uri.clone()).await?;
+                    ControlFile::new(&self.file_path, self.uri.clone()).await?;
                 if let Some(transfer_status) = transfer_status {
                     self.transfer_status = transfer_status;
                 }
@@ -70,7 +68,7 @@ impl Downloader {
                     transfer_status: self.transfer_status.clone(),
                     sink: Arc::new(Mutex::new(sink_cloned)),
                     source: self.source.clone(),
-                    file_path: self.filename.clone(),
+                    file_path: self.file_path.clone(),
                     event_sender: event_sender.clone(),
                     event_receiver,
                     control_file,
@@ -110,10 +108,7 @@ impl Downloader {
                 }
             };
             let mut progress = DownloaderStatus::from(transfer_status.clone());
-            progress.set_filename(self.filename.file_name().map_or_else(
-                || caracal_base::FALLBACK_FILENAME,
-                |s| s.to_str().unwrap_or(caracal_base::FALLBACK_FILENAME),
-            ));
+            progress.set_file_path(&self.file_path);
             Ok(Some((transfer_status, progress)))
         } else {
             Ok(None)
@@ -127,10 +122,7 @@ impl Downloader {
             recv.await
                 .map(|status| {
                     let mut progress = DownloaderStatus::from(status);
-                    progress.set_filename(self.filename.file_name().map_or_else(
-                        || caracal_base::FALLBACK_FILENAME,
-                        |s| s.to_str().unwrap_or(caracal_base::FALLBACK_FILENAME),
-                    ));
+                    progress.set_file_path(&self.file_path);
                     progress
                 })
                 .ok()

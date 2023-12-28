@@ -1,12 +1,11 @@
 use std::{collections::HashMap, fmt, path::PathBuf, time::Duration};
 
 use caracal_base::{
+    model,
     profile::{minio::MinioAlias, ssh::SshConfig},
-    Priority,
 };
 use futures::{future, FutureExt};
 use snafu::{OptionExt, ResultExt};
-use time::OffsetDateTime;
 use tokio::fs::OpenOptions;
 
 pub use crate::error::Error;
@@ -131,7 +130,7 @@ impl Factory {
     pub fn builder() -> Builder { Builder::default() }
 
     /// # Errors
-    pub async fn create_new_task(&self, new_task: &NewTask) -> Result<Downloader, Error> {
+    pub async fn create_new_task(&self, new_task: &model::CreateTask) -> Result<Downloader, Error> {
         let source = {
             let source_fut = self.create_fetcher(new_task).boxed();
             let timeout =
@@ -187,7 +186,7 @@ impl Factory {
                 sink,
                 source,
                 uri: new_task.uri.clone(),
-                filename: full_path,
+                file_path: full_path,
                 handle: None,
             })
         } else {
@@ -217,13 +216,13 @@ impl Factory {
                 sink,
                 source,
                 uri: new_task.uri.clone(),
-                filename: full_path,
+                file_path: full_path,
                 handle: None,
             })
         }
     }
 
-    async fn create_fetcher(&self, new_task: &NewTask) -> Result<Fetcher, Error> {
+    async fn create_fetcher(&self, new_task: &model::CreateTask) -> Result<Fetcher, Error> {
         match new_task.uri.scheme_str() {
             Some("file") | None => Fetcher::new_file(new_task.uri.path()).await,
             Some("http" | "https") => {
@@ -261,21 +260,4 @@ impl Factory {
             Some(scheme) => Err(Error::UnsupportedScheme { scheme: scheme.to_string() }),
         }
     }
-}
-
-#[derive(Clone, Debug)]
-pub struct NewTask {
-    pub uri: http::Uri,
-
-    pub filename: Option<PathBuf>,
-
-    pub directory_path: PathBuf,
-
-    pub concurrent_number: Option<u64>,
-
-    pub connection_timeout: Option<Duration>,
-
-    pub priority: Priority,
-
-    pub creation_timestamp: OffsetDateTime,
 }

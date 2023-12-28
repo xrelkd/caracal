@@ -1,14 +1,15 @@
+use caracal_base::model;
 use tokio::sync::oneshot;
 use uuid::Uuid;
 
-use crate::{task_scheduler::TaskStatus, NewTask};
+use crate::task_scheduler::TaskStatus;
 
 #[derive(Debug)]
 pub enum Event {
     Shutdown,
     TryStartTask,
     CheckProgress,
-    AddUri { new_task: NewTask, start_immediately: bool, sender: oneshot::Sender<Uuid> },
+    AddUri { new_task: model::CreateTask, start_immediately: bool, sender: oneshot::Sender<Uuid> },
     RemoveTask { task_id: Uuid, sender: oneshot::Sender<Option<Uuid>> },
     PauseTask { task_id: Uuid, sender: oneshot::Sender<Option<Uuid>> },
     PauseAllTasks,

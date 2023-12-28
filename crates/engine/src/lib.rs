@@ -7,7 +7,7 @@ mod fetcher;
 mod task_scheduler;
 
 pub use self::{
-    downloader::{Downloader, DownloaderFactory, DownloaderStatus, NewTask},
+    downloader::{Downloader, DownloaderFactory, DownloaderStatus},
     error::Error,
     task_scheduler::{TaskScheduler, TaskStatus},
 };
