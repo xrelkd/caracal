@@ -258,6 +258,7 @@ impl EventHandler {
             }
 
             let _ = self.paused_tasks.insert(task_id);
+            drop(self.event_sender.send(Event::TryStartTask));
             Some(task_id)
         } else {
             None
@@ -301,6 +302,19 @@ impl EventHandler {
         let _ = sender.send(task_id);
     }
 
+    fn resume_all_tasks(&mut self) {
+        for task_id in self.paused_tasks.drain() {
+            let model::CreateTask { priority, creation_timestamp, .. } =
+                self.tasks.get(&task_id).expect("task must exist");
+            self.pending_tasks.push(PendingTask {
+                priority: *priority,
+                timestamp: Reverse(*creation_timestamp),
+                task_id,
+            });
+            drop(self.event_sender.send(Event::TryStartTask));
+        }
+    }
+
     #[inline]
     fn get_all_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
         drop(sender.send(self.tasks.keys().copied().collect()));
@@ -329,19 +343,6 @@ impl EventHandler {
     #[inline]
     fn get_completed_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
         drop(sender.send(self.completed_tasks.clone()));
-    }
-
-    fn resume_all_tasks(&mut self) {
-        for task_id in self.paused_tasks.drain() {
-            let model::CreateTask { priority, creation_timestamp, .. } =
-                self.tasks.get(&task_id).expect("task must exist");
-            self.pending_tasks.push(PendingTask {
-                priority: *priority,
-                timestamp: Reverse(*creation_timestamp),
-                task_id,
-            });
-            drop(self.event_sender.send(Event::TryStartTask));
-        }
     }
 
     fn get_task_status_inner(&self, task_id: &Uuid) -> Option<model::TaskStatus> {
