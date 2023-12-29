@@ -1,4 +1,4 @@
-use std::{path::PathBuf, time::Duration};
+use std::{fmt, path::PathBuf, time::Duration};
 
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
@@ -13,6 +13,19 @@ pub enum TaskState {
     Paused,
     Canceled,
     Completed,
+}
+
+impl fmt::Display for TaskState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Self::Pending => "Pending",
+            Self::Downloading => "Downloading",
+            Self::Paused => "Paused",
+            Self::Canceled => "Canceled",
+            Self::Completed => "Completed",
+        };
+        f.write_str(s)
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
