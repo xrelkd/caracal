@@ -3,5 +3,5 @@ mod task;
 
 pub use self::{
     priority::Priority,
-    task::{CreateTask, TaskState},
+    task::{CreateTask, ProgressChunk, TaskState, TaskStatus},
 };

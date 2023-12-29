@@ -533,6 +533,7 @@ dependencies = [
  "serde",
  "snafu",
  "time",
+ "uuid",
 ]
 
 [[package]]
