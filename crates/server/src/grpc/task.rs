@@ -4,7 +4,7 @@ use std::{
 };
 
 use caracal_base::model;
-use caracal_engine::{TaskScheduler, TaskStatus};
+use caracal_engine::TaskScheduler;
 use caracal_proto as proto;
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -159,34 +159,79 @@ impl proto::Task for TaskService {
         let task_id = Uuid::try_from(task_id.ok_or_else(task_id_missing_status)?)
             .map_err(|err| tonic::Status::invalid_argument(err.to_string()))?;
 
-        if let Some(TaskStatus { id, status, state, priority, creation_timestamp }) =
+        if let Some(model::TaskStatus {
+            id,
+            file_path,
+            state,
+            priority,
+            creation_timestamp,
+            chunks,
+            content_length,
+            concurrent_number,
+        }) =
             self.task_scheduler.get_task_status(task_id).await.map_err(service_shutdown_status)?
         {
-            let chunks = status
-                .chunks()
-                .iter()
-                .map(|chunk| proto::Chunk {
-                    start: chunk.start,
-                    end: chunk.end,
-                    received: chunk.received,
-                })
-                .collect();
+            let received_bytes = chunks.iter().map(|chunk| chunk.received).sum();
+            let chunks = chunks.iter().cloned().map(proto::Chunk::from).collect();
             Ok(tonic::Response::new(proto::GetTaskStatusResponse {
-                metadata: Some(proto::TaskMetadata {
-                    id: Some(proto::Uuid::from(id)),
-                    priority: i32::from(proto::Priority::from(priority)),
-                    creation_timestamp: Some(proto::datetime_to_timestamp(&creation_timestamp)),
-                    size: Some(status.content_length()),
-                    file_path: status.file_path().to_str().unwrap_or_default().to_string(),
+                status: Some(proto::TaskStatus {
+                    metadata: Some(proto::TaskMetadata {
+                        id: Some(proto::Uuid::from(id)),
+                        priority: i32::from(proto::Priority::from(priority)),
+                        creation_timestamp: Some(proto::datetime_to_timestamp(&creation_timestamp)),
+                        size: Some(content_length),
+                        file_path: file_path.to_str().unwrap_or_default().to_string(),
+                    }),
+                    state: i32::from(proto::TaskState::from(state)),
+                    received_bytes,
+                    total_length: content_length,
+                    concurrent_number: concurrent_number as u64,
+                    chunks,
                 }),
-                state: i32::from(proto::TaskState::from(state)),
-                received_bytes: status.total_received(),
-                total_length: status.content_length(),
-                chunks,
             }))
         } else {
             Err(tonic::Status::not_found(task_id.to_string()))
         }
+    }
+
+    async fn get_all_task_statuses(
+        &self,
+        _request: tonic::Request<()>,
+    ) -> Result<tonic::Response<proto::GetAllTaskStatusesResponse>, tonic::Status> {
+        let task_status =
+            self.task_scheduler.get_all_task_statuses().await.map_err(service_shutdown_status)?;
+        let mut task_statuses = Vec::with_capacity(task_status.len());
+        for sts in task_status {
+            let model::TaskStatus {
+                id,
+                file_path,
+                state,
+                priority,
+                creation_timestamp,
+                chunks,
+                content_length,
+                concurrent_number,
+            } = sts;
+
+            let received_bytes = chunks.iter().map(|chunk| chunk.received).sum();
+            let chunks = chunks.iter().cloned().map(proto::Chunk::from).collect();
+
+            task_statuses.push(proto::TaskStatus {
+                metadata: Some(proto::TaskMetadata {
+                    id: Some(proto::Uuid::from(id)),
+                    priority: i32::from(proto::Priority::from(priority)),
+                    creation_timestamp: Some(proto::datetime_to_timestamp(&creation_timestamp)),
+                    size: Some(content_length),
+                    file_path: file_path.to_str().unwrap_or_default().to_string(),
+                }),
+                state: i32::from(proto::TaskState::from(state)),
+                received_bytes,
+                total_length: content_length,
+                concurrent_number: u64::try_from(concurrent_number).unwrap_or(1),
+                chunks,
+            });
+        }
+        Ok(tonic::Response::new(proto::GetAllTaskStatusesResponse { statuses: task_statuses }))
     }
 }
 

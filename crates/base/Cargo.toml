@@ -23,6 +23,7 @@ mime        = "0.3"
 semver      = "1"
 snafu       = "0.7"
 time        = { version = "0.3", features = ["formatting", "local-offset", "macros"] }
+uuid        = { version = "1", features = ["serde", "v4", "v5"] }
 
 [lints]
 workspace = true

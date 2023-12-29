@@ -9,5 +9,5 @@ mod task_scheduler;
 pub use self::{
     downloader::{Downloader, DownloaderFactory, DownloaderStatus},
     error::Error,
-    task_scheduler::{TaskScheduler, TaskStatus},
+    task_scheduler::TaskScheduler,
 };

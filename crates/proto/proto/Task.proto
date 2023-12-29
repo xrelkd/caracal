@@ -9,13 +9,14 @@ import "Uuid.proto";
 
 service Task {
   rpc AddUri(AddUriRequest) returns (AddUriResponse);
+  rpc GetTaskStatus(GetTaskStatusRequest) returns (GetTaskStatusResponse);
+  rpc GetAllTaskStatuses(google.protobuf.Empty)
+      returns (GetAllTaskStatusesResponse);
   rpc Pause(PauseTaskRequest) returns (PauseTaskResponse);
   rpc PauseAll(google.protobuf.Empty) returns (PauseAllTasksResponse);
   rpc Resume(ResumeTaskRequest) returns (ResumeTaskResponse);
   rpc ResumeAll(google.protobuf.Empty) returns (ResumeAllTasksResponse);
   rpc Remove(RemoveTaskRequest) returns (RemoveTaskResponse);
-
-  rpc GetTaskStatus(GetTaskStatusRequest) returns (GetTaskStatusResponse);
 }
 
 enum Priority {
@@ -34,6 +35,15 @@ enum TaskState {
   COMPLETED = 4;
 }
 
+message TaskStatus {
+  TaskMetadata metadata = 1;
+  TaskState state = 2;
+  uint64 received_bytes = 3;
+  uint64 total_length = 4;
+  uint64 concurrent_number = 5;
+  repeated Chunk chunks = 6;
+}
+
 message TaskMetadata {
   .caracal.Uuid id = 1;
   string file_path = 2;
@@ -46,6 +56,7 @@ message Chunk {
   uint64 start = 1;
   uint64 end = 2;
   uint64 received = 3;
+  bool is_completed = 4;
 }
 
 message AddUriRequest {
@@ -73,10 +84,6 @@ message RemoveTaskRequest { .caracal.Uuid task_id = 1; }
 message RemoveTaskResponse { bool ok = 1; }
 
 message GetTaskStatusRequest { .caracal.Uuid task_id = 1; }
-message GetTaskStatusResponse {
-  TaskMetadata metadata = 1;
-  TaskState state = 2;
-  uint64 received_bytes = 3;
-  uint64 total_length = 4;
-  repeated Chunk chunks = 5;
-}
+message GetTaskStatusResponse { TaskStatus status = 1; }
+
+message GetAllTaskStatusesResponse { repeated TaskStatus statuses = 1; }

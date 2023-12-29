@@ -4,7 +4,6 @@ mod worker;
 
 use caracal_base::model;
 use snafu::OptionExt;
-use time::OffsetDateTime;
 use tokio::{
     sync::{mpsc, oneshot},
     task::JoinHandle,
@@ -13,7 +12,7 @@ use uuid::Uuid;
 
 pub use self::error::{Error, Result};
 use self::{event::Event, worker::Worker};
-use crate::{downloader::DownloaderFactory, DownloaderStatus};
+use crate::downloader::DownloaderFactory;
 
 #[derive(Clone, Debug)]
 pub struct TaskScheduler {
@@ -96,7 +95,7 @@ impl TaskScheduler {
     }
 
     /// # Errors
-    pub async fn get_task_status(&self, task_id: Uuid) -> Result<Option<TaskStatus>> {
+    pub async fn get_task_status(&self, task_id: Uuid) -> Result<Option<model::TaskStatus>> {
         let (sender, receiver) = oneshot::channel();
         if self.event_sender.send(Event::GetTaskStatus { task_id, sender }).is_err() {
             return Err(Error::TaskSchedulerClosed);
@@ -108,6 +107,15 @@ impl TaskScheduler {
     pub async fn get_all_tasks(&self) -> Result<Vec<Uuid>> {
         let (sender, receiver) = oneshot::channel();
         if self.event_sender.send(Event::GetAllTasks { sender }).is_err() {
+            return Err(Error::TaskSchedulerClosed);
+        }
+        receiver.await.ok().context(error::TaskSchedulerClosedSnafu)
+    }
+
+    /// # Errors
+    pub async fn get_all_task_statuses(&self) -> Result<Vec<model::TaskStatus>> {
+        let (sender, receiver) = oneshot::channel();
+        if self.event_sender.send(Event::GetAllTaskStatuses { sender }).is_err() {
             return Err(Error::TaskSchedulerClosed);
         }
         receiver.await.ok().context(error::TaskSchedulerClosedSnafu)
@@ -181,17 +189,4 @@ impl TaskScheduler {
         }
         Ok(())
     }
-}
-
-#[derive(Clone, Debug)]
-pub struct TaskStatus {
-    pub id: Uuid,
-
-    pub status: DownloaderStatus,
-
-    pub state: model::TaskState,
-
-    pub priority: model::Priority,
-
-    pub creation_timestamp: OffsetDateTime,
 }

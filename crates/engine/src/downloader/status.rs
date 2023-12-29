@@ -1,9 +1,8 @@
 use std::path::{Path, PathBuf};
 
-use crate::{
-    downloader::{Chunk, TransferStatus},
-    ext::PathExt,
-};
+use caracal_base::model;
+
+use crate::{downloader::TransferStatus, ext::PathExt};
 
 #[derive(Clone, Debug)]
 pub struct DownloaderStatus {
@@ -11,7 +10,7 @@ pub struct DownloaderStatus {
 
     content_length: u64,
 
-    chunks: Vec<ProgressChunk>,
+    chunks: Vec<model::ProgressChunk>,
 
     concurrent_number: usize,
 }
@@ -28,7 +27,7 @@ impl DownloaderStatus {
     }
 
     #[must_use]
-    pub fn chunks(&self) -> Vec<ProgressChunk> { self.chunks.clone() }
+    pub fn chunks(&self) -> Vec<model::ProgressChunk> { self.chunks.clone() }
 
     #[must_use]
     pub fn total_chunk_count(&self) -> usize { self.chunks.len() }
@@ -50,7 +49,9 @@ impl DownloaderStatus {
 
     #[inline]
     #[must_use]
-    pub fn is_completed(&self) -> bool { self.chunks.iter().all(ProgressChunk::is_completed) }
+    pub fn is_completed(&self) -> bool {
+        self.chunks.iter().all(model::ProgressChunk::is_completed)
+    }
 
     #[inline]
     #[must_use]
@@ -85,44 +86,12 @@ impl Default for DownloaderStatus {
 
 impl From<TransferStatus> for DownloaderStatus {
     fn from(status: TransferStatus) -> Self {
-        let chunks = status.chunks().into_iter().map(ProgressChunk::from).collect();
+        let chunks = status.chunks().into_iter().map(model::ProgressChunk::from).collect();
         Self {
             file_path: PathBuf::new(),
             content_length: status.content_length(),
             chunks,
             concurrent_number: status.concurrent_number(),
         }
-    }
-}
-
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct ProgressChunk {
-    pub start: u64,
-
-    pub end: u64,
-
-    pub received: u64,
-
-    pub is_completed: bool,
-}
-
-impl ProgressChunk {
-    pub const fn len(&self) -> u64 { self.end - self.start + 1 }
-
-    pub const fn remaining(&self) -> u64 {
-        let len = self.len();
-        if len >= self.received {
-            len - self.received
-        } else {
-            0
-        }
-    }
-
-    pub const fn is_completed(&self) -> bool { self.is_completed }
-}
-
-impl From<Chunk> for ProgressChunk {
-    fn from(Chunk { start, end, received, is_completed }: Chunk) -> Self {
-        Self { start, end, received, is_completed }
     }
 }
