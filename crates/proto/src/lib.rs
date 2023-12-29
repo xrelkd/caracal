@@ -35,10 +35,10 @@ pub use self::{
         system_server::{System, SystemServer},
         task_client::TaskClient,
         task_server::{Task, TaskServer},
-        AddUriRequest, AddUriResponse, Chunk, GetSystemVersionResponse, GetTaskStatusRequest,
-        GetTaskStatusResponse, PauseAllTasksResponse, PauseTaskRequest, PauseTaskResponse,
-        Priority, RemoveTaskRequest, RemoveTaskResponse, ResumeAllTasksResponse, ResumeTaskRequest,
-        ResumeTaskResponse, TaskMetadata, TaskState, Uuid,
+        AddUriRequest, AddUriResponse, Chunk, GetAllTaskStatusesResponse, GetSystemVersionResponse,
+        GetTaskStatusRequest, GetTaskStatusResponse, PauseAllTasksResponse, PauseTaskRequest,
+        PauseTaskResponse, Priority, RemoveTaskRequest, RemoveTaskResponse, ResumeAllTasksResponse,
+        ResumeTaskRequest, ResumeTaskResponse, TaskMetadata, TaskState, TaskStatus, Uuid,
     },
     utils::{datetime_to_timestamp, timestamp_to_datetime},
 };
@@ -88,6 +88,20 @@ impl From<model::TaskState> for TaskState {
             model::TaskState::Completed => Self::Completed,
             model::TaskState::Canceled => Self::Canceled,
         }
+    }
+}
+
+impl From<model::ProgressChunk> for Chunk {
+    fn from(
+        model::ProgressChunk { start, end, received, is_completed }: model::ProgressChunk,
+    ) -> Self {
+        Self { start, end, received, is_completed }
+    }
+}
+
+impl From<Chunk> for model::ProgressChunk {
+    fn from(Chunk { start, end, received, is_completed }: Chunk) -> Self {
+        Self { start, end, received, is_completed }
     }
 }
 
