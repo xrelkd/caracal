@@ -75,6 +75,7 @@ impl From<TaskState> for model::TaskState {
             TaskState::Paused => Self::Paused,
             TaskState::Completed => Self::Completed,
             TaskState::Canceled => Self::Canceled,
+            TaskState::Failed => Self::Failed,
         }
     }
 }
@@ -87,6 +88,7 @@ impl From<model::TaskState> for TaskState {
             model::TaskState::Paused => Self::Paused,
             model::TaskState::Completed => Self::Completed,
             model::TaskState::Canceled => Self::Canceled,
+            model::TaskState::Failed => Self::Failed,
         }
     }
 }

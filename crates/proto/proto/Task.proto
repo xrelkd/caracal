@@ -33,6 +33,7 @@ enum TaskState {
   PAUSED = 2;
   CANCELED = 3;
   COMPLETED = 4;
+  Failed = 5;
 }
 
 message TaskStatus {
