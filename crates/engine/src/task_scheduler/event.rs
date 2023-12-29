@@ -2,8 +2,6 @@ use caracal_base::model;
 use tokio::sync::oneshot;
 use uuid::Uuid;
 
-use crate::task_scheduler::TaskStatus;
-
 #[derive(Debug)]
 pub enum Event {
     Shutdown,
@@ -16,7 +14,8 @@ pub enum Event {
     ResumeTask { task_id: Uuid, sender: oneshot::Sender<Option<Uuid>> },
     ResumeAllTasks,
     GetAllTasks { sender: oneshot::Sender<Vec<Uuid>> },
-    GetTaskStatus { task_id: Uuid, sender: oneshot::Sender<Option<TaskStatus>> },
+    GetTaskStatus { task_id: Uuid, sender: oneshot::Sender<Option<model::TaskStatus>> },
+    GetAllTaskStatuses { sender: oneshot::Sender<Vec<model::TaskStatus>> },
     GetPendingTasks { sender: oneshot::Sender<Vec<Uuid>> },
     GetDownloadingTasks { sender: oneshot::Sender<Vec<Uuid>> },
     GetPausedTasks { sender: oneshot::Sender<Vec<Uuid>> },

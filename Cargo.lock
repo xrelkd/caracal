@@ -594,7 +594,6 @@ dependencies = [
  "snafu",
  "time",
  "tokio",
- "tokio-stream",
  "tracing",
  "urlencoding",
  "uuid",

@@ -1,3 +1,5 @@
+use caracal_base::model;
+
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Chunk {
     pub start: u64,
@@ -47,6 +49,12 @@ impl Chunk {
             self.is_completed = true;
             Some(new_chunk)
         }
+    }
+}
+
+impl From<Chunk> for model::ProgressChunk {
+    fn from(Chunk { start, end, received, is_completed }: Chunk) -> Self {
+        Self { start, end, received, is_completed }
     }
 }
 

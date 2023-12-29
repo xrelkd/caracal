@@ -9,11 +9,7 @@ use futures::{future, FutureExt};
 use tokio::sync::mpsc;
 use uuid::Uuid;
 
-use crate::{
-    downloader::DownloaderFactory,
-    task_scheduler::{Event, TaskStatus},
-    Downloader,
-};
+use crate::{downloader::DownloaderFactory, task_scheduler::Event, Downloader, DownloaderStatus};
 
 #[derive(Debug)]
 pub struct Worker {
@@ -31,7 +27,7 @@ impl Worker {
     #[allow(clippy::too_many_lines)]
     pub async fn serve(self) {
         let Self { factory, event_sender, mut event_receiver, max_concurrent_task_number } = self;
-        let mut tasks = HashMap::new();
+        let mut tasks = HashMap::<Uuid, model::CreateTask>::new();
         let mut pending_tasks = BinaryHeap::<PendingTask>::new();
         let mut downloading_tasks = HashMap::new();
         let mut completed_tasks = Vec::new();
@@ -221,15 +217,19 @@ impl Worker {
                         } else {
                             model::TaskState::Pending
                         };
-                        download_progresses.get(&task_id).cloned().map(|status| TaskStatus {
-                            id: task_id,
-                            status,
-                            state,
-                            priority: task.priority,
-                            creation_timestamp: task.creation_timestamp,
-                        })
+                        download_progresses.get(&task_id).cloned().map(
+                            |downloader_status: DownloaderStatus| model::TaskStatus {
+                                id: task_id,
+                                content_length: downloader_status.content_length(),
+                                chunks: downloader_status.chunks(),
+                                concurrent_number: downloader_status.concurrent_number(),
+                                file_path: downloader_status.file_path().to_path_buf(),
+                                state,
+                                priority: task.priority,
+                                creation_timestamp: task.creation_timestamp,
+                            },
+                        )
                     });
-
                     drop(sender.send(task_status));
                 }
                 Event::GetAllTasks { sender } => {
@@ -250,6 +250,37 @@ impl Worker {
                 Event::GetCanceledTasks { sender } => {
                     drop(sender.send(canceled_tasks.iter().copied().collect()));
                 }
+                Event::GetAllTaskStatuses { sender } => {
+                    let task_statuses = tasks
+                        .iter()
+                        .filter_map(|(&id, task)| {
+                            let state = if canceled_tasks.contains(&id) {
+                                model::TaskState::Canceled
+                            } else if downloading_tasks.contains_key(&id) {
+                                model::TaskState::Downloading
+                            } else if completed_tasks.contains(&id) {
+                                model::TaskState::Completed
+                            } else if paused_tasks.contains(&id) {
+                                model::TaskState::Paused
+                            } else {
+                                model::TaskState::Pending
+                            };
+                            download_progresses.get(&id).cloned().map(
+                                |downloader_status: DownloaderStatus| model::TaskStatus {
+                                    id,
+                                    content_length: downloader_status.content_length(),
+                                    chunks: downloader_status.chunks(),
+                                    concurrent_number: downloader_status.concurrent_number(),
+                                    file_path: downloader_status.file_path().to_path_buf(),
+                                    state,
+                                    priority: task.priority,
+                                    creation_timestamp: task.creation_timestamp,
+                                },
+                            )
+                        })
+                        .collect();
+                    drop(sender.send(task_statuses));
+                }
                 Event::TaskCompleted { task_id } => {
                     tracing::info!("Task {task_id} is completed");
                     completed_tasks.push(task_id);
@@ -261,12 +292,12 @@ impl Worker {
                     drop(event_sender.send(Event::TryStartTask));
                 }
                 Event::IncreaseWorkerNumber { task_id } => {
-                    if let Some(downloader) = downloading_tasks.remove(&task_id) {
+                    if let Some(downloader) = downloading_tasks.get(&task_id) {
                         downloader.add_worker();
                     }
                 }
                 Event::DecreaseWorkerNumber { task_id } => {
-                    if let Some(downloader) = downloading_tasks.remove(&task_id) {
+                    if let Some(downloader) = downloading_tasks.get(&task_id) {
                         downloader.remove_worker();
                     }
                 }
