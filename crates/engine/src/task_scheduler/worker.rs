@@ -35,7 +35,8 @@ impl Worker {
             tasks: HashMap::new(),
             pending_tasks: BinaryHeap::new(),
             downloaders: HashMap::new(),
-            completed_tasks: Vec::new(),
+            completed_tasks: HashSet::new(),
+            failed_tasks: HashSet::new(),
             paused_tasks: HashSet::new(),
             canceled_tasks: HashSet::new(),
             download_progresses: HashMap::new(),
@@ -143,7 +144,8 @@ struct EventHandler {
     tasks: HashMap<Uuid, model::CreateTask>,
     pending_tasks: BinaryHeap<PendingTask>,
     downloaders: HashMap<Uuid, Downloader>,
-    completed_tasks: Vec<Uuid>,
+    completed_tasks: HashSet<Uuid>,
+    failed_tasks: HashSet<Uuid>,
     paused_tasks: HashSet<Uuid>,
     canceled_tasks: HashSet<Uuid>,
     download_progresses: HashMap<Uuid, DownloaderStatus>,
@@ -201,8 +203,8 @@ impl EventHandler {
             match self.factory.create_new_task(new_task).await {
                 Ok(mut downloader) => {
                     if let Err(err) = downloader.start().await {
-                        tracing::error!("{err}");
-                        self.completed_tasks.push(task_id);
+                        tracing::error!("Failed to download task {task_id}, error: {err}");
+                        let _ = self.failed_tasks.insert(task_id);
                         if let Some(progress) = downloader.scrape_status().await {
                             drop(self.download_progresses.insert(task_id, progress));
                         }
@@ -212,8 +214,8 @@ impl EventHandler {
                     }
                 }
                 Err(err) => {
-                    tracing::error!("{err}");
-                    self.completed_tasks.push(task_id);
+                    tracing::error!("Failed to download task {task_id}, error: {err}");
+                    let _ = self.failed_tasks.insert(task_id);
                 }
             }
         }
@@ -368,7 +370,7 @@ impl EventHandler {
 
     #[inline]
     fn get_completed_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
-        drop(sender.send(self.completed_tasks.clone()));
+        drop(sender.send(self.completed_tasks.iter().copied().collect()));
     }
 
     fn get_task_status_inner(&self, task_id: &Uuid) -> Option<model::TaskStatus> {
@@ -381,6 +383,8 @@ impl EventHandler {
                 model::TaskState::Completed
             } else if self.paused_tasks.contains(task_id) {
                 model::TaskState::Paused
+            } else if self.failed_tasks.contains(task_id) {
+                model::TaskState::Failed
             } else {
                 model::TaskState::Pending
             };
@@ -414,15 +418,20 @@ impl EventHandler {
 
     async fn on_task_completed(&mut self, task_id: Uuid) {
         tracing::info!("Completed task {task_id}");
-        self.completed_tasks.push(task_id);
         if let Some(downloader) = self.downloaders.remove(&task_id) {
             match downloader.join().await {
                 Ok(Some((_, downloader_status))) => {
+                    if downloader_status.is_completed() {
+                        let _ = self.completed_tasks.insert(task_id);
+                    } else {
+                        let _ = self.failed_tasks.insert(task_id);
+                    }
                     drop(self.download_progresses.insert(task_id, downloader_status));
                 }
                 Ok(None) => {}
                 Err(err) => {
-                    tracing::error!("{err}");
+                    let _ = self.failed_tasks.insert(task_id);
+                    tracing::warn!("Failed to download task {task_id}, error: {err}");
                 }
             }
         }
