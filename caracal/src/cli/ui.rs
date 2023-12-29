@@ -1,6 +1,8 @@
 use caracal_base::{ext::ProgressChunks, model};
 use comfy_table::{presets::UTF8_FULL, Cell, ContentArrangement, Row, Table, TableComponent};
 
+// SAFETY: the precision loss is acceptable
+#[allow(clippy::cast_precision_loss)]
 pub fn render_task_statuses_table(task_statuses: &[model::TaskStatus]) -> String {
     let header = Row::from([
         "ID",
