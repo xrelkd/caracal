@@ -1,4 +1,5 @@
 mod standalone;
+mod ui;
 
 use std::{io::Write, path::PathBuf, time::Duration};
 
@@ -109,11 +110,23 @@ pub enum Commands {
         uris: Vec<http::Uri>,
     },
 
+    #[clap(about = "Get a status of a specified task")]
+    GetTaskStatus {
+        #[arg(help = "Task ID")]
+        id: Uuid,
+    },
+
+    #[clap(about = "Get status of all tasks")]
+    GetAllTaskStatuses,
+
     #[clap(about = "Pause a task")]
     PauseTask {
         #[arg(help = "Task ID")]
         id: Uuid,
     },
+
+    #[clap(about = "Pause all tasks")]
+    PauseAllTasks,
 
     #[clap(about = "Resume a task")]
     ResumeTask {
@@ -121,7 +134,10 @@ pub enum Commands {
         id: Uuid,
     },
 
-    #[clap(about = "Resume a task")]
+    #[clap(about = "Resume all tasks")]
+    ResumeAllTasks,
+
+    #[clap(about = "Remove a task")]
     RemoveTask {
         #[arg(help = "Task ID")]
         id: Uuid,
@@ -178,6 +194,11 @@ impl Cli {
 
         Runtime::new().context(error::InitializeTokioRuntimeSnafu)?.block_on(async move {
             match commands {
+                Some(
+                    Commands::Version | Commands::Completions { .. } | Commands::DefaultConfig,
+                ) => {
+                    unreachable!("these commands should be handled previously");
+                }
                 Some(Commands::AddUri {
                     pause,
                     priority,
@@ -207,15 +228,47 @@ impl Cli {
                     drop(client);
                     Ok(())
                 }
+                Some(Commands::GetTaskStatus { id }) => {
+                    let client = create_grpc_client(&config).await?;
+                    let task_status = client.get_task_status(id).await?;
+                    println!("{}", ui::render_task_statuses_table(&[task_status]));
+                    drop(client);
+                    Ok(())
+                }
+                Some(Commands::GetAllTaskStatuses) => {
+                    let client = create_grpc_client(&config).await?;
+                    let task_statuses = client.get_all_task_statuses().await?;
+                    println!("{}", ui::render_task_statuses_table(&task_statuses));
+                    drop(client);
+                    Ok(())
+                }
                 Some(Commands::PauseTask { id }) => {
                     let client = create_grpc_client(&config).await?;
                     let _ = client.pause(id).await?;
                     drop(client);
                     Ok(())
                 }
+                Some(Commands::PauseAllTasks) => {
+                    let client = create_grpc_client(&config).await?;
+                    let task_ids = client.pause_all().await?;
+                    for task_id in task_ids {
+                        println!("{task_id} is paused");
+                    }
+                    drop(client);
+                    Ok(())
+                }
                 Some(Commands::ResumeTask { id }) => {
                     let client = create_grpc_client(&config).await?;
                     let _ = client.resume(id).await?;
+                    drop(client);
+                    Ok(())
+                }
+                Some(Commands::ResumeAllTasks) => {
+                    let client = create_grpc_client(&config).await?;
+                    let task_ids = client.resume_all().await?;
+                    for task_id in task_ids {
+                        println!("{task_id} is resumed");
+                    }
                     drop(client);
                     Ok(())
                 }
@@ -248,7 +301,6 @@ impl Cli {
                     )
                     .await
                 }
-                _ => unreachable!(),
             }
         })
     }

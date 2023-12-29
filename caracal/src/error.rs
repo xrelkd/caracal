@@ -62,14 +62,38 @@ impl From<caracal_grpc_client::error::PauseTaskError> for Error {
     }
 }
 
+impl From<caracal_grpc_client::error::PauseAllTasksError> for Error {
+    fn from(error: caracal_grpc_client::error::PauseAllTasksError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
 impl From<caracal_grpc_client::error::ResumeTaskError> for Error {
     fn from(error: caracal_grpc_client::error::ResumeTaskError) -> Self {
         Self::Operation { error: error.to_string() }
     }
 }
 
+impl From<caracal_grpc_client::error::ResumeAllTasksError> for Error {
+    fn from(error: caracal_grpc_client::error::ResumeAllTasksError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
 impl From<caracal_grpc_client::error::RemoveTaskError> for Error {
     fn from(error: caracal_grpc_client::error::RemoveTaskError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
+impl From<caracal_grpc_client::error::GetTaskStatusError> for Error {
+    fn from(error: caracal_grpc_client::error::GetTaskStatusError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
+impl From<caracal_grpc_client::error::GetAllTaskStatusesError> for Error {
+    fn from(error: caracal_grpc_client::error::GetAllTaskStatusesError) -> Self {
         Self::Operation { error: error.to_string() }
     }
 }
