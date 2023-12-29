@@ -9,7 +9,9 @@ use futures::{future, FutureExt};
 use tokio::sync::{mpsc, oneshot};
 use uuid::Uuid;
 
-use crate::{downloader::DownloaderFactory, task_scheduler::Event, Downloader, DownloaderStatus};
+use crate::{
+    downloader::DownloaderFactory, ext::UriExt, task_scheduler::Event, Downloader, DownloaderStatus,
+};
 
 #[derive(Debug)]
 pub struct Worker {
@@ -149,17 +151,16 @@ struct EventHandler {
 
 impl EventHandler {
     async fn check_progress(&mut self) {
-        let futs = self.downloaders.iter().map(|(&task_id, downloader): (_, &Downloader)| {
-            async move { (task_id, downloader.scrape_status().await) }.boxed()
+        let futs = self.downloaders.iter().map(|(&task_id, downloader)| {
+            async move { (task_id, downloader.is_completed(), downloader.scrape_status().await) }.boxed()
         });
         let maybe_progresses = future::join_all(futs).await;
-        for (task_id, maybe_progress) in maybe_progresses {
+        for (task_id, is_completed, maybe_progress) in maybe_progresses {
             if let Some(progress) = maybe_progress {
-                let is_completed = progress.is_completed();
                 drop(self.download_progresses.insert(task_id, progress));
-                if is_completed {
-                    drop(self.event_sender.send(Event::TaskCompleted { task_id }));
-                }
+            }
+            if is_completed {
+                drop(self.event_sender.send(Event::TaskCompleted { task_id }));
             }
         }
     }
@@ -168,14 +169,16 @@ impl EventHandler {
         self.pending_tasks.clear();
 
         // stop all downloading tasks
-        let futs = self.downloaders.drain().map(|(_task_id, mut downloader)| {
+        let futs = self.downloaders.drain().map(|(task_id, mut downloader)| {
             async move {
+                tracing::info!("Stopping task {task_id}");
                 if let Err(err) = downloader.pause().await {
                     tracing::error!("{err}");
                 }
                 if let Err(err) = downloader.join().await {
                     tracing::error!("{err}");
                 }
+                tracing::info!("Stopped task {task_id}");
             }
             .boxed()
         });
@@ -188,12 +191,13 @@ impl EventHandler {
             let task_id = if let Some(task) = self.pending_tasks.pop() {
                 task.task_id
             } else {
-                tracing::info!("No pending tasks");
+                tracing::debug!("No pending tasks");
                 return;
             };
 
-            tracing::info!("Try to start new task {task_id}");
             let new_task = self.tasks.get(&task_id).expect("task must exist");
+            tracing::info!("Starting task {task_id}, URI: {uri}", uri = new_task.uri);
+
             match self.factory.create_new_task(new_task).await {
                 Ok(mut downloader) => {
                     if let Err(err) = downloader.start().await {
@@ -203,6 +207,7 @@ impl EventHandler {
                             drop(self.download_progresses.insert(task_id, progress));
                         }
                     } else {
+                        tracing::info!("Started task {task_id}, URI: {uri}", uri = new_task.uri);
                         drop(self.downloaders.insert(task_id, downloader));
                     }
                 }
@@ -222,7 +227,17 @@ impl EventHandler {
     ) {
         let (task_id, priority, timestamp) =
             (Uuid::new_v4(), new_task.priority, Reverse(new_task.creation_timestamp));
+
+        tracing::info!(
+            "Added new task {task_id}, URI: {uri}, start immediately: {start_immediately}",
+            uri = new_task.uri
+        );
+        drop(
+            self.download_progresses
+                .insert(task_id, DownloaderStatus::with_file_path(new_task.uri.guess_filename())),
+        );
         drop(self.tasks.insert(task_id, new_task));
+
         if start_immediately {
             self.pending_tasks.push(PendingTask { priority, timestamp, task_id });
         } else {
@@ -234,12 +249,16 @@ impl EventHandler {
 
     async fn remove_task(&mut self, task_id: Uuid, sender: oneshot::Sender<Option<Uuid>>) {
         let task_id = if let Some(mut downloader) = self.downloaders.remove(&task_id) {
+            tracing::info!("Removing task {task_id}");
+
             if let Err(err) = downloader.pause().await {
                 tracing::error!("{err}");
             }
             if let Err(err) = downloader.join().await {
                 tracing::error!("{err}");
             }
+            tracing::info!("Removed task {task_id}");
+
             let _ = self.canceled_tasks.insert(task_id);
             Some(task_id)
         } else {
@@ -250,12 +269,15 @@ impl EventHandler {
 
     async fn pause_task(&mut self, task_id: Uuid, sender: oneshot::Sender<Option<Uuid>>) {
         let task_id = if let Some(mut downloader) = self.downloaders.remove(&task_id) {
+            tracing::info!("Pausing task {task_id}");
+
             if let Err(err) = downloader.pause().await {
                 tracing::error!("{err}");
             }
             if let Err(err) = downloader.join().await {
                 tracing::error!("{err}");
             }
+            tracing::info!("Paused task {task_id}");
 
             let _ = self.paused_tasks.insert(task_id);
             drop(self.event_sender.send(Event::TryStartTask));
@@ -267,6 +289,7 @@ impl EventHandler {
     }
 
     async fn pause_all_tasks(&mut self) {
+        tracing::info!("Pausing all tasks");
         let mut futs = Vec::new();
         for (task_id, mut downloader) in self.downloaders.drain() {
             let _ = self.paused_tasks.insert(task_id);
@@ -283,9 +306,11 @@ impl EventHandler {
             );
         }
         drop(future::join_all(futs).await);
+        tracing::info!("Paused all tasks");
     }
 
     fn resume_task(&mut self, task_id: Uuid, sender: oneshot::Sender<Option<Uuid>>) {
+        tracing::info!("Resuming task {task_id}");
         let task_id = if self.paused_tasks.remove(&task_id) {
             let model::CreateTask { priority, creation_timestamp, .. } =
                 self.tasks.get(&task_id).expect("task must exist");
@@ -303,6 +328,7 @@ impl EventHandler {
     }
 
     fn resume_all_tasks(&mut self) {
+        tracing::info!("Resuming all tasks");
         for task_id in self.paused_tasks.drain() {
             let model::CreateTask { priority, creation_timestamp, .. } =
                 self.tasks.get(&task_id).expect("task must exist");
@@ -358,6 +384,7 @@ impl EventHandler {
             } else {
                 model::TaskState::Pending
             };
+
             self.download_progresses.get(task_id).cloned().map(
                 |downloader_status: DownloaderStatus| model::TaskStatus {
                     id: *task_id,
@@ -386,11 +413,17 @@ impl EventHandler {
     }
 
     async fn on_task_completed(&mut self, task_id: Uuid) {
-        tracing::info!("Task {task_id} is completed");
+        tracing::info!("Completed task {task_id}");
         self.completed_tasks.push(task_id);
         if let Some(downloader) = self.downloaders.remove(&task_id) {
-            if let Err(err) = downloader.join().await {
-                tracing::error!("{err}");
+            match downloader.join().await {
+                Ok(Some((_, downloader_status))) => {
+                    drop(self.download_progresses.insert(task_id, downloader_status));
+                }
+                Ok(None) => {}
+                Err(err) => {
+                    tracing::error!("{err}");
+                }
             }
         }
         drop(self.event_sender.send(Event::TryStartTask));

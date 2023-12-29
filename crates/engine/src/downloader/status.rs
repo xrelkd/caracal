@@ -27,6 +27,19 @@ impl DownloaderStatus {
     }
 
     #[must_use]
+    pub fn with_file_path<P>(file_path: P) -> Self
+    where
+        P: AsRef<Path>,
+    {
+        Self {
+            file_path: file_path.as_ref().to_path_buf(),
+            content_length: 0,
+            chunks: Vec::new(),
+            concurrent_number: 0,
+        }
+    }
+
+    #[must_use]
     pub fn chunks(&self) -> Vec<model::ProgressChunk> { self.chunks.clone() }
 
     #[must_use]
