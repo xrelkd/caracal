@@ -13,6 +13,7 @@ pub enum TaskState {
     Paused,
     Canceled,
     Completed,
+    Failed,
 }
 
 impl fmt::Display for TaskState {
@@ -23,6 +24,7 @@ impl fmt::Display for TaskState {
             Self::Paused => "Paused",
             Self::Canceled => "Canceled",
             Self::Completed => "Completed",
+            Self::Failed => "Failed",
         };
         f.write_str(s)
     }

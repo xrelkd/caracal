@@ -505,6 +505,7 @@ dependencies = [
  "futures",
  "http 1.0.0",
  "http-serde",
+ "humansize",
  "indicatif",
  "reqwest",
  "resolve-path",

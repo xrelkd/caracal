@@ -1,4 +1,10 @@
-use std::{collections::HashMap, fmt, path::PathBuf, time::Duration};
+use std::{
+    collections::HashMap,
+    fmt,
+    path::PathBuf,
+    sync::{atomic::AtomicBool, Arc},
+    time::Duration,
+};
 
 use caracal_base::{
     model,
@@ -189,6 +195,7 @@ impl Factory {
                 uri: new_task.uri.clone(),
                 file_path: full_path,
                 handle: None,
+                is_completed: Arc::new(AtomicBool::new(false)),
             })
         } else {
             let filename =
@@ -220,6 +227,7 @@ impl Factory {
                 uri: new_task.uri.clone(),
                 file_path: full_path,
                 handle: None,
+                is_completed: Arc::new(AtomicBool::new(false)),
             })
         }
     }

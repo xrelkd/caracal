@@ -6,7 +6,15 @@ mod status;
 mod transfer_status;
 mod worker;
 
-use std::{collections::HashMap, io::SeekFrom, path::PathBuf, sync::Arc};
+use std::{
+    collections::HashMap,
+    io::SeekFrom,
+    path::PathBuf,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+};
 
 use futures::future;
 use snafu::ResultExt;
@@ -39,12 +47,13 @@ pub struct Downloader {
     uri: http::Uri,
     file_path: PathBuf,
     handle: DownloaderHandle,
+    is_completed: Arc<AtomicBool>,
 }
 
 impl Downloader {
     /// # Errors
     pub async fn start(&mut self) -> Result<(), Error> {
-        if self.handle.is_none() {
+        if self.handle.is_none() && !self.is_completed.load(Ordering::Relaxed) {
             let sink_cloned = self.sink.try_clone().await.with_context(|_| {
                 error::CloneFileInstanceSnafu { file_path: self.file_path.clone() }
             })?;
@@ -56,6 +65,7 @@ impl Downloader {
                     self.source.clone(),
                     self.file_path.clone(),
                     event_receiver,
+                    self.is_completed.clone(),
                 ))
             } else {
                 let (control_file, transfer_status) =
@@ -72,6 +82,7 @@ impl Downloader {
                     event_sender: event_sender.clone(),
                     event_receiver,
                     control_file,
+                    is_completed: self.is_completed.clone(),
                 }))
             };
             self.handle = Some((event_sender, join_handle));
@@ -121,6 +132,7 @@ impl Downloader {
             drop(event_sender.send(Event::GetStatus(send)));
             recv.await
                 .map(|status| {
+                    self.is_completed.store(status.is_completed(), Ordering::Relaxed);
                     let mut progress = DownloaderStatus::from(status);
                     progress.set_file_path(&self.file_path);
                     progress
@@ -130,6 +142,8 @@ impl Downloader {
             None
         }
     }
+
+    pub fn is_completed(&self) -> bool { self.is_completed.load(Ordering::Relaxed) }
 
     pub fn add_worker(&self) {
         if let Some((event_sender, _join_handle)) = self.handle.as_ref() {
@@ -149,6 +163,7 @@ impl Downloader {
         mut source: Fetcher,
         file_path: PathBuf,
         mut event_receiver: mpsc::UnboundedReceiver<Event>,
+        is_completed: Arc<AtomicBool>,
     ) -> Result<Summary, Error> {
         let mut stream = source.fetch_all().await?;
         let _ = sink
@@ -180,6 +195,7 @@ impl Downloader {
                     if let Err(err) = sink.sync_all().await {
                         tracing::warn!("Error occurs while synchronizing file, error: {err}");
                     }
+                    is_completed.store(true, Ordering::Relaxed);
                     transfer_status.mark_chunk_completed(0);
                     summary = Summary::Completed { transfer_status };
                     break;
@@ -213,6 +229,7 @@ impl Downloader {
             event_sender,
             mut event_receiver,
             mut control_file,
+            is_completed,
         }: ServeWithMultipleWorkerOptions,
     ) -> Result<Summary, Error> {
         tracing::debug!("Start downloader with {worker_number} connection(s)");
@@ -257,6 +274,7 @@ impl Downloader {
                     transfer_status.mark_chunk_completed(chunk_start);
 
                     if transfer_status.is_completed() {
+                        is_completed.store(true, Ordering::Relaxed);
                         summary = Summary::Completed { transfer_status };
                         control_file.remove().await;
                         break;
@@ -365,6 +383,7 @@ struct ServeWithMultipleWorkerOptions {
     event_sender: mpsc::UnboundedSender<Event>,
     event_receiver: mpsc::UnboundedReceiver<Event>,
     control_file: ControlFile,
+    is_completed: Arc<AtomicBool>,
 }
 
 enum Event {
