@@ -6,7 +6,7 @@ use std::{
 
 use caracal_base::model;
 use futures::{future, FutureExt};
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, oneshot};
 use uuid::Uuid;
 
 use crate::{downloader::DownloaderFactory, task_scheduler::Event, Downloader, DownloaderStatus};
@@ -23,19 +23,23 @@ pub struct Worker {
 }
 
 impl Worker {
-    // FIXME: split this function
-    #[allow(clippy::too_many_lines)]
     pub async fn serve(self) {
         let Self { factory, event_sender, mut event_receiver, max_concurrent_task_number } = self;
-        let mut tasks = HashMap::<Uuid, model::CreateTask>::new();
-        let mut pending_tasks = BinaryHeap::<PendingTask>::new();
-        let mut downloading_tasks = HashMap::new();
-        let mut completed_tasks = Vec::new();
-        let mut paused_tasks = HashSet::new();
-        let mut canceled_tasks = HashSet::new();
-        let mut download_progresses = HashMap::new();
+
+        let mut event_handler = EventHandler {
+            factory,
+            event_sender: event_sender.clone(),
+            max_concurrent_task_number,
+            tasks: HashMap::new(),
+            pending_tasks: BinaryHeap::new(),
+            downloaders: HashMap::new(),
+            completed_tasks: Vec::new(),
+            paused_tasks: HashSet::new(),
+            canceled_tasks: HashSet::new(),
+            download_progresses: HashMap::new(),
+        };
+
         let timer = tokio::spawn({
-            let event_sender = event_sender.clone();
             async move {
                 let mut interval = tokio::time::interval(Duration::from_millis(200));
                 loop {
@@ -50,256 +54,65 @@ impl Worker {
         while let Some(event) = event_receiver.recv().await {
             match event {
                 Event::CheckProgress => {
-                    let futs =
-                        downloading_tasks.iter().map(|(&task_id, downloader): (_, &Downloader)| {
-                            async move { (task_id, downloader.scrape_status().await) }.boxed()
-                        });
-                    let maybe_progresses = future::join_all(futs).await;
-                    for (task_id, maybe_progress) in maybe_progresses {
-                        if let Some(progress) = maybe_progress {
-                            let is_completed = progress.is_completed();
-                            drop(download_progresses.insert(task_id, progress));
-                            if is_completed {
-                                drop(event_sender.send(Event::TaskCompleted { task_id }));
-                            }
-                        }
-                    }
+                    event_handler.check_progress().await;
                 }
                 Event::Shutdown => {
-                    pending_tasks.clear();
-
-                    // stop all downloading tasks
-                    let futs = downloading_tasks.drain().map(|(_task_id, mut downloader)| {
-                        async move {
-                            if let Err(err) = downloader.pause().await {
-                                tracing::error!("{err}");
-                            }
-                            if let Err(err) = downloader.join().await {
-                                tracing::error!("{err}");
-                            }
-                        }
-                        .boxed()
-                    });
-                    let _results = future::join_all(futs).await;
-
+                    event_handler.on_shutdown().await;
                     break;
                 }
                 Event::TryStartTask => {
-                    if downloading_tasks.len() < max_concurrent_task_number {
-                        // start downloader
-                        let task_id = if let Some(task) = pending_tasks.pop() {
-                            task.task_id
-                        } else {
-                            tracing::info!("No pending tasks");
-                            continue;
-                        };
-
-                        tracing::info!("Try to start new task {task_id}");
-                        let new_task = tasks.get(&task_id).expect("task must exist");
-                        match factory.create_new_task(new_task).await {
-                            Ok(mut downloader) => {
-                                if let Err(err) = downloader.start().await {
-                                    tracing::error!("{err}");
-                                    completed_tasks.push(task_id);
-                                    if let Some(progress) = downloader.scrape_status().await {
-                                        drop(download_progresses.insert(task_id, progress));
-                                    }
-                                } else {
-                                    drop(downloading_tasks.insert(task_id, downloader));
-                                }
-                            }
-                            Err(err) => {
-                                tracing::error!("{err}");
-                                completed_tasks.push(task_id);
-                            }
-                        }
-                    }
+                    event_handler.try_start_task().await;
                 }
                 Event::AddUri { new_task, start_immediately, sender } => {
-                    let (task_id, priority, timestamp) =
-                        (Uuid::new_v4(), new_task.priority, Reverse(new_task.creation_timestamp));
-                    drop(tasks.insert(task_id, new_task));
-                    if start_immediately {
-                        pending_tasks.push(PendingTask { priority, timestamp, task_id });
-                    } else {
-                        let _ = paused_tasks.insert(task_id);
-                    }
-                    drop(event_sender.send(Event::TryStartTask));
-                    let _ = sender.send(task_id);
+                    event_handler.add_uri(new_task, start_immediately, sender);
                 }
                 Event::RemoveTask { task_id, sender } => {
-                    let task_id = if let Some(mut downloader) = downloading_tasks.remove(&task_id) {
-                        if let Err(err) = downloader.pause().await {
-                            tracing::error!("{err}");
-                        }
-                        if let Err(err) = downloader.join().await {
-                            tracing::error!("{err}");
-                        }
-                        let _ = canceled_tasks.insert(task_id);
-                        Some(task_id)
-                    } else {
-                        None
-                    };
-                    let _ = sender.send(task_id);
+                    event_handler.remove_task(task_id, sender).await;
                 }
                 Event::PauseTask { task_id, sender } => {
-                    let task_id = if let Some(mut downloader) = downloading_tasks.remove(&task_id) {
-                        if let Err(err) = downloader.pause().await {
-                            tracing::error!("{err}");
-                        }
-                        if let Err(err) = downloader.join().await {
-                            tracing::error!("{err}");
-                        }
-
-                        let _ = paused_tasks.insert(task_id);
-                        Some(task_id)
-                    } else {
-                        None
-                    };
-                    let _ = sender.send(task_id);
+                    event_handler.pause_task(task_id, sender).await;
                 }
                 Event::PauseAllTasks => {
-                    let mut futs = Vec::new();
-                    for (task_id, mut downloader) in downloading_tasks.drain() {
-                        let _ = paused_tasks.insert(task_id);
-                        futs.push(
-                            async move {
-                                if let Err(err) = downloader.pause().await {
-                                    tracing::error!("{err}");
-                                }
-                                if let Err(err) = downloader.join().await {
-                                    tracing::error!("{err}");
-                                }
-                            }
-                            .boxed(),
-                        );
-                    }
-                    drop(future::join_all(futs).await);
+                    event_handler.pause_all_tasks().await;
                 }
                 Event::ResumeTask { task_id, sender } => {
-                    let task_id = if paused_tasks.remove(&task_id) {
-                        let model::CreateTask { priority, creation_timestamp, .. } =
-                            tasks.get(&task_id).expect("task must exist");
-                        pending_tasks.push(PendingTask {
-                            priority: *priority,
-                            timestamp: Reverse(*creation_timestamp),
-                            task_id,
-                        });
-                        drop(event_sender.send(Event::TryStartTask));
-                        Some(task_id)
-                    } else {
-                        None
-                    };
-                    let _ = sender.send(task_id);
+                    event_handler.resume_task(task_id, sender);
                 }
                 Event::ResumeAllTasks => {
-                    for task_id in paused_tasks.drain() {
-                        let model::CreateTask { priority, creation_timestamp, .. } =
-                            tasks.get(&task_id).expect("task must exist");
-                        pending_tasks.push(PendingTask {
-                            priority: *priority,
-                            timestamp: Reverse(*creation_timestamp),
-                            task_id,
-                        });
-                        drop(event_sender.send(Event::TryStartTask));
-                    }
+                    event_handler.resume_all_tasks();
                 }
                 Event::GetTaskStatus { task_id, sender } => {
-                    let task_status = tasks.get(&task_id).and_then(|task| {
-                        let state = if canceled_tasks.contains(&task_id) {
-                            model::TaskState::Canceled
-                        } else if downloading_tasks.contains_key(&task_id) {
-                            model::TaskState::Downloading
-                        } else if completed_tasks.contains(&task_id) {
-                            model::TaskState::Completed
-                        } else if paused_tasks.contains(&task_id) {
-                            model::TaskState::Paused
-                        } else {
-                            model::TaskState::Pending
-                        };
-                        download_progresses.get(&task_id).cloned().map(
-                            |downloader_status: DownloaderStatus| model::TaskStatus {
-                                id: task_id,
-                                content_length: downloader_status.content_length(),
-                                chunks: downloader_status.chunks(),
-                                concurrent_number: downloader_status.concurrent_number(),
-                                file_path: downloader_status.file_path().to_path_buf(),
-                                state,
-                                priority: task.priority,
-                                creation_timestamp: task.creation_timestamp,
-                            },
-                        )
-                    });
-                    drop(sender.send(task_status));
+                    event_handler.get_task_status(task_id, sender);
                 }
                 Event::GetAllTasks { sender } => {
-                    drop(sender.send(tasks.keys().copied().collect()));
+                    event_handler.get_all_tasks(sender);
                 }
                 Event::GetPendingTasks { sender } => {
-                    drop(sender.send(pending_tasks.iter().map(|task| task.task_id).collect()));
+                    event_handler.get_pending_tasks(sender);
                 }
                 Event::GetDownloadingTasks { sender } => {
-                    drop(sender.send(downloading_tasks.keys().copied().collect()));
+                    event_handler.get_downloading_tasks(sender);
                 }
                 Event::GetPausedTasks { sender } => {
-                    drop(sender.send(paused_tasks.iter().copied().collect()));
+                    event_handler.get_paused_tasks(sender);
                 }
                 Event::GetCompletedTasks { sender } => {
-                    drop(sender.send(completed_tasks.clone()));
+                    event_handler.get_completed_tasks(sender);
                 }
                 Event::GetCanceledTasks { sender } => {
-                    drop(sender.send(canceled_tasks.iter().copied().collect()));
+                    event_handler.get_canceled_tasks(sender);
                 }
                 Event::GetAllTaskStatuses { sender } => {
-                    let task_statuses = tasks
-                        .iter()
-                        .filter_map(|(&id, task)| {
-                            let state = if canceled_tasks.contains(&id) {
-                                model::TaskState::Canceled
-                            } else if downloading_tasks.contains_key(&id) {
-                                model::TaskState::Downloading
-                            } else if completed_tasks.contains(&id) {
-                                model::TaskState::Completed
-                            } else if paused_tasks.contains(&id) {
-                                model::TaskState::Paused
-                            } else {
-                                model::TaskState::Pending
-                            };
-                            download_progresses.get(&id).cloned().map(
-                                |downloader_status: DownloaderStatus| model::TaskStatus {
-                                    id,
-                                    content_length: downloader_status.content_length(),
-                                    chunks: downloader_status.chunks(),
-                                    concurrent_number: downloader_status.concurrent_number(),
-                                    file_path: downloader_status.file_path().to_path_buf(),
-                                    state,
-                                    priority: task.priority,
-                                    creation_timestamp: task.creation_timestamp,
-                                },
-                            )
-                        })
-                        .collect();
-                    drop(sender.send(task_statuses));
+                    event_handler.get_all_task_statuses(sender);
                 }
                 Event::TaskCompleted { task_id } => {
-                    tracing::info!("Task {task_id} is completed");
-                    completed_tasks.push(task_id);
-                    if let Some(downloader) = downloading_tasks.remove(&task_id) {
-                        if let Err(err) = downloader.join().await {
-                            tracing::error!("{err}");
-                        }
-                    }
-                    drop(event_sender.send(Event::TryStartTask));
+                    event_handler.on_task_completed(task_id).await;
                 }
                 Event::IncreaseWorkerNumber { task_id } => {
-                    if let Some(downloader) = downloading_tasks.get(&task_id) {
-                        downloader.add_worker();
-                    }
+                    event_handler.increase_worker_number(task_id);
                 }
                 Event::DecreaseWorkerNumber { task_id } => {
-                    if let Some(downloader) = downloading_tasks.get(&task_id) {
-                        downloader.remove_worker();
-                    }
+                    event_handler.decrease_worker_number(task_id);
                 }
             }
         }
@@ -319,4 +132,280 @@ struct PendingTask {
     pub timestamp: Reverse<time::OffsetDateTime>,
 
     pub task_id: Uuid,
+}
+
+struct EventHandler {
+    factory: DownloaderFactory,
+    event_sender: mpsc::UnboundedSender<Event>,
+    max_concurrent_task_number: usize,
+    tasks: HashMap<Uuid, model::CreateTask>,
+    pending_tasks: BinaryHeap<PendingTask>,
+    downloaders: HashMap<Uuid, Downloader>,
+    completed_tasks: Vec<Uuid>,
+    paused_tasks: HashSet<Uuid>,
+    canceled_tasks: HashSet<Uuid>,
+    download_progresses: HashMap<Uuid, DownloaderStatus>,
+}
+
+impl EventHandler {
+    async fn check_progress(&mut self) {
+        let futs = self.downloaders.iter().map(|(&task_id, downloader): (_, &Downloader)| {
+            async move { (task_id, downloader.scrape_status().await) }.boxed()
+        });
+        let maybe_progresses = future::join_all(futs).await;
+        for (task_id, maybe_progress) in maybe_progresses {
+            if let Some(progress) = maybe_progress {
+                let is_completed = progress.is_completed();
+                drop(self.download_progresses.insert(task_id, progress));
+                if is_completed {
+                    drop(self.event_sender.send(Event::TaskCompleted { task_id }));
+                }
+            }
+        }
+    }
+
+    async fn on_shutdown(mut self) {
+        self.pending_tasks.clear();
+
+        // stop all downloading tasks
+        let futs = self.downloaders.drain().map(|(_task_id, mut downloader)| {
+            async move {
+                if let Err(err) = downloader.pause().await {
+                    tracing::error!("{err}");
+                }
+                if let Err(err) = downloader.join().await {
+                    tracing::error!("{err}");
+                }
+            }
+            .boxed()
+        });
+        let _results = future::join_all(futs).await;
+    }
+
+    async fn try_start_task(&mut self) {
+        if self.downloaders.len() < self.max_concurrent_task_number {
+            // start downloader
+            let task_id = if let Some(task) = self.pending_tasks.pop() {
+                task.task_id
+            } else {
+                tracing::info!("No pending tasks");
+                return;
+            };
+
+            tracing::info!("Try to start new task {task_id}");
+            let new_task = self.tasks.get(&task_id).expect("task must exist");
+            match self.factory.create_new_task(new_task).await {
+                Ok(mut downloader) => {
+                    if let Err(err) = downloader.start().await {
+                        tracing::error!("{err}");
+                        self.completed_tasks.push(task_id);
+                        if let Some(progress) = downloader.scrape_status().await {
+                            drop(self.download_progresses.insert(task_id, progress));
+                        }
+                    } else {
+                        drop(self.downloaders.insert(task_id, downloader));
+                    }
+                }
+                Err(err) => {
+                    tracing::error!("{err}");
+                    self.completed_tasks.push(task_id);
+                }
+            }
+        }
+    }
+
+    fn add_uri(
+        &mut self,
+        new_task: model::CreateTask,
+        start_immediately: bool,
+        sender: oneshot::Sender<Uuid>,
+    ) {
+        let (task_id, priority, timestamp) =
+            (Uuid::new_v4(), new_task.priority, Reverse(new_task.creation_timestamp));
+        drop(self.tasks.insert(task_id, new_task));
+        if start_immediately {
+            self.pending_tasks.push(PendingTask { priority, timestamp, task_id });
+        } else {
+            let _ = self.paused_tasks.insert(task_id);
+        }
+        drop(self.event_sender.send(Event::TryStartTask));
+        let _ = sender.send(task_id);
+    }
+
+    async fn remove_task(&mut self, task_id: Uuid, sender: oneshot::Sender<Option<Uuid>>) {
+        let task_id = if let Some(mut downloader) = self.downloaders.remove(&task_id) {
+            if let Err(err) = downloader.pause().await {
+                tracing::error!("{err}");
+            }
+            if let Err(err) = downloader.join().await {
+                tracing::error!("{err}");
+            }
+            let _ = self.canceled_tasks.insert(task_id);
+            Some(task_id)
+        } else {
+            None
+        };
+        let _ = sender.send(task_id);
+    }
+
+    async fn pause_task(&mut self, task_id: Uuid, sender: oneshot::Sender<Option<Uuid>>) {
+        let task_id = if let Some(mut downloader) = self.downloaders.remove(&task_id) {
+            if let Err(err) = downloader.pause().await {
+                tracing::error!("{err}");
+            }
+            if let Err(err) = downloader.join().await {
+                tracing::error!("{err}");
+            }
+
+            let _ = self.paused_tasks.insert(task_id);
+            Some(task_id)
+        } else {
+            None
+        };
+        let _ = sender.send(task_id);
+    }
+
+    async fn pause_all_tasks(&mut self) {
+        let mut futs = Vec::new();
+        for (task_id, mut downloader) in self.downloaders.drain() {
+            let _ = self.paused_tasks.insert(task_id);
+            futs.push(
+                async move {
+                    if let Err(err) = downloader.pause().await {
+                        tracing::error!("{err}");
+                    }
+                    if let Err(err) = downloader.join().await {
+                        tracing::error!("{err}");
+                    }
+                }
+                .boxed(),
+            );
+        }
+        drop(future::join_all(futs).await);
+    }
+
+    fn resume_task(&mut self, task_id: Uuid, sender: oneshot::Sender<Option<Uuid>>) {
+        let task_id = if self.paused_tasks.remove(&task_id) {
+            let model::CreateTask { priority, creation_timestamp, .. } =
+                self.tasks.get(&task_id).expect("task must exist");
+            self.pending_tasks.push(PendingTask {
+                priority: *priority,
+                timestamp: Reverse(*creation_timestamp),
+                task_id,
+            });
+            drop(self.event_sender.send(Event::TryStartTask));
+            Some(task_id)
+        } else {
+            None
+        };
+        let _ = sender.send(task_id);
+    }
+
+    #[inline]
+    fn get_all_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
+        drop(sender.send(self.tasks.keys().copied().collect()));
+    }
+
+    #[inline]
+    fn get_pending_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
+        drop(sender.send(self.pending_tasks.iter().map(|task| task.task_id).collect()));
+    }
+
+    #[inline]
+    fn get_downloading_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
+        drop(sender.send(self.downloaders.keys().copied().collect()));
+    }
+
+    #[inline]
+    fn get_canceled_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
+        drop(sender.send(self.canceled_tasks.iter().copied().collect()));
+    }
+
+    #[inline]
+    fn get_paused_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
+        drop(sender.send(self.paused_tasks.iter().copied().collect()));
+    }
+
+    #[inline]
+    fn get_completed_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
+        drop(sender.send(self.completed_tasks.clone()));
+    }
+
+    fn resume_all_tasks(&mut self) {
+        for task_id in self.paused_tasks.drain() {
+            let model::CreateTask { priority, creation_timestamp, .. } =
+                self.tasks.get(&task_id).expect("task must exist");
+            self.pending_tasks.push(PendingTask {
+                priority: *priority,
+                timestamp: Reverse(*creation_timestamp),
+                task_id,
+            });
+            drop(self.event_sender.send(Event::TryStartTask));
+        }
+    }
+
+    fn get_task_status_inner(&self, task_id: &Uuid) -> Option<model::TaskStatus> {
+        self.tasks.get(task_id).and_then(|task| {
+            let state = if self.canceled_tasks.contains(task_id) {
+                model::TaskState::Canceled
+            } else if self.downloaders.contains_key(task_id) {
+                model::TaskState::Downloading
+            } else if self.completed_tasks.contains(task_id) {
+                model::TaskState::Completed
+            } else if self.paused_tasks.contains(task_id) {
+                model::TaskState::Paused
+            } else {
+                model::TaskState::Pending
+            };
+            self.download_progresses.get(task_id).cloned().map(
+                |downloader_status: DownloaderStatus| model::TaskStatus {
+                    id: *task_id,
+                    content_length: downloader_status.content_length(),
+                    chunks: downloader_status.chunks(),
+                    concurrent_number: downloader_status.concurrent_number(),
+                    file_path: downloader_status.file_path().to_path_buf(),
+                    state,
+                    priority: task.priority,
+                    creation_timestamp: task.creation_timestamp,
+                },
+            )
+        })
+    }
+
+    #[inline]
+    fn get_task_status(&self, task_id: Uuid, sender: oneshot::Sender<Option<model::TaskStatus>>) {
+        drop(sender.send(self.get_task_status_inner(&task_id)));
+    }
+
+    #[inline]
+    fn get_all_task_statuses(&self, sender: oneshot::Sender<Vec<model::TaskStatus>>) {
+        let task_statuses =
+            self.tasks.keys().filter_map(|id| self.get_task_status_inner(id)).collect();
+        drop(sender.send(task_statuses));
+    }
+
+    async fn on_task_completed(&mut self, task_id: Uuid) {
+        tracing::info!("Task {task_id} is completed");
+        self.completed_tasks.push(task_id);
+        if let Some(downloader) = self.downloaders.remove(&task_id) {
+            if let Err(err) = downloader.join().await {
+                tracing::error!("{err}");
+            }
+        }
+        drop(self.event_sender.send(Event::TryStartTask));
+    }
+
+    #[inline]
+    fn increase_worker_number(&mut self, task_id: Uuid) {
+        if let Some(downloader) = self.downloaders.get(&task_id) {
+            downloader.add_worker();
+        }
+    }
+
+    #[inline]
+    fn decrease_worker_number(&mut self, task_id: Uuid) {
+        if let Some(downloader) = self.downloaders.get(&task_id) {
+            downloader.remove_worker();
+        }
+    }
 }
