@@ -1,5 +1,7 @@
 use caracal_base::model;
 
+const MINIMUM_NEW_CHUNK_SIZE: u64 = 128;
+
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Chunk {
     pub start: u64,
@@ -28,10 +30,18 @@ impl Chunk {
             None
         } else {
             let len = self.remaining() / 2;
-            let new_chunk =
-                Self { start: self.start + len, end: self.end, received: 0, is_completed: false };
-            self.end = self.start + len - 1;
-            Some(new_chunk)
+            if len <= MINIMUM_NEW_CHUNK_SIZE {
+                None
+            } else {
+                let new_chunk = Self {
+                    start: self.start + len,
+                    end: self.end,
+                    received: 0,
+                    is_completed: false,
+                };
+                self.end = self.start + len - 1;
+                Some(new_chunk)
+            }
         }
     }
 
