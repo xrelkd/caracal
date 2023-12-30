@@ -24,7 +24,7 @@ use crate::{
 
 #[derive(Clone, Debug)]
 pub struct Builder {
-    pub default_worker_number: u64,
+    pub default_concurrent_number: u64,
 
     pub default_output_directory_path: PathBuf,
 
@@ -43,7 +43,7 @@ impl Builder {
     /// # Errors
     pub fn new() -> Result<Self, Error> {
         Ok(Self {
-            default_worker_number: 5,
+            default_concurrent_number: 5,
             default_output_directory_path: std::env::current_dir()
                 .context(error::GetCurrentDirectorySnafu)?,
             http_user_agent: None,
@@ -54,8 +54,8 @@ impl Builder {
         })
     }
 
-    pub const fn default_worker_number(mut self, default_worker_number: u64) -> Self {
-        self.default_worker_number = default_worker_number;
+    pub const fn default_concurrent_number(mut self, default_concurrent_number: u64) -> Self {
+        self.default_concurrent_number = default_concurrent_number;
         self
     }
 
@@ -99,7 +99,7 @@ impl Builder {
         let Self {
             http_user_agent,
             default_output_directory_path,
-            default_worker_number,
+            default_concurrent_number,
             minio_aliases,
             ssh_servers,
             minimum_chunk_size,
@@ -117,7 +117,7 @@ impl Builder {
         Ok(Factory {
             http_client,
             default_output_directory_path,
-            default_concurrent_number: default_worker_number,
+            default_concurrent_number,
             minimum_chunk_size,
             minio_aliases,
             ssh_servers,
