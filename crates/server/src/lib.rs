@@ -3,12 +3,7 @@ mod error;
 mod grpc;
 mod metrics;
 
-use std::{
-    future::Future,
-    net::SocketAddr,
-    path::{Path, PathBuf},
-    pin::Pin,
-};
+use std::{future::Future, net::SocketAddr, path::PathBuf, pin::Pin};
 
 use caracal_engine::{DownloaderFactory, TaskScheduler};
 use futures::FutureExt;
@@ -41,11 +36,12 @@ pub async fn serve_with_shutdown(
     }: Config,
 ) -> Result<()> {
     let lifecycle_manager = LifecycleManager::<Error>::new();
-    let default_output_directory = task_scheduler.default_output_directory;
 
     let (task_scheduler, task_scheduler_worker) = {
         let downloader_factory = DownloaderFactory::builder()
+            .context(error::BuildDownloaderFactorySnafu)?
             .http_user_agent(task_scheduler.http.user_agent)
+            .default_output_directory_path(task_scheduler.default_output_directory)
             .default_worker_number(u64::from(task_scheduler.http.concurrent_connections))
             .minimum_chunk_size(MINIMUM_CHUNK_SIZE)
             .ssh_servers(ssh_servers)
@@ -67,7 +63,6 @@ pub async fn serve_with_shutdown(
                 grpc_listen_address,
                 grpc_access_token.clone(),
                 task_scheduler.clone(),
-                default_output_directory.clone(),
             ),
         );
     }
@@ -79,7 +74,6 @@ pub async fn serve_with_shutdown(
                 grpc_local_socket,
                 grpc_access_token,
                 task_scheduler.clone(),
-                default_output_directory,
             ),
         );
     }
@@ -101,16 +95,11 @@ pub async fn serve_with_shutdown(
     }
 }
 
-fn create_grpc_local_socket_server_future<P>(
+fn create_grpc_local_socket_server_future(
     local_socket: PathBuf,
     grpc_access_token: Option<String>,
     task_scheduler: TaskScheduler,
-    default_output_directory: P,
-) -> impl FnOnce(Shutdown) -> Pin<Box<dyn Future<Output = ExitStatus<Error>> + Send>>
-where
-    P: AsRef<Path>,
-{
-    let default_output_directory = default_output_directory.as_ref().to_path_buf();
+) -> impl FnOnce(Shutdown) -> Pin<Box<dyn Future<Output = ExitStatus<Error>> + Send>> {
     move |signal| {
         async move {
             tracing::info!("Listening Caracal gRPC endpoint on {}", local_socket.display());
@@ -137,7 +126,7 @@ where
                     interceptor.clone(),
                 ))
                 .add_service(caracal_proto::TaskServer::with_interceptor(
-                    grpc::TaskService::new(task_scheduler, default_output_directory),
+                    grpc::TaskService::new(task_scheduler),
                     interceptor,
                 ))
                 .serve_with_incoming_shutdown(uds_stream, signal)
@@ -161,16 +150,11 @@ where
     }
 }
 
-fn create_grpc_http_server_future<P>(
+fn create_grpc_http_server_future(
     listen_address: SocketAddr,
     grpc_access_token: Option<String>,
     task_scheduler: TaskScheduler,
-    default_output_directory: P,
-) -> impl FnOnce(Shutdown) -> Pin<Box<dyn Future<Output = ExitStatus<Error>> + Send>>
-where
-    P: AsRef<Path>,
-{
-    let default_output_directory = default_output_directory.as_ref().to_path_buf();
+) -> impl FnOnce(Shutdown) -> Pin<Box<dyn Future<Output = ExitStatus<Error>> + Send>> {
     move |signal| {
         async move {
             tracing::info!("Listening Caracal gRPC endpoint on {listen_address}");
@@ -182,7 +166,7 @@ where
                     interceptor.clone(),
                 ))
                 .add_service(caracal_proto::TaskServer::with_interceptor(
-                    grpc::TaskService::new(task_scheduler, default_output_directory),
+                    grpc::TaskService::new(task_scheduler),
                     interceptor,
                 ))
                 .serve_with_shutdown(listen_address, signal)
