@@ -46,6 +46,10 @@ impl Worker {
                 chunk.len()
             );
             progress_updater.signal_started(id, chunk.start);
+            if chunk.received >= chunk.len() {
+                progress_updater.signal_completed(id, chunk.start);
+                continue;
+            }
             let mut received = chunk.received;
             let mut stream = source.fetch_bytes(chunk.start + chunk.received, chunk.end).await?;
 
