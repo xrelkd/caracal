@@ -523,7 +523,7 @@ spec:
                 path: caracal-daemon.toml
       containers:
         - name: caracal
-          image: ghcr.io/xrelkd/caracal:build-2023.12.30-0e31748
+          image: ghcr.io/xrelkd/caracal:latest
           imagePullPolicy: IfNotPresent
           command:
             - "caracal-daemon"
