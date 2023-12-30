@@ -60,7 +60,7 @@ pub struct Cli {
     )]
     concurrent_connections: Option<u16>,
 
-    #[arg(long = "timeout", short = 'T', help = "Set the network timeout to seconds")]
+    #[arg(long = "timeout", short = 'T', help = "Set the network timeout in second")]
     connection_timeout: Option<u64>,
 
     uris: Vec<http::Uri>,
@@ -104,7 +104,7 @@ pub enum Commands {
         )]
         concurrent_connections: Option<u16>,
 
-        #[arg(long = "timeout", short = 'T', help = "Set the network timeout to seconds")]
+        #[arg(long = "timeout", short = 'T', help = "Set the network timeout in second")]
         connection_timeout: Option<u64>,
 
         uris: Vec<http::Uri>,
