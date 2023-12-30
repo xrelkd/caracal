@@ -49,7 +49,7 @@ pub async fn serve_with_shutdown(
             .context(error::BuildDownloaderFactorySnafu)?
             .http_user_agent(task_scheduler.http.user_agent)
             .default_output_directory_path(task_scheduler.default_output_directory)
-            .default_worker_number(u64::from(task_scheduler.http.concurrent_connections))
+            .default_concurrent_number(u64::from(task_scheduler.http.concurrent_connections))
             .minimum_chunk_size(MINIMUM_CHUNK_SIZE)
             .ssh_servers(ssh_servers)
             .minio_aliases(minio_aliases)
