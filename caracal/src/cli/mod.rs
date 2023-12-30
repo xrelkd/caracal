@@ -109,37 +109,34 @@ pub enum Commands {
         uris: Vec<http::Uri>,
     },
 
-    #[clap(about = "Get a status of a specified task")]
-    GetTaskStatus {
-        #[arg(help = "Task ID")]
-        id: u64,
-    },
-
     #[clap(about = "Get status of all tasks")]
-    GetAllTaskStatuses,
-
-    #[clap(about = "Pause a task")]
-    PauseTask {
+    Status {
         #[arg(help = "Task ID")]
-        id: u64,
+        id: Option<u64>,
     },
 
-    #[clap(about = "Pause all tasks")]
-    PauseAllTasks,
+    #[clap(about = "Pause tasks")]
+    Pause {
+        #[arg(long = "all", short = 'a', help = "Pause all tasks")]
+        all: bool,
 
-    #[clap(about = "Resume a task")]
-    ResumeTask {
         #[arg(help = "Task ID")]
-        id: u64,
+        ids: Vec<u64>,
     },
 
-    #[clap(about = "Resume all tasks")]
-    ResumeAllTasks,
+    #[clap(about = "Resume tasks")]
+    Resume {
+        #[arg(long = "all", short = 'a', help = "Resume all tasks")]
+        all: bool,
 
-    #[clap(about = "Remove a task")]
-    RemoveTask {
         #[arg(help = "Task ID")]
-        id: u64,
+        ids: Vec<u64>,
+    },
+
+    #[clap(about = "Remove tasks")]
+    Remove {
+        #[arg(help = "Task ID")]
+        ids: Vec<u64>,
     },
 }
 
@@ -227,53 +224,57 @@ impl Cli {
                     drop(client);
                     Ok(())
                 }
-                Some(Commands::GetTaskStatus { id }) => {
+                Some(Commands::Status { id }) => {
                     let client = create_grpc_client(&config).await?;
-                    let task_status = client.get_task_status(id).await?;
-                    println!("{}", ui::render_task_statuses_table(&[task_status]));
+                    let task_statuses = if let Some(id) = id {
+                        vec![client.get_task_status(id).await?]
+                    } else {
+                        client.get_all_task_statuses().await?
+                    };
+                    println!("{table}", table = ui::render_task_statuses_table(&task_statuses));
                     drop(client);
                     Ok(())
                 }
-                Some(Commands::GetAllTaskStatuses) => {
+                Some(Commands::Pause { ids, all }) => {
                     let client = create_grpc_client(&config).await?;
-                    let task_statuses = client.get_all_task_statuses().await?;
-                    println!("{}", ui::render_task_statuses_table(&task_statuses));
-                    drop(client);
-                    Ok(())
-                }
-                Some(Commands::PauseTask { id }) => {
-                    let client = create_grpc_client(&config).await?;
-                    let _ = client.pause(id).await?;
-                    drop(client);
-                    Ok(())
-                }
-                Some(Commands::PauseAllTasks) => {
-                    let client = create_grpc_client(&config).await?;
-                    let task_ids = client.pause_all().await?;
+                    let task_ids = if all {
+                        client.pause_all().await?
+                    } else {
+                        for &id in &ids {
+                            let _ = client.pause(id).await?;
+                        }
+                        ids
+                    };
                     for task_id in task_ids {
                         println!("{task_id} is paused");
                     }
                     drop(client);
                     Ok(())
                 }
-                Some(Commands::ResumeTask { id }) => {
+                Some(Commands::Resume { ids, all }) => {
                     let client = create_grpc_client(&config).await?;
-                    let _ = client.resume(id).await?;
-                    drop(client);
-                    Ok(())
-                }
-                Some(Commands::ResumeAllTasks) => {
-                    let client = create_grpc_client(&config).await?;
-                    let task_ids = client.resume_all().await?;
-                    for task_id in task_ids {
-                        println!("{task_id} is resumed");
+                    let task_ids = if all {
+                        client.resume_all().await?
+                    } else {
+                        for &id in &ids {
+                            let _ = client.resume(id).await?;
+                        }
+                        ids
+                    };
+                    for id in task_ids {
+                        println!("{id} is resumed");
                     }
                     drop(client);
                     Ok(())
                 }
-                Some(Commands::RemoveTask { id }) => {
+                Some(Commands::Remove { ids }) => {
                     let client = create_grpc_client(&config).await?;
-                    let _ = client.remove(id).await?;
+                    for &id in &ids {
+                        let _ = client.remove(id).await?;
+                    }
+                    for id in ids {
+                        println!("{id} is removed");
+                    }
                     drop(client);
                     Ok(())
                 }
