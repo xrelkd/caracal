@@ -7,7 +7,6 @@ use caracal_base::model;
 use caracal_engine::TaskScheduler;
 use caracal_proto as proto;
 use time::OffsetDateTime;
-use uuid::Uuid;
 
 pub struct TaskService {
     task_scheduler: TaskScheduler,
@@ -67,9 +66,7 @@ impl proto::Task for TaskService {
             .await
             .map_err(service_shutdown_status)?;
 
-        Ok(tonic::Response::new(proto::AddUriResponse {
-            task_id: Some(proto::Uuid::from(task_id)),
-        }))
+        Ok(tonic::Response::new(proto::AddUriResponse { task_id }))
     }
 
     async fn pause(
@@ -77,9 +74,6 @@ impl proto::Task for TaskService {
         request: tonic::Request<proto::PauseTaskRequest>,
     ) -> Result<tonic::Response<proto::PauseTaskResponse>, tonic::Status> {
         let proto::PauseTaskRequest { task_id } = request.into_inner();
-
-        let task_id = Uuid::try_from(task_id.ok_or_else(task_id_missing_status)?)
-            .map_err(|err| tonic::Status::invalid_argument(err.to_string()))?;
 
         self.task_scheduler
             .pause_task(task_id)
@@ -96,10 +90,7 @@ impl proto::Task for TaskService {
         self.task_scheduler
             .get_all_tasks()
             .await
-            .map(|task_ids| {
-                let task_ids = task_ids.iter().copied().map(proto::Uuid::from).collect();
-                tonic::Response::new(proto::PauseAllTasksResponse { task_ids })
-            })
+            .map(|task_ids| tonic::Response::new(proto::PauseAllTasksResponse { task_ids }))
             .map_err(service_shutdown_status)
     }
 
@@ -108,9 +99,6 @@ impl proto::Task for TaskService {
         request: tonic::Request<proto::ResumeTaskRequest>,
     ) -> Result<tonic::Response<proto::ResumeTaskResponse>, tonic::Status> {
         let proto::ResumeTaskRequest { task_id } = request.into_inner();
-
-        let task_id = Uuid::try_from(task_id.ok_or_else(task_id_missing_status)?)
-            .map_err(|err| tonic::Status::invalid_argument(err.to_string()))?;
 
         self.task_scheduler
             .resume_task(task_id)
@@ -127,10 +115,7 @@ impl proto::Task for TaskService {
         self.task_scheduler
             .get_all_tasks()
             .await
-            .map(|task_ids| {
-                let task_ids = task_ids.iter().copied().map(proto::Uuid::from).collect();
-                tonic::Response::new(proto::ResumeAllTasksResponse { task_ids })
-            })
+            .map(|task_ids| tonic::Response::new(proto::ResumeAllTasksResponse { task_ids }))
             .map_err(service_shutdown_status)
     }
 
@@ -139,9 +124,6 @@ impl proto::Task for TaskService {
         request: tonic::Request<proto::RemoveTaskRequest>,
     ) -> Result<tonic::Response<proto::RemoveTaskResponse>, tonic::Status> {
         let proto::RemoveTaskRequest { task_id } = request.into_inner();
-
-        let task_id = Uuid::try_from(task_id.ok_or_else(task_id_missing_status)?)
-            .map_err(|err| tonic::Status::invalid_argument(err.to_string()))?;
 
         self.task_scheduler
             .remove_task(task_id)
@@ -155,9 +137,6 @@ impl proto::Task for TaskService {
         request: tonic::Request<proto::GetTaskStatusRequest>,
     ) -> Result<tonic::Response<proto::GetTaskStatusResponse>, tonic::Status> {
         let proto::GetTaskStatusRequest { task_id } = request.into_inner();
-
-        let task_id = Uuid::try_from(task_id.ok_or_else(task_id_missing_status)?)
-            .map_err(|err| tonic::Status::invalid_argument(err.to_string()))?;
 
         if let Some(model::TaskStatus {
             id,
@@ -176,7 +155,7 @@ impl proto::Task for TaskService {
             Ok(tonic::Response::new(proto::GetTaskStatusResponse {
                 status: Some(proto::TaskStatus {
                     metadata: Some(proto::TaskMetadata {
-                        id: Some(proto::Uuid::from(id)),
+                        id,
                         priority: i32::from(proto::Priority::from(priority)),
                         creation_timestamp: Some(proto::datetime_to_timestamp(&creation_timestamp)),
                         size: Some(content_length),
@@ -218,7 +197,7 @@ impl proto::Task for TaskService {
 
             task_statuses.push(proto::TaskStatus {
                 metadata: Some(proto::TaskMetadata {
-                    id: Some(proto::Uuid::from(id)),
+                    id,
                     priority: i32::from(proto::Priority::from(priority)),
                     creation_timestamp: Some(proto::datetime_to_timestamp(&creation_timestamp)),
                     size: Some(content_length),
@@ -238,8 +217,4 @@ impl proto::Task for TaskService {
 #[allow(clippy::needless_pass_by_value)]
 fn service_shutdown_status<E>(_err: E) -> tonic::Status {
     tonic::Status::unavailable("Caracal is shutting down")
-}
-
-fn task_id_missing_status() -> tonic::Status {
-    tonic::Status::invalid_argument("task_id is missing")
 }
