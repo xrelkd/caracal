@@ -26,17 +26,27 @@ tokio   = { version = "1", features = ["rt-multi-thread", "sync"] }
 
 reqwest = { version = "0.11", default-features = false, features = ["stream"] }
 
-clap          = { version = "4", features = ["derive", "env"] }
+clap = { version = "4", features = ["derive", "env"] }
 clap_complete = "4"
-http          = "1"
-indicatif     = "0.17"
-resolve-path  = "0.1"
-shadow-rs     = "0.25"
-snafu         = "0.7"
+comfy-table = "7"
+http = "1"
+humansize = "2"
+humantime = "2"
+indicatif = "0.17"
+resolve-path = "0.1"
+shadow-rs = "0.25"
+snafu = "0.7"
+time = { version = "0.3", features = [
+  "formatting",
+  "macros",
+  "parsing",
+  "serde",
+] }
 
-caracal-base   = { path = "../crates/base" }
-caracal-cli    = { path = "../crates/cli" }
-caracal-engine = { path = "../crates/engine" }
+caracal-base        = { path = "../crates/base" }
+caracal-cli         = { path = "../crates/cli" }
+caracal-engine      = { path = "../crates/engine" }
+caracal-grpc-client = { path = "../crates/grpc-client" }
 
 [build-dependencies]
 shadow-rs = "0.25"

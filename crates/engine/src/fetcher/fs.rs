@@ -6,6 +6,7 @@ use snafu::ResultExt;
 use crate::{
     error,
     error::{Error, Result},
+    ext::PathExt,
     fetcher::{generic::ByteStream, Metadata},
 };
 
@@ -43,13 +44,7 @@ impl Fetcher {
     }
 
     pub fn fetch_metadata(&self) -> Metadata {
-        Metadata {
-            length: self.length,
-            filename: self
-                .file_path
-                .file_name()
-                .map_or_else(|| PathBuf::from(caracal_base::FALLBACK_FILENAME), PathBuf::from),
-        }
+        Metadata { length: self.length, filename: self.file_path.file_name_or_fallback() }
     }
 
     pub async fn fetch_all(&mut self) -> Result<ByteStream> {
@@ -57,11 +52,11 @@ impl Fetcher {
     }
 
     pub async fn fetch_bytes(&mut self, start: u64, end: u64) -> Result<ByteStream> {
-        let reader = self
-            .operator
-            .reader(&self.file_path.to_string_lossy())
+        self.operator
+            .reader_with(&self.file_path.to_string_lossy())
+            .range(start..=end)
             .await
-            .context(error::CreateReaderSnafu)?;
-        Ok(ByteStream::new(reader, start, end))
+            .map(ByteStream::from)
+            .context(error::CreateReaderSnafu)
     }
 }

@@ -1,6 +1,7 @@
 use std::{future::Future, path::Path, pin::Pin, sync::Arc, time::Duration};
 
-use caracal_engine::{DownloaderFactory, NewTask};
+use caracal_base::model;
+use caracal_engine::DownloaderFactory;
 use futures::{FutureExt, StreamExt};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use sigfinn::{ExitStatus, LifecycleManager};
@@ -20,7 +21,7 @@ enum Event {
 pub async fn run<P>(
     uris: Vec<http::Uri>,
     output_directory: Option<P>,
-    worker_number: Option<u16>,
+    concurrent_number: Option<u16>,
     connection_timeout: Option<Duration>,
     downloader_factory: DownloaderFactory,
 ) -> Result<(), Error>
@@ -53,12 +54,14 @@ where
     let lifecycle_manager = LifecycleManager::<Error>::new();
 
     for (idx, uri) in uris.into_iter().enumerate() {
-        let task = NewTask {
+        let task = model::CreateTask {
             uri,
-            directory_path: output_directory.clone(),
+            output_directory: Some(output_directory.clone()),
             filename: None,
-            worker_number: worker_number.map(u64::from),
+            concurrent_number: concurrent_number.map(u64::from),
             connection_timeout,
+            priority: model::Priority::Normal,
+            creation_timestamp: time::OffsetDateTime::now_utc(),
         };
 
         let progress_bar = multi_progress.add(ProgressBar::new(0));
@@ -74,7 +77,7 @@ where
 }
 
 fn create_task_future(
-    task: NewTask,
+    task: model::CreateTask,
     factory: Arc<DownloaderFactory>,
     progress_bar: ProgressBar,
 ) -> impl FnOnce(sigfinn::Shutdown) -> Pin<Box<dyn Future<Output = ExitStatus<Error>> + Send>> {
@@ -114,14 +117,14 @@ fn create_task_future(
                         break;
                     }
                     Event::UpdateProgress => {
-                        if let Some(progress) = downloader.progress().await {
+                        if let Some(progress) = downloader.scrape_status().await {
                             progress_bar.set_position(progress.total_received());
                             progress_bar.set_length(progress.content_length());
                             progress_bar.set_message(format!(
                                 "{}/{} {}",
                                 progress.completed_chunk_count(),
                                 progress.total_chunk_count(),
-                                progress.filename()
+                                progress.filename().display()
                             ));
                             if progress.is_completed() {
                                 break;
@@ -141,7 +144,7 @@ fn create_task_future(
                         "{}/{} {}",
                         progress.completed_chunk_count(),
                         progress.total_chunk_count(),
-                        progress.filename()
+                        progress.filename().display()
                     ));
                     sigfinn::ExitStatus::Success
                 }

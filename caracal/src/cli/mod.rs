@@ -1,24 +1,24 @@
 mod standalone;
+mod ui;
 
-use std::{collections::HashMap, io::Write, path::PathBuf, time::Duration};
+use std::{io::Write, path::PathBuf, time::Duration};
 
-use caracal_base::profile::{minio::MinioAlias, ssh::SshConfig};
-use caracal_cli::{
-    profile,
-    profile::{Profile, ProfileItem},
-};
-use caracal_engine::DownloaderFactory;
+use caracal_base::{model, model::Priority};
+use caracal_engine::{DownloaderFactory, MINIMUM_CHUNK_SIZE};
+use caracal_grpc_client as grpc;
+use caracal_grpc_client::Task as _;
 use clap::{CommandFactory, Parser, Subcommand};
+use grpc::System;
 use snafu::ResultExt;
+use time::OffsetDateTime;
 use tokio::runtime::Runtime;
 
 use crate::{
-    config::Config,
-    error::{self, Error},
+    config::{self, Config},
+    error,
+    error::Error,
     shadow,
 };
-
-const MINIMUM_CHUNK_SIZE: u64 = 100 * 1024;
 
 #[derive(Parser)]
 #[command(
@@ -58,7 +58,7 @@ pub struct Cli {
     )]
     concurrent_connections: Option<u16>,
 
-    #[arg(long = "timeout", short = 'T', help = "Set the network timeout to seconds")]
+    #[arg(long = "timeout", short = 'T', help = "Set the network timeout in second")]
     connection_timeout: Option<u64>,
 
     uris: Vec<http::Uri>,
@@ -74,6 +74,81 @@ pub enum Commands {
 
     #[clap(about = "Output default configuration")]
     DefaultConfig,
+
+    #[clap(about = "Add URI to daemon")]
+    AddUri {
+        #[arg(long = "pause", help = "Add new URI but not start immediately")]
+        pause: bool,
+
+        #[arg(
+            long = "priority",
+            default_value = "normal",
+            help = "Set the priority, available values: \"lowest\", \"low\", \"normal\", \
+                    \"high\", \"highest\""
+        )]
+        priority: Priority,
+
+        #[arg(
+            long = "output-directory",
+            short = 'D',
+            help = "The directory to store the downloaded files"
+        )]
+        output_directory: Option<PathBuf>,
+
+        #[arg(
+            long = "num-connections",
+            short = 'n',
+            help = "Specify an alternative number of connections"
+        )]
+        concurrent_connections: Option<u16>,
+
+        #[arg(long = "timeout", short = 'T', help = "Set the network timeout in second")]
+        connection_timeout: Option<u64>,
+
+        uris: Vec<http::Uri>,
+    },
+
+    #[clap(about = "Get status of all tasks")]
+    Status {
+        #[arg(help = "Task ID")]
+        id: Option<u64>,
+    },
+
+    #[clap(about = "Pause tasks")]
+    Pause {
+        #[arg(long = "all", short = 'a', help = "Pause all tasks")]
+        all: bool,
+
+        #[arg(help = "Task ID")]
+        ids: Vec<u64>,
+    },
+
+    #[clap(about = "Resume tasks")]
+    Resume {
+        #[arg(long = "all", short = 'a', help = "Resume all tasks")]
+        all: bool,
+
+        #[arg(help = "Task ID")]
+        ids: Vec<u64>,
+    },
+
+    #[clap(about = "Remove tasks")]
+    Remove {
+        #[arg(help = "Task ID")]
+        ids: Vec<u64>,
+    },
+
+    #[clap(about = "Increase concurrent number of tasks")]
+    IncreaseConcurrentNumber {
+        #[arg(help = "Task ID")]
+        ids: Vec<u64>,
+    },
+
+    #[clap(about = "Decrease concurrent number of tasks")]
+    DecreaseConcurrentNumber {
+        #[arg(help = "Task ID")]
+        ids: Vec<u64>,
+    },
 }
 
 impl Default for Cli {
@@ -81,6 +156,7 @@ impl Default for Cli {
 }
 
 impl Cli {
+    #[allow(clippy::too_many_lines)]
     pub fn run(self) -> Result<(), Error> {
         let Self {
             commands,
@@ -93,12 +169,6 @@ impl Cli {
         } = self;
 
         match commands {
-            Some(Commands::Version) => {
-                std::io::stdout()
-                    .write_all(Self::command().render_long_version().as_bytes())
-                    .expect("Failed to write to stdout");
-                return Ok(());
-            }
             Some(Commands::Completions { shell }) => {
                 let mut app = Self::command();
                 let bin_name = app.get_name().to_string();
@@ -125,41 +195,143 @@ impl Cli {
 
         Runtime::new().context(error::InitializeTokioRuntimeSnafu)?.block_on(async move {
             match commands {
-                None => {
-                    let mut minio_aliases = HashMap::new();
-                    let mut ssh_servers = HashMap::new();
-                    for profile_file in config.profile_files() {
-                        for profile_item in Profile::load(profile_file).await?.profiles {
-                            match profile_item {
-                                ProfileItem::Ssh(profile::Ssh {
-                                    name,
-                                    endpoint,
-                                    user,
-                                    identity_file,
-                                }) => {
-                                    let config = SshConfig {
-                                        endpoint,
-                                        user,
-                                        identity_file: identity_file.to_string_lossy().to_string(),
-                                    };
-                                    drop(ssh_servers.insert(name, config));
-                                }
-                                ProfileItem::Minio(profile::Minio {
-                                    name,
-                                    endpoint_url,
-                                    access_key,
-                                    secret_key,
-                                }) => {
-                                    let alias = MinioAlias { endpoint_url, access_key, secret_key };
-                                    drop(minio_aliases.insert(name, alias));
-                                }
-                            }
+                Some(Commands::Completions { .. } | Commands::DefaultConfig) => {
+                    unreachable!("these commands should be handled previously");
+                }
+                Some(Commands::Version) => {
+                    std::io::stdout()
+                        .write_all(Self::command().render_long_version().as_bytes())
+                        .expect("Failed to write to stdout");
+
+                    if let Ok(client) = create_grpc_client(&config).await {
+                        let client_version =
+                            Self::command().get_version().unwrap_or_default().to_string();
+                        let server_version = client.get_version().await.map_or_else(
+                            |_err| "unknown".to_string(),
+                            |version| version.to_string(),
+                        );
+                        let info = format!(
+                            "Client:\n\tVersion: {client_version}\n\nServer:\n\tVersion: \
+                             {server_version}\n",
+                        );
+                        std::io::stdout()
+                            .write_all(info.as_bytes())
+                            .expect("Failed to write to stdout");
+
+                        drop(client);
+                    }
+                    Ok(())
+                }
+                Some(Commands::AddUri {
+                    pause,
+                    priority,
+                    output_directory,
+                    connection_timeout,
+                    concurrent_connections,
+                    uris,
+                }) => {
+                    let output_directory = if let Some(path) = output_directory {
+                        tokio::fs::canonicalize(path).await.ok()
+                    } else {
+                        None
+                    };
+                    let start_immediately = !pause;
+                    let client = create_grpc_client(&config).await?;
+                    for uri in uris {
+                        let create_task = model::CreateTask {
+                            uri,
+                            filename: None,
+                            output_directory: output_directory.clone(),
+                            connection_timeout: connection_timeout.map(Duration::from_secs),
+                            concurrent_number: concurrent_connections.map(u64::from),
+                            priority,
+                            creation_timestamp: OffsetDateTime::now_utc(),
+                        };
+                        let task_id = client.add_uri(create_task, start_immediately).await?;
+                        println!("{task_id}");
+                    }
+                    drop(client);
+                    Ok(())
+                }
+                Some(Commands::Status { id }) => {
+                    let client = create_grpc_client(&config).await?;
+                    let mut task_statuses = if let Some(id) = id {
+                        vec![client.get_task_status(id).await?]
+                    } else {
+                        client.get_all_task_statuses().await?
+                    };
+                    task_statuses.sort_unstable_by_key(|status| status.id);
+                    println!("{table}", table = ui::render_task_statuses_table(&task_statuses));
+                    drop(client);
+                    Ok(())
+                }
+                Some(Commands::Pause { ids, all }) => {
+                    let client = create_grpc_client(&config).await?;
+                    let task_ids = if all {
+                        client.pause_all().await?
+                    } else {
+                        for &id in &ids {
+                            let _ = client.pause(id).await?;
                         }
+                        ids
+                    };
+                    for task_id in task_ids {
+                        println!("{task_id} is paused");
+                    }
+                    drop(client);
+                    Ok(())
+                }
+                Some(Commands::Resume { ids, all }) => {
+                    let client = create_grpc_client(&config).await?;
+                    let task_ids = if all {
+                        client.resume_all().await?
+                    } else {
+                        for &id in &ids {
+                            let _ = client.resume(id).await?;
+                        }
+                        ids
+                    };
+                    for id in task_ids {
+                        println!("{id} is resumed");
+                    }
+                    drop(client);
+                    Ok(())
+                }
+                Some(Commands::Remove { ids }) => {
+                    let client = create_grpc_client(&config).await?;
+                    for &id in &ids {
+                        let _ = client.remove(id).await?;
+                    }
+                    for id in ids {
+                        println!("{id} is removed");
+                    }
+                    drop(client);
+                    Ok(())
+                }
+                Some(Commands::IncreaseConcurrentNumber { ids }) => {
+                    let client = create_grpc_client(&config).await?;
+                    for &id in &ids {
+                        let _ = client.increase_concurrent_number(id).await?;
+                    }
+                    drop(client);
+                    Ok(())
+                }
+                Some(Commands::DecreaseConcurrentNumber { ids }) => {
+                    let client = create_grpc_client(&config).await?;
+                    for &id in &ids {
+                        let _ = client.decrease_concurrent_number(id).await?;
                     }
 
+                    drop(client);
+                    Ok(())
+                }
+                None => {
+                    let config::Profiles { ssh_servers, minio_aliases } =
+                        config.load_profiles().await.context(error::ConfigSnafu)?;
                     let downloader_factory = DownloaderFactory::builder()
+                        .context(error::BuildDownloaderFactorySnafu)?
                         .http_user_agent(config.downloader.http.user_agent)
-                        .default_worker_number(u64::from(
+                        .default_concurrent_number(u64::from(
                             config.downloader.http.concurrent_connections,
                         ))
                         .minimum_chunk_size(MINIMUM_CHUNK_SIZE)
@@ -177,10 +349,15 @@ impl Cli {
                     )
                     .await
                 }
-                _ => unreachable!(),
             }
         })
     }
+}
+
+async fn create_grpc_client(config: &Config) -> Result<grpc::Client, Error> {
+    let server_endpoint = config.daemon.server_endpoint.clone();
+    let access_token = config.daemon.access_token();
+    Ok(grpc::Client::new(server_endpoint, access_token).await?)
 }
 
 #[cfg(test)]

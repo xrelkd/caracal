@@ -1,0 +1,33 @@
+[package]
+name                 = "caracal-proto"
+description          = "Caracal protobuf"
+version.workspace    = true
+authors.workspace    = true
+homepage.workspace   = true
+readme.workspace     = true
+repository.workspace = true
+license.workspace    = true
+edition.workspace    = true
+categories.workspace = true
+keywords.workspace   = true
+
+[dependencies]
+prost       = "0.12"
+prost-types = "0.12"
+tonic       = { version = "0.10", features = ["gzip"] }
+
+mime  = "0.3"
+snafu = "0.7"
+time  = { version = "0.3", features = ["formatting", "macros"] }
+
+caracal-base = { path = "../base" }
+
+[build-dependencies]
+tonic-build = { version = "0.10", default-features = false, features = [
+  "prost",
+  "transport",
+] }
+prost-build = "0.12"
+
+[lints]
+workspace = true

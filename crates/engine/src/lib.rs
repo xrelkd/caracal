@@ -4,10 +4,10 @@ mod downloader;
 mod error;
 mod ext;
 mod fetcher;
-mod progress;
+mod task_scheduler;
 
 pub use self::{
-    downloader::{Downloader, DownloaderFactory, NewTask},
+    downloader::{Downloader, DownloaderFactory, DownloaderStatus, MINIMUM_CHUNK_SIZE},
     error::Error,
-    progress::Progress,
+    task_scheduler::TaskScheduler,
 };

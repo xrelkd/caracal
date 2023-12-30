@@ -1,7 +1,15 @@
-use core::fmt;
-use std::{collections::HashMap, path::PathBuf, time::Duration};
+use std::{
+    collections::HashMap,
+    fmt,
+    path::{Path, PathBuf},
+    sync::{atomic::AtomicBool, Arc},
+    time::Duration,
+};
 
-use caracal_base::profile::{minio::MinioAlias, ssh::SshConfig};
+use caracal_base::{
+    model,
+    profile::{minio::MinioAlias, ssh::SshConfig},
+};
 use futures::{future, FutureExt};
 use snafu::{OptionExt, ResultExt};
 use tokio::fs::OpenOptions;
@@ -16,7 +24,9 @@ use crate::{
 
 #[derive(Clone, Debug)]
 pub struct Builder {
-    pub default_worker_number: u64,
+    pub default_concurrent_number: u64,
+
+    pub default_output_directory_path: PathBuf,
 
     pub http_user_agent: Option<String>,
 
@@ -30,10 +40,30 @@ pub struct Builder {
 }
 
 impl Builder {
-    pub fn new() -> Self { Self::default() }
+    /// # Errors
+    pub fn new() -> Result<Self, Error> {
+        Ok(Self {
+            default_concurrent_number: 5,
+            default_output_directory_path: std::env::current_dir()
+                .context(error::GetCurrentDirectorySnafu)?,
+            http_user_agent: None,
+            minimum_chunk_size: 100 * 1024,
+            minio_aliases: HashMap::new(),
+            ssh_servers: HashMap::new(),
+            connection_timeout: Duration::from_secs(60),
+        })
+    }
 
-    pub const fn default_worker_number(mut self, default_worker_number: u64) -> Self {
-        self.default_worker_number = default_worker_number;
+    pub const fn default_concurrent_number(mut self, default_concurrent_number: u64) -> Self {
+        self.default_concurrent_number = default_concurrent_number;
+        self
+    }
+
+    pub fn default_output_directory_path<P>(mut self, default_output_directory_path: P) -> Self
+    where
+        P: AsRef<Path>,
+    {
+        self.default_output_directory_path = default_output_directory_path.as_ref().to_path_buf();
         self
     }
 
@@ -68,7 +98,8 @@ impl Builder {
     pub fn build(self) -> Result<Factory, Error> {
         let Self {
             http_user_agent,
-            default_worker_number,
+            default_output_directory_path,
+            default_concurrent_number,
             minio_aliases,
             ssh_servers,
             minimum_chunk_size,
@@ -85,7 +116,8 @@ impl Builder {
 
         Ok(Factory {
             http_client,
-            default_worker_number,
+            default_output_directory_path,
+            default_concurrent_number,
             minimum_chunk_size,
             minio_aliases,
             ssh_servers,
@@ -94,24 +126,13 @@ impl Builder {
     }
 }
 
-impl Default for Builder {
-    fn default() -> Self {
-        Self {
-            default_worker_number: 5,
-            http_user_agent: None,
-            minimum_chunk_size: 100 * 1024,
-            minio_aliases: HashMap::new(),
-            ssh_servers: HashMap::new(),
-            connection_timeout: Duration::from_secs(60),
-        }
-    }
-}
-
 #[derive(Clone, Debug)]
 pub struct Factory {
     http_client: reqwest::Client,
 
-    default_worker_number: u64,
+    default_output_directory_path: PathBuf,
+
+    default_concurrent_number: u64,
 
     minimum_chunk_size: u64,
 
@@ -123,12 +144,12 @@ pub struct Factory {
 }
 
 impl Factory {
+    /// # Errors
     #[inline]
-    #[must_use]
-    pub fn builder() -> Builder { Builder::default() }
+    pub fn builder() -> Result<Builder, Error> { Builder::new() }
 
     /// # Errors
-    pub async fn create_new_task(&self, new_task: &NewTask) -> Result<Downloader, Error> {
+    pub async fn create_new_task(&self, new_task: &model::CreateTask) -> Result<Downloader, Error> {
         let source = {
             let source_fut = self.create_fetcher(new_task).boxed();
             let timeout =
@@ -143,36 +164,14 @@ impl Factory {
         };
 
         let metadata = source.fetch_metadata();
-        if metadata.length == 0 {
-            let filename =
-                new_task.filename.clone().unwrap_or_else(|| new_task.uri.guess_filename());
-            let full_path = [&new_task.directory_path, &filename].into_iter().collect::<PathBuf>();
-            if tokio::fs::try_exists(&full_path).await.unwrap_or(false) {
-                return Err(Error::DestinationFileExists { file_path: full_path.clone() });
-            }
-            let sink = OpenOptions::new()
-                .create(true)
-                .write(true)
-                .open(&full_path)
-                .await
-                .with_context(|_| error::CreateFileSnafu { file_path: filename.clone() })?;
-            sink.set_len(0)
-                .await
-                .with_context(|_| error::ResizeFileSnafu { file_path: filename.clone() })?;
-            let transfer_status = TransferStatus::unknown_length();
-            Ok(Downloader {
-                use_simple: true,
-                worker_number: 1,
-                transfer_status,
-                sink,
-                source,
-                uri: new_task.uri.clone(),
-                filename: full_path,
-                handle: None,
-            })
-        } else {
+        if source.supports_range_request() {
             let filename = new_task.filename.clone().unwrap_or_else(|| metadata.filename.clone());
-            let full_path = [&new_task.directory_path, &filename].into_iter().collect::<PathBuf>();
+            let full_path = [
+                new_task.output_directory.as_ref().unwrap_or(&self.default_output_directory_path),
+                &filename,
+            ]
+            .into_iter()
+            .collect::<PathBuf>();
             if tokio::fs::try_exists(&full_path).await.unwrap_or(false)
                 && !tokio::fs::try_exists(ControlFile::file_path(&full_path)).await.unwrap_or(false)
             {
@@ -192,27 +191,69 @@ impl Factory {
             let (chunk_size, worker_number) = if metadata.length <= self.minimum_chunk_size {
                 (metadata.length, 1)
             } else {
-                let worker_number = new_task.worker_number.unwrap_or(self.default_worker_number);
-                let worker_number =
-                    if worker_number == 0 { self.default_worker_number } else { worker_number };
-                (metadata.length / worker_number, worker_number)
+                let concurrent_number =
+                    new_task.concurrent_number.unwrap_or(self.default_concurrent_number);
+                let concurrent_number = if concurrent_number == 0 {
+                    self.default_concurrent_number
+                } else {
+                    concurrent_number
+                };
+                (metadata.length / concurrent_number, concurrent_number)
             };
+
             let transfer_status = TransferStatus::new(metadata.length, chunk_size)?;
 
             Ok(Downloader {
-                use_simple: false,
+                use_single_worker: false,
                 worker_number,
                 transfer_status,
                 sink,
                 source,
                 uri: new_task.uri.clone(),
-                filename: full_path,
+                file_path: full_path,
                 handle: None,
+                is_completed: Arc::new(AtomicBool::new(false)),
+            })
+        } else {
+            let filename =
+                new_task.filename.clone().unwrap_or_else(|| new_task.uri.guess_filename());
+            let full_path = [
+                new_task.output_directory.as_ref().unwrap_or(&self.default_output_directory_path),
+                &filename,
+            ]
+            .into_iter()
+            .collect::<PathBuf>();
+            if tokio::fs::try_exists(&full_path).await.unwrap_or(false) {
+                return Err(Error::DestinationFileExists { file_path: full_path.clone() });
+            }
+
+            let sink = OpenOptions::new()
+                .create(true)
+                .write(true)
+                .open(&full_path)
+                .await
+                .with_context(|_| error::CreateFileSnafu { file_path: filename.clone() })?;
+            sink.set_len(0)
+                .await
+                .with_context(|_| error::ResizeFileSnafu { file_path: filename.clone() })?;
+
+            let transfer_status = TransferStatus::unknown_length();
+
+            Ok(Downloader {
+                use_single_worker: true,
+                worker_number: 1,
+                transfer_status,
+                sink,
+                source,
+                uri: new_task.uri.clone(),
+                file_path: full_path,
+                handle: None,
+                is_completed: Arc::new(AtomicBool::new(false)),
             })
         }
     }
 
-    async fn create_fetcher(&self, new_task: &NewTask) -> Result<Fetcher, Error> {
+    async fn create_fetcher(&self, new_task: &model::CreateTask) -> Result<Fetcher, Error> {
         match new_task.uri.scheme_str() {
             Some("file") | None => Fetcher::new_file(new_task.uri.path()).await,
             Some("http" | "https") => {
@@ -250,17 +291,4 @@ impl Factory {
             Some(scheme) => Err(Error::UnsupportedScheme { scheme: scheme.to_string() }),
         }
     }
-}
-
-#[derive(Clone, Debug)]
-pub struct NewTask {
-    pub uri: http::Uri,
-
-    pub filename: Option<PathBuf>,
-
-    pub directory_path: PathBuf,
-
-    pub worker_number: Option<u64>,
-
-    pub connection_timeout: Option<Duration>,
 }

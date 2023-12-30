@@ -20,6 +20,9 @@ pub enum Error {
     #[snafu(display("Error occurs while interacting with server, error: {error}"))]
     Operation { error: String },
 
+    #[snafu(display("Error occurs while building DownloaderFactory, error: {source}"))]
+    BuildDownloaderFactory { source: caracal_engine::Error },
+
     #[snafu(display("Error occurs while initializing downloader factory, error: {source}"))]
     InitializeDownloader { source: caracal_engine::Error },
 
@@ -30,12 +33,82 @@ pub enum Error {
     LifecycleManager { source: sigfinn::Error },
 
     #[snafu(display("{source}"))]
-    Profile { source: caracal_cli::profile::Error },
+    Config {
+        #[snafu(source(from(crate::config::Error, Box::new)))]
+        source: Box<crate::config::Error>,
+    },
+
+    #[snafu(display("{source}"))]
+    Client { source: caracal_grpc_client::Error },
 
     #[snafu(display("No URI is provided"))]
     NoUri,
 }
 
-impl From<caracal_cli::profile::Error> for Error {
-    fn from(source: caracal_cli::profile::Error) -> Self { Self::Profile { source } }
+impl From<crate::config::Error> for Error {
+    fn from(source: crate::config::Error) -> Self { Self::Config { source: Box::new(source) } }
+}
+
+impl From<caracal_grpc_client::Error> for Error {
+    fn from(source: caracal_grpc_client::Error) -> Self { Self::Client { source } }
+}
+
+impl From<caracal_grpc_client::error::AddUriError> for Error {
+    fn from(error: caracal_grpc_client::error::AddUriError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
+impl From<caracal_grpc_client::error::PauseTaskError> for Error {
+    fn from(error: caracal_grpc_client::error::PauseTaskError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
+impl From<caracal_grpc_client::error::PauseAllTasksError> for Error {
+    fn from(error: caracal_grpc_client::error::PauseAllTasksError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
+impl From<caracal_grpc_client::error::ResumeTaskError> for Error {
+    fn from(error: caracal_grpc_client::error::ResumeTaskError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
+impl From<caracal_grpc_client::error::ResumeAllTasksError> for Error {
+    fn from(error: caracal_grpc_client::error::ResumeAllTasksError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
+impl From<caracal_grpc_client::error::RemoveTaskError> for Error {
+    fn from(error: caracal_grpc_client::error::RemoveTaskError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
+impl From<caracal_grpc_client::error::IncreaseConcurrentNumberError> for Error {
+    fn from(error: caracal_grpc_client::error::IncreaseConcurrentNumberError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
+impl From<caracal_grpc_client::error::DecreaseConcurrentNumberError> for Error {
+    fn from(error: caracal_grpc_client::error::DecreaseConcurrentNumberError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
+impl From<caracal_grpc_client::error::GetTaskStatusError> for Error {
+    fn from(error: caracal_grpc_client::error::GetTaskStatusError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
+impl From<caracal_grpc_client::error::GetAllTaskStatusesError> for Error {
+    fn from(error: caracal_grpc_client::error::GetAllTaskStatusesError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
 }

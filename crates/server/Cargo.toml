@@ -1,0 +1,60 @@
+[package]
+name                 = "caracal-server"
+description          = "Caracal server"
+version.workspace    = true
+authors.workspace    = true
+homepage.workspace   = true
+readme.workspace     = true
+repository.workspace = true
+license.workspace    = true
+edition.workspace    = true
+categories.workspace = true
+keywords.workspace   = true
+
+[dependencies]
+tracing = "0.1"
+
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+async-trait = "0.1"
+futures = "0.3"
+sigfinn = "0.2"
+tokio = { version = "1", features = [
+  "fs",
+  "macros",
+  "rt-multi-thread",
+  "sync",
+] }
+tokio-stream = { version = "0.1", features = ["net"] }
+
+tonic = { version = "0.10", features = ["gzip"] }
+
+http = "1"
+
+zbus = { version = "3", default-features = false, features = ["tokio"] }
+
+hex = "0.4"
+humansize = "2"
+lazy_static = "1"
+mime = "0.3"
+notify-rust = "4"
+parking_lot = "0.12"
+prometheus = "0.13"
+regex = "1"
+semver = "1"
+snafu = "0.7"
+time = { version = "0.3", features = [
+  "formatting",
+  "macros",
+  "parsing",
+  "serde",
+] }
+
+caracal-base    = { path = "../base" }
+caracal-engine  = { path = "../engine" }
+caracal-metrics = { path = "../metrics" }
+caracal-proto   = { path = "../proto" }
+
+[lints]
+workspace = true

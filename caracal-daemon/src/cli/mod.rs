@@ -49,20 +49,18 @@ impl Default for Cli {
 
 impl Cli {
     pub fn run(self) -> Result<(), Error> {
-        let Self { commands, log_level, config_file } = self;
-
-        match commands {
+        match self.commands {
             Some(Commands::Version) => {
                 std::io::stdout()
                     .write_all(Self::command().render_long_version().as_bytes())
                     .expect("Failed to write to stdout");
-                return Ok(());
+                Ok(())
             }
             Some(Commands::Completions { shell }) => {
                 let mut app = Self::command();
                 let bin_name = app.get_name().to_string();
                 clap_complete::generate(shell, &mut app, bin_name, &mut std::io::stdout());
-                return Ok(());
+                Ok(())
             }
             Some(Commands::DefaultConfig) => {
                 let config_text =
@@ -70,28 +68,44 @@ impl Cli {
                 std::io::stdout()
                     .write_all(config_text.as_bytes())
                     .expect("Failed to write to stdout");
-                return Ok(());
+                Ok(())
             }
-            _ => {}
+            None => {
+                let config = self.load_config();
+                run_daemon(config)
+            }
         }
+    }
 
-        let mut config = Config::load_or_default(config_file.unwrap_or_else(Config::default_path));
-        if let Some(log_level) = log_level {
+    fn load_config(&self) -> Config {
+        let mut config =
+            Config::load_or_default(self.config_file.clone().unwrap_or_else(Config::default_path));
+        if let Some(log_level) = self.log_level {
             config.log.level = log_level;
         }
-
-        config.log.registry();
-
-        Runtime::new().context(error::InitializeTokioRuntimeSnafu)?.block_on(async move {
-            match commands {
-                None => serve().await,
-                _ => unreachable!(),
-            }
-        })
+        config
     }
 }
 
-pub async fn serve() -> Result<(), Error> { std::future::ready(Ok(())).await }
+pub fn run_daemon(config: Config) -> Result<(), Error> {
+    config.log.registry();
+
+    Runtime::new().context(error::InitializeTokioRuntimeSnafu)?.block_on(async move {
+        tracing::info!(
+            "Starting {} {}",
+            caracal_base::DAEMON_PROGRAM_NAME,
+            caracal_base::PROJECT_VERSION
+        );
+        let config = config.into_server_config().await?;
+        caracal_server::serve_with_shutdown(config).await?;
+        tracing::info!(
+            "Stopped {} {}",
+            caracal_base::DAEMON_PROGRAM_NAME,
+            caracal_base::PROJECT_VERSION
+        );
+        Ok(())
+    })
+}
 
 #[cfg(test)]
 mod tests {

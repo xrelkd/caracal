@@ -49,7 +49,7 @@ impl LogConfig {
 
     #[inline]
     #[must_use]
-    pub const fn default_emit_journald() -> bool { false }
+    pub const fn default_emit_journald() -> bool { true }
 
     #[inline]
     #[must_use]
@@ -83,9 +83,8 @@ enum LogDriver {
 }
 
 impl LogDriver {
-    /// # Panics
-    #[allow(clippy::option_if_let_else, clippy::type_repetition_in_bounds)]
-    fn layer<S>(self) -> Box<dyn Layer<S> + Send + Sync + 'static>
+    #[allow(clippy::type_repetition_in_bounds)]
+    fn layer<S>(self) -> Option<Box<dyn Layer<S> + Send + Sync + 'static>>
     where
         S: tracing::Subscriber,
         for<'a> S: LookupSpan<'a>,
@@ -96,23 +95,16 @@ impl LogDriver {
 
         // Configure the writer based on the desired log target:
         match self {
-            Self::Stdout => Box::new(fmt.with_writer(std::io::stdout)),
-            Self::Stderr => Box::new(fmt.with_writer(std::io::stderr)),
+            Self::Stdout => Some(Box::new(fmt.with_writer(std::io::stdout))),
+            Self::Stderr => Some(Box::new(fmt.with_writer(std::io::stderr))),
             Self::File(path) => {
-                let file = OpenOptions::new()
-                    .create(true)
-                    .write(true)
-                    .append(true)
-                    .open(path)
-                    .expect("failed to create log file");
-                Box::new(fmt.with_writer(file))
+                let file =
+                    OpenOptions::new().create(true).write(true).append(true).open(path).ok()?;
+                Some(Box::new(fmt.with_writer(file)))
             }
             Self::Journald => {
-                if let Ok(journald) = tracing_journald::layer() {
-                    Box::new(journald)
-                } else {
-                    Box::new(fmt.with_writer(std::io::stdout))
-                }
+                let journald = tracing_journald::layer().ok()?;
+                Some(Box::new(journald))
             }
         }
     }

@@ -2,10 +2,19 @@ mod chunk;
 mod control_file;
 mod factory;
 mod progress_updater;
+mod status;
 mod transfer_status;
 mod worker;
 
-use std::{collections::HashMap, io::SeekFrom, path::PathBuf, sync::Arc};
+use std::{
+    collections::HashMap,
+    io::SeekFrom,
+    path::PathBuf,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+};
 
 use futures::future;
 use snafu::ResultExt;
@@ -17,8 +26,9 @@ use tokio::{
 };
 
 pub use self::{
-    chunk::Chunk,
-    factory::{Factory as DownloaderFactory, NewTask},
+    chunk::{Chunk, MINIMUM_CHUNK_SIZE},
+    factory::Factory as DownloaderFactory,
+    status::DownloaderStatus,
     transfer_status::TransferStatus,
 };
 use self::{
@@ -26,53 +36,56 @@ use self::{
     progress_updater::ProgressUpdater,
     worker::{Worker, WorkerEvent},
 };
-use crate::{error, error::Error, fetcher::Fetcher, Progress};
+use crate::{error, error::Error, fetcher::Fetcher};
 
 type DownloaderHandle = Option<(mpsc::UnboundedSender<Event>, JoinHandle<Result<Summary, Error>>)>;
 
 pub struct Downloader {
-    use_simple: bool,
+    use_single_worker: bool,
     worker_number: u64,
     transfer_status: TransferStatus,
     sink: File,
     source: Fetcher,
     uri: http::Uri,
-    filename: PathBuf,
+    file_path: PathBuf,
     handle: DownloaderHandle,
+    is_completed: Arc<AtomicBool>,
 }
 
 impl Downloader {
     /// # Errors
     pub async fn start(&mut self) -> Result<(), Error> {
-        if self.handle.is_none() {
+        if self.handle.is_none() && !self.is_completed.load(Ordering::Relaxed) {
             let sink_cloned = self.sink.try_clone().await.with_context(|_| {
-                error::CloneFileInstanceSnafu { file_path: self.filename.clone() }
+                error::CloneFileInstanceSnafu { file_path: self.file_path.clone() }
             })?;
             let (event_sender, event_receiver) = mpsc::unbounded_channel::<Event>();
-            let join_handle = if self.use_simple {
-                tokio::spawn(Self::serve_simple(
+            let join_handle = if self.use_single_worker {
+                tokio::spawn(Self::serve_with_single_worker(
                     self.transfer_status.clone(),
                     sink_cloned,
                     self.source.clone(),
-                    self.filename.clone(),
+                    self.file_path.clone(),
                     event_receiver,
+                    self.is_completed.clone(),
                 ))
             } else {
                 let (control_file, transfer_status) =
-                    ControlFile::new(&self.filename, self.uri.clone()).await?;
+                    ControlFile::new(&self.file_path, self.uri.clone()).await?;
                 if let Some(transfer_status) = transfer_status {
                     self.transfer_status = transfer_status;
                 }
-                tokio::spawn(Self::serve(
-                    self.worker_number,
-                    self.transfer_status.clone(),
-                    Arc::new(Mutex::new(sink_cloned)),
-                    self.source.clone(),
-                    self.filename.clone(),
-                    event_sender.clone(),
+                tokio::spawn(Self::serve_with_multiple_workers(ServeWithMultipleWorkerOptions {
+                    worker_number: self.worker_number,
+                    transfer_status: self.transfer_status.clone(),
+                    sink: Arc::new(Mutex::new(sink_cloned)),
+                    source: self.source.clone(),
+                    file_path: self.file_path.clone(),
+                    event_sender: event_sender.clone(),
                     event_receiver,
                     control_file,
-                ))
+                    is_completed: self.is_completed.clone(),
+                }))
             };
             self.handle = Some((event_sender, join_handle));
         }
@@ -100,35 +113,30 @@ impl Downloader {
     pub async fn resume(&mut self) -> Result<(), Error> { self.start().await }
 
     /// # Errors
-    pub async fn join(mut self) -> Result<Option<(TransferStatus, Progress)>, Error> {
+    pub async fn join(mut self) -> Result<Option<(TransferStatus, DownloaderStatus)>, Error> {
         if let Some((_event_sender, join_handle)) = self.handle.take() {
             let transfer_status = match join_handle.await.context(error::JoinTaskSnafu)?? {
                 Summary::Completed { transfer_status } | Summary::Partial { transfer_status } => {
                     transfer_status
                 }
             };
-            let mut progress = Progress::from(transfer_status.clone());
-            progress.set_filename(self.filename.file_name().map_or_else(
-                || caracal_base::FALLBACK_FILENAME,
-                |s| s.to_str().unwrap_or(caracal_base::FALLBACK_FILENAME),
-            ));
+            let mut progress = DownloaderStatus::from(transfer_status.clone());
+            progress.set_file_path(&self.file_path);
             Ok(Some((transfer_status, progress)))
         } else {
             Ok(None)
         }
     }
 
-    pub async fn progress(&self) -> Option<Progress> {
+    pub async fn scrape_status(&self) -> Option<DownloaderStatus> {
         if let Some((event_sender, _join_handle)) = self.handle.as_ref() {
             let (send, recv) = oneshot::channel();
-            drop(event_sender.send(Event::GetProgress(send)));
+            drop(event_sender.send(Event::GetStatus(send)));
             recv.await
                 .map(|status| {
-                    let mut progress = Progress::from(status);
-                    progress.set_filename(self.filename.file_name().map_or_else(
-                        || caracal_base::FALLBACK_FILENAME,
-                        |s| s.to_str().unwrap_or(caracal_base::FALLBACK_FILENAME),
-                    ));
+                    self.is_completed.store(status.is_completed(), Ordering::Relaxed);
+                    let mut progress = DownloaderStatus::from(status);
+                    progress.set_file_path(&self.file_path);
                     progress
                 })
                 .ok()
@@ -136,6 +144,8 @@ impl Downloader {
             None
         }
     }
+
+    pub fn is_completed(&self) -> bool { self.is_completed.load(Ordering::Relaxed) }
 
     pub fn add_worker(&self) {
         if let Some((event_sender, _join_handle)) = self.handle.as_ref() {
@@ -149,12 +159,13 @@ impl Downloader {
         }
     }
 
-    async fn serve_simple(
+    async fn serve_with_single_worker(
         mut transfer_status: TransferStatus,
         mut sink: File,
         mut source: Fetcher,
         file_path: PathBuf,
         mut event_receiver: mpsc::UnboundedReceiver<Event>,
+        is_completed: Arc<AtomicBool>,
     ) -> Result<Summary, Error> {
         let mut stream = source.fetch_all().await?;
         let _ = sink
@@ -186,6 +197,7 @@ impl Downloader {
                     if let Err(err) = sink.sync_all().await {
                         tracing::warn!("Error occurs while synchronizing file, error: {err}");
                     }
+                    is_completed.store(true, Ordering::Relaxed);
                     transfer_status.mark_chunk_completed(0);
                     summary = Summary::Completed { transfer_status };
                     break;
@@ -194,7 +206,7 @@ impl Downloader {
                     tracing::warn!("{err}");
                     break;
                 }
-                future::Either::Right((Some(Event::GetProgress(sender)), _)) => {
+                future::Either::Right((Some(Event::GetStatus(sender)), _)) => {
                     drop(sender.send(transfer_status.clone()));
                 }
                 future::Either::Right((Some(Event::Stop), _)) => {
@@ -208,16 +220,19 @@ impl Downloader {
         Ok(summary)
     }
 
-    #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
-    async fn serve(
-        worker_number: u64,
-        mut transfer_status: TransferStatus,
-        sink: Arc<Mutex<File>>,
-        source: Fetcher,
-        file_path: PathBuf,
-        event_sender: mpsc::UnboundedSender<Event>,
-        mut event_receiver: mpsc::UnboundedReceiver<Event>,
-        mut control_file: ControlFile,
+    #[allow(clippy::too_many_lines)]
+    async fn serve_with_multiple_workers(
+        ServeWithMultipleWorkerOptions {
+            worker_number,
+            mut transfer_status,
+            sink,
+            source,
+            file_path,
+            event_sender,
+            mut event_receiver,
+            mut control_file,
+            is_completed,
+        }: ServeWithMultipleWorkerOptions,
     ) -> Result<Summary, Error> {
         tracing::debug!("Start downloader with {worker_number} connection(s)");
         let (chunk_sender, chunk_receiver) = async_channel::unbounded::<Chunk>();
@@ -244,6 +259,7 @@ impl Downloader {
         for chunk in transfer_status.chunks() {
             drop(chunk_sender.send(chunk).await);
         }
+        transfer_status.update_concurrent_number(worker_event_senders.len());
 
         let mut next_worker_id = worker_number;
         let mut chunk_to_worker = HashMap::new();
@@ -253,12 +269,14 @@ impl Downloader {
             match event {
                 Event::ChunkTransferStarted { worker_id, chunk_start } => {
                     let _unused = chunk_to_worker.insert(chunk_start, worker_id);
+                    transfer_status.update_concurrent_number(worker_event_senders.len());
                 }
                 Event::ChunkTransferCompleted { chunk_start, worker_id: _worker_id } => {
                     let _unused = chunk_to_worker.remove(&chunk_start);
                     transfer_status.mark_chunk_completed(chunk_start);
 
                     if transfer_status.is_completed() {
+                        is_completed.store(true, Ordering::Relaxed);
                         summary = Summary::Completed { transfer_status };
                         control_file.remove().await;
                         break;
@@ -272,7 +290,7 @@ impl Downloader {
                 } => {
                     transfer_status.update_progress(start, received);
                 }
-                Event::GetProgress(sender) => drop(sender.send(transfer_status.clone())),
+                Event::GetStatus(sender) => drop(sender.send(transfer_status.clone())),
                 Event::Stop => {
                     control_file.update_progress(&transfer_status).await?;
                     control_file.flush().await?;
@@ -311,11 +329,12 @@ impl Downloader {
                         let _ = chunk_sender.send(new_chunk).await;
                         let _ = chunk_sender.send(origin_chunk).await;
                     }
+                    transfer_status.update_concurrent_number(worker_event_senders.len());
                 }
                 Event::RemoveWorker => {
                     if let Some((origin_chunk, new_chunk)) = transfer_status.freeze() {
                         if let Some(worker_id) = chunk_to_worker.get(&origin_chunk.start) {
-                            if let Some(worker) = worker_event_senders.get(worker_id) {
+                            if let Some(worker) = worker_event_senders.remove(worker_id) {
                                 let (sender, wait) = oneshot::channel();
                                 drop(worker.send(WorkerEvent::Remove(sender)));
                                 let _ = wait.await;
@@ -323,6 +342,7 @@ impl Downloader {
                         }
                         let _ = chunk_sender.send(new_chunk).await;
                     }
+                    transfer_status.update_concurrent_number(worker_event_senders.len());
                 }
             }
         }
@@ -356,9 +376,21 @@ impl Downloader {
     }
 }
 
+struct ServeWithMultipleWorkerOptions {
+    worker_number: u64,
+    transfer_status: TransferStatus,
+    sink: Arc<Mutex<File>>,
+    source: Fetcher,
+    file_path: PathBuf,
+    event_sender: mpsc::UnboundedSender<Event>,
+    event_receiver: mpsc::UnboundedReceiver<Event>,
+    control_file: ControlFile,
+    is_completed: Arc<AtomicBool>,
+}
+
 enum Event {
     Stop,
-    GetProgress(oneshot::Sender<TransferStatus>),
+    GetStatus(oneshot::Sender<TransferStatus>),
     AddWorker,
     RemoveWorker,
     UpdateChunkTranserProgress { worker_id: u64, start: u64, end: u64, received: u64 },
