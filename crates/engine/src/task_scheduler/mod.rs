@@ -175,7 +175,7 @@ impl TaskScheduler {
 
     /// # Errors
     pub fn increase_concurrent_number(&self, task_id: u64) -> Result<()> {
-        if self.event_sender.send(Event::IncreaseWorkerNumber { task_id }).is_err() {
+        if self.event_sender.send(Event::IncreaseConcurrentNumber { task_id }).is_err() {
             return Err(Error::TaskSchedulerClosed);
         }
         Ok(())
@@ -183,7 +183,7 @@ impl TaskScheduler {
 
     /// # Errors
     pub fn decrease_concurrent_number(&self, task_id: u64) -> Result<()> {
-        if self.event_sender.send(Event::DecreaseWorkerNumber { task_id }).is_err() {
+        if self.event_sender.send(Event::DecreaseConcurrentNumber { task_id }).is_err() {
             return Err(Error::TaskSchedulerClosed);
         }
         Ok(())
