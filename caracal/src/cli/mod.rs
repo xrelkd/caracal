@@ -137,6 +137,18 @@ pub enum Commands {
         #[arg(help = "Task ID")]
         ids: Vec<u64>,
     },
+
+    #[clap(about = "Increase concurrent number of tasks")]
+    IncreaseConcurrentNumber {
+        #[arg(help = "Task ID")]
+        ids: Vec<u64>,
+    },
+
+    #[clap(about = "Decrease concurrent number of tasks")]
+    DecreaseConcurrentNumber {
+        #[arg(help = "Task ID")]
+        ids: Vec<u64>,
+    },
 }
 
 impl Default for Cli {
@@ -293,6 +305,23 @@ impl Cli {
                     for id in ids {
                         println!("{id} is removed");
                     }
+                    drop(client);
+                    Ok(())
+                }
+                Some(Commands::IncreaseConcurrentNumber { ids }) => {
+                    let client = create_grpc_client(&config).await?;
+                    for &id in &ids {
+                        let _ = client.increase_concurrent_number(id).await?;
+                    }
+                    drop(client);
+                    Ok(())
+                }
+                Some(Commands::DecreaseConcurrentNumber { ids }) => {
+                    let client = create_grpc_client(&config).await?;
+                    for &id in &ids {
+                        let _ = client.decrease_concurrent_number(id).await?;
+                    }
+
                     drop(client);
                     Ok(())
                 }
