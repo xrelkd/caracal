@@ -15,6 +15,10 @@ service Task {
   rpc Resume(ResumeTaskRequest) returns (ResumeTaskResponse);
   rpc ResumeAll(google.protobuf.Empty) returns (ResumeAllTasksResponse);
   rpc Remove(RemoveTaskRequest) returns (RemoveTaskResponse);
+  rpc IncreaseConcurrentNumber(IncreaseConcurrentNumberRequest)
+      returns (IncreaseConcurrentNumberResponse);
+  rpc DecreaseConcurrentNumber(DecreaseConcurrentNumberRequest)
+      returns (DecreaseConcurrentNumberResponse);
 }
 
 enum Priority {
@@ -86,3 +90,9 @@ message GetTaskStatusRequest { uint64 task_id = 1; }
 message GetTaskStatusResponse { TaskStatus status = 1; }
 
 message GetAllTaskStatusesResponse { repeated TaskStatus statuses = 1; }
+
+message IncreaseConcurrentNumberRequest { uint64 task_id = 1; }
+message IncreaseConcurrentNumberResponse { bool ok = 1; }
+
+message DecreaseConcurrentNumberRequest { uint64 task_id = 1; }
+message DecreaseConcurrentNumberResponse { bool ok = 1; }
