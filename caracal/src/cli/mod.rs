@@ -243,11 +243,12 @@ impl Cli {
                 }
                 Some(Commands::Status { id }) => {
                     let client = create_grpc_client(&config).await?;
-                    let task_statuses = if let Some(id) = id {
+                    let mut task_statuses = if let Some(id) = id {
                         vec![client.get_task_status(id).await?]
                     } else {
                         client.get_all_task_statuses().await?
                     };
+                    task_statuses.sort_unstable_by_key(|status| status.id);
                     println!("{table}", table = ui::render_task_statuses_table(&task_statuses));
                     drop(client);
                     Ok(())
