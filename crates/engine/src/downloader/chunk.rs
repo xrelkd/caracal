@@ -1,6 +1,6 @@
 use caracal_base::model;
 
-const MINIMUM_NEW_CHUNK_SIZE: u64 = 128;
+pub const MINIMUM_CHUNK_SIZE: u64 = 100 * 1024;
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Chunk {
@@ -30,7 +30,7 @@ impl Chunk {
             None
         } else {
             let len = self.remaining() / 2;
-            if len <= MINIMUM_NEW_CHUNK_SIZE {
+            if len <= MINIMUM_CHUNK_SIZE {
                 None
             } else {
                 let new_chunk = Self {
@@ -72,28 +72,33 @@ impl From<Chunk> for model::ProgressChunk {
 mod tests {
     use super::Chunk;
 
+    const KB: u64 = 1024;
+
     #[test]
     fn test_split() {
-        let len = 2048;
+        let len = 2048 * KB;
         let mut origin_chunk = Chunk { start: 0, end: len - 1, received: 0, is_completed: false };
         assert_eq!(len, origin_chunk.len());
         let new_chunk = origin_chunk.split().unwrap();
         assert_eq!(
             new_chunk,
-            Chunk { start: 1024, end: len - 1, received: 0, is_completed: false }
+            Chunk { start: 1024 * KB, end: len - 1, received: 0, is_completed: false }
         );
         assert_eq!(len, origin_chunk.len() + new_chunk.len());
-        assert_eq!(1024, origin_chunk.len());
-        assert_eq!(1024, new_chunk.len());
+        assert_eq!(1024 * KB, origin_chunk.len());
+        assert_eq!(1024 * KB, new_chunk.len());
 
-        let len = 1001;
+        let len = 1000 * KB + 1;
         let mut origin_chunk = Chunk { start: 0, end: len - 1, received: 0, is_completed: false };
         assert_eq!(len, origin_chunk.len());
         let new_chunk = origin_chunk.split().unwrap();
-        assert_eq!(new_chunk, Chunk { start: 500, end: 1000, received: 0, is_completed: false });
+        assert_eq!(
+            new_chunk,
+            Chunk { start: 500 * KB, end: 1000 * KB, received: 0, is_completed: false }
+        );
         assert_eq!(len, origin_chunk.len() + new_chunk.len());
-        assert_eq!(500, origin_chunk.len());
-        assert_eq!(501, new_chunk.len());
+        assert_eq!(500 * KB, origin_chunk.len());
+        assert_eq!(500 * KB + 1, new_chunk.len());
     }
 
     #[test]

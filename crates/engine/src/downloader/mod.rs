@@ -26,7 +26,9 @@ use tokio::{
 };
 
 pub use self::{
-    chunk::Chunk, factory::Factory as DownloaderFactory, status::DownloaderStatus,
+    chunk::{Chunk, MINIMUM_CHUNK_SIZE},
+    factory::Factory as DownloaderFactory,
+    status::DownloaderStatus,
     transfer_status::TransferStatus,
 };
 use self::{
