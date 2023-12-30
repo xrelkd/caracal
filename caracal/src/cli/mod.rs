@@ -4,7 +4,7 @@ mod ui;
 use std::{io::Write, path::PathBuf, time::Duration};
 
 use caracal_base::{model, model::Priority};
-use caracal_engine::DownloaderFactory;
+use caracal_engine::{DownloaderFactory, MINIMUM_CHUNK_SIZE};
 use caracal_grpc_client as grpc;
 use caracal_grpc_client::Task as _;
 use clap::{CommandFactory, Parser, Subcommand};
@@ -19,8 +19,6 @@ use crate::{
     error::Error,
     shadow,
 };
-
-const MINIMUM_CHUNK_SIZE: u64 = 100 * 1024;
 
 #[derive(Parser)]
 #[command(
