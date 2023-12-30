@@ -12,7 +12,7 @@
     <a href="https://github.com/xrelkd/caracal/blob/master/LICENSE"><img alt="GitHub License" src="https://img.shields.io/github/license/xrelkd/caracal"></a>
 </p>
 
-**[Installation](#installation) | [Usage](#usage) | [Configuration](#configuration)**
+**[Installation](#installation) | [Usage](#usage) | [Configuration](#configuration)| [Container](#container)**
 
 <details>
 <summary>Table of contents</summary>
@@ -21,6 +21,7 @@
 - [Installation](#installation)
 - [Usage](#usage)
 - [Configuration](#configuration)
+- [Container](#container)
 - [License](#license)
 
 </details>
@@ -362,6 +363,86 @@ endpoint      = "my-ssh-server2"
 user          = "user"
 identity_file = "/path/to/ssh/key2"
 ```
+
+</details>
+
+## Container
+
+Container images are available on [GitHub Packages](https://github.com/xrelkd/caracal/pkgs/container/caracal).
+
+- Run `caracal-daemon` with `Docker`
+
+```bash
+docker pull ghcr.io/xrelkd/caracal:latest
+docker run -d ghcr.io/xrelkd/caracal:latest
+```
+
+<details>
+<summary>Run with <b>Docker Compose</b></summary>
+
+We use `Docker Compose` to configurate `caracal-daemon` service.
+
+1. Create `docker-compose.yaml` and `caracal-daemon.toml` with the following contents.
+
+- `docker-compose.yaml`
+
+```yaml
+services:
+  caracal:
+    image: ghcr.io/xrelkd/caracal:latest
+    ports:
+      - "127.0.0.1:37000:37000"
+      - "127.0.0.1:37002:37002"
+    volumes:
+      - ${PWD}/caracal-daemon.toml:/etc/caracal/caracal-daemon.toml
+      - downloads:/downloads
+    entrypoint: ["caracal-daemon", "--config=/etc/caracal/caracal-daemon.toml"]
+
+volumes:
+  downloads:
+```
+
+- `caracal-daemon.toml`
+
+```toml
+profile_files = []
+
+[log]
+# systemd-journald is not available in container, disable it
+emit_journald = false
+# Emit log message to stdout.
+emit_stdout   = true
+emit_stderr   = false
+level         = "INFO"
+
+[task_scheduler]
+concurrent_number = 10
+
+[downloader]
+# Set default output directory to `/downloads`.
+default_output_directory = "/downloads"
+
+[downloader.http]
+user_agent             = "Caracal/0.2.0"
+concurrent_connections = 5
+
+[grpc]
+enable_http         = true
+# Disable local socket because we only interact with the daemon via HTTP.
+enable_local_socket = false
+host                = "0.0.0.0"
+port                = 37000
+
+[metrics]
+enable = true
+host   = "0.0.0.0"
+port   = 37002
+```
+
+2. Run `docker compose up` to start the container.
+3. Run `caracal add-uri https://www.rust-lang.org/` to create a new task, the downloaded file is placed on `/downloads` in the container.
+4. Run `caracal status` to display the status of tasks.
+5. Run `docker compose down` to stop the container.
 
 </details>
 
