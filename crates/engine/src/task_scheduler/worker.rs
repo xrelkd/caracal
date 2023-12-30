@@ -7,7 +7,6 @@ use std::{
 use caracal_base::model;
 use futures::{future, FutureExt};
 use tokio::sync::{mpsc, oneshot};
-use uuid::Uuid;
 
 use crate::{
     downloader::DownloaderFactory, ext::UriExt, task_scheduler::Event, Downloader, DownloaderStatus,
@@ -33,6 +32,7 @@ impl Worker {
             factory,
             event_sender: event_sender.clone(),
             max_concurrent_task_number,
+            next_task_id: 0,
             tasks: HashMap::new(),
             pending_tasks: BinaryHeap::new(),
             downloaders: HashMap::new(),
@@ -138,21 +138,22 @@ struct PendingTask {
 
     pub timestamp: Reverse<time::OffsetDateTime>,
 
-    pub task_id: Uuid,
+    pub task_id: u64,
 }
 
 struct EventHandler {
     factory: DownloaderFactory,
     event_sender: mpsc::UnboundedSender<Event>,
     max_concurrent_task_number: usize,
-    tasks: HashMap<Uuid, model::CreateTask>,
+    next_task_id: u64,
+    tasks: HashMap<u64, model::CreateTask>,
     pending_tasks: BinaryHeap<PendingTask>,
-    downloaders: HashMap<Uuid, Downloader>,
-    completed_tasks: HashSet<Uuid>,
-    failed_tasks: HashSet<Uuid>,
-    paused_tasks: HashSet<Uuid>,
-    canceled_tasks: HashSet<Uuid>,
-    download_progresses: HashMap<Uuid, DownloaderStatus>,
+    downloaders: HashMap<u64, Downloader>,
+    completed_tasks: HashSet<u64>,
+    failed_tasks: HashSet<u64>,
+    paused_tasks: HashSet<u64>,
+    canceled_tasks: HashSet<u64>,
+    download_progresses: HashMap<u64, DownloaderStatus>,
 }
 
 impl EventHandler {
@@ -229,10 +230,10 @@ impl EventHandler {
         &mut self,
         new_task: model::CreateTask,
         start_immediately: bool,
-        sender: oneshot::Sender<Uuid>,
+        sender: oneshot::Sender<u64>,
     ) {
         let (task_id, priority, timestamp) =
-            (Uuid::new_v4(), new_task.priority, Reverse(new_task.creation_timestamp));
+            (self.next_task_id(), new_task.priority, Reverse(new_task.creation_timestamp));
 
         tracing::info!(
             "Added new task {task_id}, URI: {uri}, start immediately: {start_immediately}",
@@ -253,7 +254,7 @@ impl EventHandler {
         let _ = sender.send(task_id);
     }
 
-    async fn remove_task(&mut self, task_id: Uuid, sender: oneshot::Sender<Option<Uuid>>) {
+    async fn remove_task(&mut self, task_id: u64, sender: oneshot::Sender<Option<u64>>) {
         let task_id = if let Some(mut downloader) = self.downloaders.remove(&task_id) {
             tracing::info!("Removing task {task_id}");
 
@@ -273,7 +274,7 @@ impl EventHandler {
         let _ = sender.send(task_id);
     }
 
-    async fn pause_task(&mut self, task_id: Uuid, sender: oneshot::Sender<Option<Uuid>>) {
+    async fn pause_task(&mut self, task_id: u64, sender: oneshot::Sender<Option<u64>>) {
         let task_id = if let Some(mut downloader) = self.downloaders.remove(&task_id) {
             tracing::info!("Pausing task {task_id}");
 
@@ -315,7 +316,7 @@ impl EventHandler {
         tracing::info!("Paused all tasks");
     }
 
-    fn resume_task(&mut self, task_id: Uuid, sender: oneshot::Sender<Option<Uuid>>) {
+    fn resume_task(&mut self, task_id: u64, sender: oneshot::Sender<Option<u64>>) {
         tracing::info!("Resuming task {task_id}");
         let task_id = if self.paused_tasks.remove(&task_id) {
             let model::CreateTask { priority, creation_timestamp, .. } =
@@ -348,54 +349,54 @@ impl EventHandler {
     }
 
     #[inline]
-    fn get_all_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
+    fn get_all_tasks(&self, sender: oneshot::Sender<Vec<u64>>) {
         drop(sender.send(self.tasks.keys().copied().collect()));
     }
 
     #[inline]
-    fn get_pending_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
+    fn get_pending_tasks(&self, sender: oneshot::Sender<Vec<u64>>) {
         drop(sender.send(self.pending_tasks.iter().map(|task| task.task_id).collect()));
     }
 
     #[inline]
-    fn get_downloading_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
+    fn get_downloading_tasks(&self, sender: oneshot::Sender<Vec<u64>>) {
         drop(sender.send(self.downloaders.keys().copied().collect()));
     }
 
     #[inline]
-    fn get_canceled_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
+    fn get_canceled_tasks(&self, sender: oneshot::Sender<Vec<u64>>) {
         drop(sender.send(self.canceled_tasks.iter().copied().collect()));
     }
 
     #[inline]
-    fn get_paused_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
+    fn get_paused_tasks(&self, sender: oneshot::Sender<Vec<u64>>) {
         drop(sender.send(self.paused_tasks.iter().copied().collect()));
     }
 
     #[inline]
-    fn get_completed_tasks(&self, sender: oneshot::Sender<Vec<Uuid>>) {
+    fn get_completed_tasks(&self, sender: oneshot::Sender<Vec<u64>>) {
         drop(sender.send(self.completed_tasks.iter().copied().collect()));
     }
 
-    fn get_task_status_inner(&self, task_id: &Uuid) -> Option<model::TaskStatus> {
-        self.tasks.get(task_id).and_then(|task| {
-            let state = if self.canceled_tasks.contains(task_id) {
+    fn get_task_status_inner(&self, id: u64) -> Option<model::TaskStatus> {
+        self.tasks.get(&id).and_then(|task| {
+            let state = if self.canceled_tasks.contains(&id) {
                 model::TaskState::Canceled
-            } else if self.downloaders.contains_key(task_id) {
+            } else if self.downloaders.contains_key(&id) {
                 model::TaskState::Downloading
-            } else if self.completed_tasks.contains(task_id) {
+            } else if self.completed_tasks.contains(&id) {
                 model::TaskState::Completed
-            } else if self.paused_tasks.contains(task_id) {
+            } else if self.paused_tasks.contains(&id) {
                 model::TaskState::Paused
-            } else if self.failed_tasks.contains(task_id) {
+            } else if self.failed_tasks.contains(&id) {
                 model::TaskState::Failed
             } else {
                 model::TaskState::Pending
             };
 
-            self.download_progresses.get(task_id).cloned().map(
-                |downloader_status: DownloaderStatus| model::TaskStatus {
-                    id: *task_id,
+            self.download_progresses.get(&id).cloned().map(|downloader_status: DownloaderStatus| {
+                model::TaskStatus {
+                    id,
                     content_length: downloader_status.content_length(),
                     chunks: downloader_status.chunks(),
                     concurrent_number: downloader_status.concurrent_number(),
@@ -403,24 +404,24 @@ impl EventHandler {
                     state,
                     priority: task.priority,
                     creation_timestamp: task.creation_timestamp,
-                },
-            )
+                }
+            })
         })
     }
 
     #[inline]
-    fn get_task_status(&self, task_id: Uuid, sender: oneshot::Sender<Option<model::TaskStatus>>) {
-        drop(sender.send(self.get_task_status_inner(&task_id)));
+    fn get_task_status(&self, task_id: u64, sender: oneshot::Sender<Option<model::TaskStatus>>) {
+        drop(sender.send(self.get_task_status_inner(task_id)));
     }
 
     #[inline]
     fn get_all_task_statuses(&self, sender: oneshot::Sender<Vec<model::TaskStatus>>) {
         let task_statuses =
-            self.tasks.keys().filter_map(|id| self.get_task_status_inner(id)).collect();
+            self.tasks.keys().filter_map(|&id| self.get_task_status_inner(id)).collect();
         drop(sender.send(task_statuses));
     }
 
-    async fn on_task_completed(&mut self, task_id: Uuid) {
+    async fn on_task_completed(&mut self, task_id: u64) {
         tracing::info!("Completed task {task_id}");
         if let Some(downloader) = self.downloaders.remove(&task_id) {
             match downloader.join().await {
@@ -443,16 +444,22 @@ impl EventHandler {
     }
 
     #[inline]
-    fn increase_worker_number(&mut self, task_id: Uuid) {
+    fn increase_worker_number(&mut self, task_id: u64) {
         if let Some(downloader) = self.downloaders.get(&task_id) {
             downloader.add_worker();
         }
     }
 
     #[inline]
-    fn decrease_worker_number(&mut self, task_id: Uuid) {
+    fn decrease_worker_number(&mut self, task_id: u64) {
         if let Some(downloader) = self.downloaders.get(&task_id) {
             downloader.remove_worker();
         }
+    }
+
+    fn next_task_id(&mut self) -> u64 {
+        let id = self.next_task_id;
+        self.next_task_id += 1;
+        id
     }
 }

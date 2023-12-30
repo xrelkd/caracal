@@ -4,7 +4,6 @@ use async_trait::async_trait;
 use caracal_base::model;
 use caracal_proto as proto;
 use tonic::Request;
-use uuid::Uuid;
 
 use crate::{
     error::{
@@ -20,20 +19,19 @@ pub trait Task {
         &self,
         create_task: model::CreateTask,
         start_immediately: bool,
-    ) -> Result<Uuid, AddUriError>;
+    ) -> Result<u64, AddUriError>;
 
-    async fn pause(&self, task_id: Uuid) -> Result<bool, PauseTaskError>;
+    async fn pause(&self, task_id: u64) -> Result<bool, PauseTaskError>;
 
-    async fn resume(&self, task_id: Uuid) -> Result<bool, ResumeTaskError>;
+    async fn resume(&self, task_id: u64) -> Result<bool, ResumeTaskError>;
 
-    async fn remove(&self, task_id: Uuid) -> Result<bool, RemoveTaskError>;
+    async fn remove(&self, task_id: u64) -> Result<bool, RemoveTaskError>;
 
-    async fn pause_all(&self) -> Result<Vec<Uuid>, PauseAllTasksError>;
+    async fn pause_all(&self) -> Result<Vec<u64>, PauseAllTasksError>;
 
-    async fn resume_all(&self) -> Result<Vec<Uuid>, ResumeAllTasksError>;
+    async fn resume_all(&self) -> Result<Vec<u64>, ResumeAllTasksError>;
 
-    async fn get_task_status(&self, task_id: Uuid)
-        -> Result<model::TaskStatus, GetTaskStatusError>;
+    async fn get_task_status(&self, task_id: u64) -> Result<model::TaskStatus, GetTaskStatusError>;
 
     async fn get_all_task_statuses(
         &self,
@@ -54,7 +52,7 @@ impl Task for Client {
             ..
         }: model::CreateTask,
         start_immediately: bool,
-    ) -> Result<Uuid, AddUriError> {
+    ) -> Result<u64, AddUriError> {
         let proto::AddUriResponse { task_id } =
             proto::TaskClient::with_interceptor(self.channel.clone(), self.interceptor.clone())
                 .add_uri(Request::new(proto::AddUriRequest {
@@ -70,47 +68,40 @@ impl Task for Client {
                 .map_err(|source| AddUriError::Status { source })?
                 .into_inner();
 
-        Uuid::try_from(task_id.ok_or(AddUriError::InvalidResponse)?)
-            .map_err(|_| AddUriError::InvalidResponse)
+        Ok(task_id)
     }
 
-    async fn pause(&self, task_id: Uuid) -> Result<bool, PauseTaskError> {
+    async fn pause(&self, task_id: u64) -> Result<bool, PauseTaskError> {
         let proto::PauseTaskResponse { ok } =
             proto::TaskClient::with_interceptor(self.channel.clone(), self.interceptor.clone())
-                .pause(Request::new(proto::PauseTaskRequest {
-                    task_id: Some(proto::Uuid::from(task_id)),
-                }))
+                .pause(Request::new(proto::PauseTaskRequest { task_id }))
                 .await
                 .map_err(|source| PauseTaskError::Status { source })?
                 .into_inner();
         Ok(ok)
     }
 
-    async fn resume(&self, task_id: Uuid) -> Result<bool, ResumeTaskError> {
+    async fn resume(&self, task_id: u64) -> Result<bool, ResumeTaskError> {
         let proto::ResumeTaskResponse { ok } =
             proto::TaskClient::with_interceptor(self.channel.clone(), self.interceptor.clone())
-                .resume(Request::new(proto::ResumeTaskRequest {
-                    task_id: Some(proto::Uuid::from(task_id)),
-                }))
+                .resume(Request::new(proto::ResumeTaskRequest { task_id }))
                 .await
                 .map_err(|source| ResumeTaskError::Status { source })?
                 .into_inner();
         Ok(ok)
     }
 
-    async fn remove(&self, task_id: Uuid) -> Result<bool, RemoveTaskError> {
+    async fn remove(&self, task_id: u64) -> Result<bool, RemoveTaskError> {
         let proto::RemoveTaskResponse { ok } =
             proto::TaskClient::with_interceptor(self.channel.clone(), self.interceptor.clone())
-                .remove(Request::new(proto::RemoveTaskRequest {
-                    task_id: Some(proto::Uuid::from(task_id)),
-                }))
+                .remove(Request::new(proto::RemoveTaskRequest { task_id }))
                 .await
                 .map_err(|source| RemoveTaskError::Status { source })?
                 .into_inner();
         Ok(ok)
     }
 
-    async fn pause_all(&self) -> Result<Vec<Uuid>, PauseAllTasksError> {
+    async fn pause_all(&self) -> Result<Vec<u64>, PauseAllTasksError> {
         let proto::PauseAllTasksResponse { task_ids } =
             proto::TaskClient::with_interceptor(self.channel.clone(), self.interceptor.clone())
                 .pause_all(Request::new(()))
@@ -118,13 +109,10 @@ impl Task for Client {
                 .map_err(|source| PauseAllTasksError::Status { source })?
                 .into_inner();
 
-        task_ids
-            .into_iter()
-            .map(|task_id| Uuid::try_from(task_id).map_err(|_| PauseAllTasksError::InvalidResponse))
-            .collect::<Result<Vec<_>, _>>()
+        Ok(task_ids)
     }
 
-    async fn resume_all(&self) -> Result<Vec<Uuid>, ResumeAllTasksError> {
+    async fn resume_all(&self) -> Result<Vec<u64>, ResumeAllTasksError> {
         let proto::ResumeAllTasksResponse { task_ids } =
             proto::TaskClient::with_interceptor(self.channel.clone(), self.interceptor.clone())
                 .resume_all(Request::new(()))
@@ -132,23 +120,13 @@ impl Task for Client {
                 .map_err(|source| ResumeAllTasksError::Status { source })?
                 .into_inner();
 
-        task_ids
-            .into_iter()
-            .map(|task_id| {
-                Uuid::try_from(task_id).map_err(|_| ResumeAllTasksError::InvalidResponse)
-            })
-            .collect::<Result<Vec<_>, _>>()
+        Ok(task_ids)
     }
 
-    async fn get_task_status(
-        &self,
-        task_id: Uuid,
-    ) -> Result<model::TaskStatus, GetTaskStatusError> {
+    async fn get_task_status(&self, task_id: u64) -> Result<model::TaskStatus, GetTaskStatusError> {
         let proto::GetTaskStatusResponse { status } =
             proto::TaskClient::with_interceptor(self.channel.clone(), self.interceptor.clone())
-                .get_task_status(Request::new(proto::GetTaskStatusRequest {
-                    task_id: Some(proto::Uuid::from(task_id)),
-                }))
+                .get_task_status(Request::new(proto::GetTaskStatusRequest { task_id }))
                 .await
                 .map_err(|source| GetTaskStatusError::Status { source })?
                 .into_inner();
@@ -156,8 +134,6 @@ impl Task for Client {
             status.ok_or(GetTaskStatusError::InvalidResponse)?;
         let proto::TaskMetadata { id, file_path, priority, creation_timestamp, .. } =
             metadata.ok_or(GetTaskStatusError::InvalidResponse)?;
-        let id = Uuid::try_from(id.ok_or(GetTaskStatusError::InvalidResponse)?)
-            .map_err(|_| GetTaskStatusError::InvalidResponse)?;
         let creation_timestamp = creation_timestamp.ok_or(GetTaskStatusError::InvalidResponse)?;
 
         Ok(model::TaskStatus {
@@ -193,8 +169,6 @@ impl Task for Client {
         {
             let proto::TaskMetadata { id, file_path, priority, creation_timestamp, .. } =
                 metadata.ok_or(GetAllTaskStatusesError::InvalidResponse)?;
-            let id = Uuid::try_from(id.ok_or(GetAllTaskStatusesError::InvalidResponse)?)
-                .map_err(|_| GetAllTaskStatusesError::InvalidResponse)?;
             let creation_timestamp = proto::timestamp_to_datetime(
                 &creation_timestamp.ok_or(GetAllTaskStatusesError::InvalidResponse)?,
             )

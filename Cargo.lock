@@ -520,7 +520,6 @@ dependencies = [
  "tracing",
  "tracing-journald",
  "tracing-subscriber",
- "uuid",
 ]
 
 [[package]]
@@ -536,7 +535,6 @@ dependencies = [
  "serde",
  "snafu",
  "time",
- "uuid",
 ]
 
 [[package]]
@@ -599,7 +597,6 @@ dependencies = [
  "tokio",
  "tracing",
  "urlencoding",
- "uuid",
 ]
 
 [[package]]
@@ -617,7 +614,6 @@ dependencies = [
  "tonic",
  "tower",
  "tracing",
- "uuid",
 ]
 
 [[package]]
@@ -648,7 +644,6 @@ dependencies = [
  "time",
  "tonic",
  "tonic-build",
- "uuid",
 ]
 
 [[package]]
@@ -680,7 +675,6 @@ dependencies = [
  "tokio-stream",
  "tonic",
  "tracing",
- "uuid",
  "zbus",
 ]
 
@@ -1970,9 +1964,9 @@ dependencies = [
 
 [[package]]
 name = "memchr"
-version = "2.6.4"
+version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f665ee40bc4a3c5590afb1e9677db74a508659dfd71e126420da8274909a0167"
+checksum = "523dc4f511e55ab87b694dc30d0f820d60906ef06413f93d4d7a1385599cc149"
 
 [[package]]
 name = "memoffset"
@@ -3149,12 +3143,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sha1_smol"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae1a47186c03a32177042e55dbc5fd5aee900b8e0069a8d70fba96a9375cd012"
-
-[[package]]
 name = "sha2"
 version = "0.10.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3175,7 +3163,7 @@ dependencies = [
  "git2",
  "is_debug",
  "time",
- "tzdb",
+ "tzdb 0.5.10",
 ]
 
 [[package]]
@@ -3877,9 +3865,20 @@ dependencies = [
 
 [[package]]
 name = "tzdb"
-version = "0.5.9"
+version = "0.5.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c76c47aa2434148c4c709d5f5ac44a1de3137da224cb74eb7c0c425cb83f837e"
+checksum = "6a18ee5bde3433d683d41859650804a5ad89cad17f153a53f1e6a96e0da2d969"
+dependencies = [
+ "iana-time-zone",
+ "tz-rs",
+ "tzdb 0.6.0",
+]
+
+[[package]]
+name = "tzdb"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89fa300beb03071a30ac37fe10b27bdd75b4f2f81adf03455b00b1bfb31827a9"
 dependencies = [
  "iana-time-zone",
  "tz-rs",
@@ -3966,7 +3965,6 @@ checksum = "5e395fcf16a7a3d8127ec99782007af141946b4795001f876d54fb0d55978560"
 dependencies = [
  "getrandom",
  "serde",
- "sha1_smol",
 ]
 
 [[package]]
