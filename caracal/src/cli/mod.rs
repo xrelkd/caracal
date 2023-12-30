@@ -8,6 +8,7 @@ use caracal_engine::DownloaderFactory;
 use caracal_grpc_client as grpc;
 use caracal_grpc_client::Task as _;
 use clap::{CommandFactory, Parser, Subcommand};
+use grpc::System;
 use snafu::ResultExt;
 use time::OffsetDateTime;
 use tokio::runtime::Runtime;
@@ -158,12 +159,6 @@ impl Cli {
         } = self;
 
         match commands {
-            Some(Commands::Version) => {
-                std::io::stdout()
-                    .write_all(Self::command().render_long_version().as_bytes())
-                    .expect("Failed to write to stdout");
-                return Ok(());
-            }
             Some(Commands::Completions { shell }) => {
                 let mut app = Self::command();
                 let bin_name = app.get_name().to_string();
@@ -190,10 +185,32 @@ impl Cli {
 
         Runtime::new().context(error::InitializeTokioRuntimeSnafu)?.block_on(async move {
             match commands {
-                Some(
-                    Commands::Version | Commands::Completions { .. } | Commands::DefaultConfig,
-                ) => {
+                Some(Commands::Completions { .. } | Commands::DefaultConfig) => {
                     unreachable!("these commands should be handled previously");
+                }
+                Some(Commands::Version) => {
+                    std::io::stdout()
+                        .write_all(Self::command().render_long_version().as_bytes())
+                        .expect("Failed to write to stdout");
+
+                    if let Ok(client) = create_grpc_client(&config).await {
+                        let client_version =
+                            Self::command().get_version().unwrap_or_default().to_string();
+                        let server_version = client.get_version().await.map_or_else(
+                            |_err| "unknown".to_string(),
+                            |version| version.to_string(),
+                        );
+                        let info = format!(
+                            "Client:\n\tVersion: {client_version}\n\nServer:\n\tVersion: \
+                             {server_version}\n",
+                        );
+                        std::io::stdout()
+                            .write_all(info.as_bytes())
+                            .expect("Failed to write to stdout");
+
+                        drop(client);
+                    }
+                    Ok(())
                 }
                 Some(Commands::AddUri {
                     pause,
@@ -203,11 +220,11 @@ impl Cli {
                     concurrent_connections,
                     uris,
                 }) => {
-                    let client = create_grpc_client(&config).await?;
-                    let start_immediately = !pause;
                     let output_directory = output_directory.clone().unwrap_or(
                         std::env::current_dir().context(error::GetCurrentDirectorySnafu)?,
                     );
+                    let start_immediately = !pause;
+                    let client = create_grpc_client(&config).await?;
                     for uri in uris {
                         let create_task = model::CreateTask {
                             uri,
