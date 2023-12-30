@@ -1,3 +1,5 @@
+use std::time::SystemTime;
+
 use caracal_base::{ext::ProgressChunks, model};
 use comfy_table::{presets::UTF8_FULL, Cell, ContentArrangement, Row, Table, TableComponent};
 
@@ -27,12 +29,12 @@ pub fn render_task_statuses_table(task_statuses: &[model::TaskStatus]) -> String
         };
         let progress_percentage = if total_bytes == 0 {
             if received_bytes == 0 {
-                String::from("0%")
+                String::from("0.00%")
             } else {
-                String::from("100%")
+                String::from("100.00%")
             }
         } else {
-            format!("{}%", (received_bytes as f64 / total_bytes as f64) * 100.0)
+            format!("{:.2}%", (received_bytes as f64 / total_bytes as f64) * 100.0)
         };
         Row::from([
             Cell::new(status.id),
@@ -43,7 +45,9 @@ pub fn render_task_statuses_table(task_statuses: &[model::TaskStatus]) -> String
             Cell::new(progress_percentage),
             Cell::new(status.concurrent_number),
             Cell::new(status.priority),
-            Cell::new(status.creation_timestamp),
+            Cell::new(humantime::format_rfc3339_seconds(SystemTime::from(
+                status.creation_timestamp,
+            ))),
         ])
     });
 
@@ -54,7 +58,8 @@ pub fn build_table() -> Table {
     let mut table = Table::new();
     let _ = table
         .load_preset(UTF8_FULL)
-        .set_style(TableComponent::MiddleHeaderIntersections, '═')
+        .remove_style(TableComponent::HeaderLines)
+        .remove_style(TableComponent::MiddleHeaderIntersections)
         .remove_style(TableComponent::BottomBorder)
         .remove_style(TableComponent::BottomBorderIntersections)
         .remove_style(TableComponent::BottomLeftCorner)

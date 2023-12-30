@@ -113,7 +113,7 @@ where
     let default_output_directory = default_output_directory.as_ref().to_path_buf();
     move |signal| {
         async move {
-            tracing::info!("Listen Caracal gRPC endpoint on {}", local_socket.display());
+            tracing::info!("Listening Caracal gRPC endpoint on {}", local_socket.display());
             if let Some(local_socket_parent) = local_socket.parent() {
                 if let Err(err) = tokio::fs::create_dir_all(&local_socket_parent)
                     .await
@@ -147,11 +147,11 @@ where
             match result {
                 Ok(()) => {
                     tracing::info!(
-                        "Remove Unix domain socket `{path}`",
+                        "Removing Unix domain socket `{path}`",
                         path = local_socket.display()
                     );
                     drop(tokio::fs::remove_file(local_socket).await);
-                    tracing::info!("gRPC local socket server is shut down gracefully");
+                    tracing::info!("Stopped gRPC local socket server gracefully");
                     ExitStatus::Success
                 }
                 Err(err) => ExitStatus::Error(err),
@@ -173,7 +173,7 @@ where
     let default_output_directory = default_output_directory.as_ref().to_path_buf();
     move |signal| {
         async move {
-            tracing::info!("Listen Caracal gRPC endpoint on {listen_address}");
+            tracing::info!("Listening Caracal gRPC endpoint on {listen_address}");
 
             let interceptor = grpc::Interceptor::new(grpc_access_token);
             let result = tonic::transport::Server::builder()
@@ -191,7 +191,7 @@ where
 
             match result {
                 Ok(()) => {
-                    tracing::info!("gRPC HTTP server is shut down gracefully");
+                    tracing::info!("Stopped gRPC HTTP server gracefully");
                     ExitStatus::Success
                 }
                 Err(err) => ExitStatus::Error(err),
@@ -208,8 +208,9 @@ fn create_task_scheduler_future(
     move |shutdown_signal| {
         async move {
             shutdown_signal.await;
+            tracing::info!("Stopping Task scheduler");
             match task_scheduler.shutdown() {
-                Ok(()) => tracing::info!("Task scheduler is shut down gracefully"),
+                Ok(()) => tracing::info!("Stopped Task scheduler gracefully"),
                 Err(err) => tracing::warn!(
                     "Error occurred while shutting down Task scheduler, error: {err}"
                 ),
@@ -231,12 +232,12 @@ where
 {
     move |signal| {
         async move {
-            tracing::info!("Listen metrics endpoint on {listen_address}");
+            tracing::info!("Listening metrics endpoint on {listen_address}");
             let result =
                 caracal_metrics::start_metrics_server(listen_address, metrics, signal).await;
             match result {
                 Ok(()) => {
-                    tracing::info!("Metrics server is shut down gracefully");
+                    tracing::info!("Stopped Metrics server gracefully");
                     ExitStatus::Success
                 }
                 Err(err) => ExitStatus::Error(Error::from(err)),

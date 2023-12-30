@@ -91,8 +91,18 @@ pub fn run_daemon(config: Config) -> Result<(), Error> {
     config.log.registry();
 
     Runtime::new().context(error::InitializeTokioRuntimeSnafu)?.block_on(async move {
+        tracing::info!(
+            "Starting {} {}",
+            caracal_base::DAEMON_PROGRAM_NAME,
+            caracal_base::PROJECT_VERSION
+        );
         let config = config.into_server_config().await?;
         caracal_server::serve_with_shutdown(config).await?;
+        tracing::info!(
+            "Stopped {} {}",
+            caracal_base::DAEMON_PROGRAM_NAME,
+            caracal_base::PROJECT_VERSION
+        );
         Ok(())
     })
 }
