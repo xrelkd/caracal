@@ -237,6 +237,11 @@ profile_files = ["/path/to/profile/file", "/path/to/profile/file2"]
 # Caracal connect to gRPC server via local socket with file path like "/path/to/caracal-daemon/grpc.sock"
 # Caracal connect to gRPC server via HTTP with URI like "http://www.my.server.com/"
 server_endpoint = "/path/to/caracal-daemon/grpc.sock"
+# Access token, remove this line to disable authentication
+access_token    = "my-access-token"
+# File path of access token, remove this line to disable authentication
+# `access_token_file_path` is preferred if both `access_token` and `access_token_file_path` are provided.
+access_token_file_path = "/path/to/access-token"
 
 [log]
 # Emit log to systemd-journald
@@ -295,6 +300,11 @@ port = 37000
 enable_local_socket = true
 # Path of local socket
 local_socket = "/path/to/caracal-daemon/grpc.sock"
+# Access token, remove this line to disable authentication
+access_token    = "my-access-token"
+# File path of access token, remove this line to disable authentication
+# `access_token_file_path` is preferred if both `access_token` and `access_token_file_path` are provided.
+access_token_file_path = "/path/to/access-token"
 
 [metrics]
 # Enable Prometheus metrics
