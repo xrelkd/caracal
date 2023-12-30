@@ -61,7 +61,8 @@ impl Task for Client {
                     concurrent_number,
                     connection_timeout: connection_timeout.map(|t| t.as_secs()),
                     filename: filename.map(|f| f.to_string_lossy().to_string()),
-                    output_directory: Some(output_directory.to_string_lossy().to_string()),
+                    output_directory: output_directory
+                        .map(|path| path.to_string_lossy().to_string()),
                     priority: Some(i32::from(proto::Priority::from(priority))),
                 }))
                 .await
