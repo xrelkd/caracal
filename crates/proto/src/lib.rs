@@ -27,7 +27,6 @@ mod proto {
 }
 
 use caracal_base::model;
-use snafu::ResultExt;
 
 pub use self::{
     proto::{
@@ -38,7 +37,7 @@ pub use self::{
         AddUriRequest, AddUriResponse, Chunk, GetAllTaskStatusesResponse, GetSystemVersionResponse,
         GetTaskStatusRequest, GetTaskStatusResponse, PauseAllTasksResponse, PauseTaskRequest,
         PauseTaskResponse, Priority, RemoveTaskRequest, RemoveTaskResponse, ResumeAllTasksResponse,
-        ResumeTaskRequest, ResumeTaskResponse, TaskMetadata, TaskState, TaskStatus, Uuid,
+        ResumeTaskRequest, ResumeTaskResponse, TaskMetadata, TaskState, TaskStatus,
     },
     utils::{datetime_to_timestamp, timestamp_to_datetime},
 };
@@ -105,18 +104,4 @@ impl From<Chunk> for model::ProgressChunk {
     fn from(Chunk { start, end, received, is_completed }: Chunk) -> Self {
         Self { start, end, received, is_completed }
     }
-}
-
-impl TryFrom<Uuid> for uuid::Uuid {
-    type Error = error::UnexpectedDataFormatError;
-
-    #[inline]
-    fn try_from(Uuid { ref value }: Uuid) -> Result<Self, Self::Error> {
-        Self::from_slice(value).map_err(Box::from).with_context(|_| error::UnexpectedFormatSnafu {})
-    }
-}
-
-impl From<uuid::Uuid> for Uuid {
-    #[inline]
-    fn from(uuid: uuid::Uuid) -> Self { Self { value: uuid.as_u128().to_be_bytes().to_vec() } }
 }
