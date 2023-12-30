@@ -11,7 +11,6 @@ use clap::{CommandFactory, Parser, Subcommand};
 use snafu::ResultExt;
 use time::OffsetDateTime;
 use tokio::runtime::Runtime;
-use uuid::Uuid;
 
 use crate::{
     config::{self, Config},
@@ -113,7 +112,7 @@ pub enum Commands {
     #[clap(about = "Get a status of a specified task")]
     GetTaskStatus {
         #[arg(help = "Task ID")]
-        id: Uuid,
+        id: u64,
     },
 
     #[clap(about = "Get status of all tasks")]
@@ -122,7 +121,7 @@ pub enum Commands {
     #[clap(about = "Pause a task")]
     PauseTask {
         #[arg(help = "Task ID")]
-        id: Uuid,
+        id: u64,
     },
 
     #[clap(about = "Pause all tasks")]
@@ -131,7 +130,7 @@ pub enum Commands {
     #[clap(about = "Resume a task")]
     ResumeTask {
         #[arg(help = "Task ID")]
-        id: Uuid,
+        id: u64,
     },
 
     #[clap(about = "Resume all tasks")]
@@ -140,7 +139,7 @@ pub enum Commands {
     #[clap(about = "Remove a task")]
     RemoveTask {
         #[arg(help = "Task ID")]
-        id: Uuid,
+        id: u64,
     },
 }
 
