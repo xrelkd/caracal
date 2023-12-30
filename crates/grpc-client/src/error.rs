@@ -147,6 +147,36 @@ impl fmt::Display for GetAllTaskStatusesError {
 }
 
 #[derive(Debug)]
+pub enum IncreaseConcurrentNumberError {
+    Status { source: tonic::Status },
+    InvalidResponse,
+}
+
+impl fmt::Display for IncreaseConcurrentNumberError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Status { source } => source.fmt(f),
+            Self::InvalidResponse => f.write_str("invalid response"),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum DecreaseConcurrentNumberError {
+    Status { source: tonic::Status },
+    InvalidResponse,
+}
+
+impl fmt::Display for DecreaseConcurrentNumberError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Status { source } => source.fmt(f),
+            Self::InvalidResponse => f.write_str("invalid response"),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub enum GetSystemVersionError {
     Status { source: tonic::Status },
 }

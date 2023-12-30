@@ -7,8 +7,9 @@ use tonic::Request;
 
 use crate::{
     error::{
-        AddUriError, GetAllTaskStatusesError, GetTaskStatusError, PauseAllTasksError,
-        PauseTaskError, RemoveTaskError, ResumeAllTasksError, ResumeTaskError,
+        AddUriError, DecreaseConcurrentNumberError, GetAllTaskStatusesError, GetTaskStatusError,
+        IncreaseConcurrentNumberError, PauseAllTasksError, PauseTaskError, RemoveTaskError,
+        ResumeAllTasksError, ResumeTaskError,
     },
     Client,
 };
@@ -36,6 +37,16 @@ pub trait Task {
     async fn get_all_task_statuses(
         &self,
     ) -> Result<Vec<model::TaskStatus>, GetAllTaskStatusesError>;
+
+    async fn increase_concurrent_number(
+        &self,
+        task_id: u64,
+    ) -> Result<bool, IncreaseConcurrentNumberError>;
+
+    async fn decrease_concurrent_number(
+        &self,
+        task_id: u64,
+    ) -> Result<bool, DecreaseConcurrentNumberError>;
 }
 
 #[async_trait]
@@ -191,5 +202,35 @@ impl Task for Client {
         }
 
         Ok(ret)
+    }
+
+    async fn increase_concurrent_number(
+        &self,
+        task_id: u64,
+    ) -> Result<bool, IncreaseConcurrentNumberError> {
+        let proto::IncreaseConcurrentNumberResponse { ok } =
+            proto::TaskClient::with_interceptor(self.channel.clone(), self.interceptor.clone())
+                .increase_concurrent_number(Request::new(proto::IncreaseConcurrentNumberRequest {
+                    task_id,
+                }))
+                .await
+                .map_err(|source| IncreaseConcurrentNumberError::Status { source })?
+                .into_inner();
+        Ok(ok)
+    }
+
+    async fn decrease_concurrent_number(
+        &self,
+        task_id: u64,
+    ) -> Result<bool, DecreaseConcurrentNumberError> {
+        let proto::DecreaseConcurrentNumberResponse { ok } =
+            proto::TaskClient::with_interceptor(self.channel.clone(), self.interceptor.clone())
+                .decrease_concurrent_number(Request::new(proto::DecreaseConcurrentNumberRequest {
+                    task_id,
+                }))
+                .await
+                .map_err(|source| DecreaseConcurrentNumberError::Status { source })?
+                .into_inner();
+        Ok(ok)
     }
 }
