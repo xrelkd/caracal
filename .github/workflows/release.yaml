@@ -50,7 +50,7 @@ jobs:
       - name: Install Dependencies
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          sudo apt install -y --no-install-recommends musl-tools protobuf-compiler
+          sudo apt install -y --no-install-recommends musl-tools protobuf-compiler libprotobuf-dev
 
       - name: Install Rust Toolchain Components
         uses: actions-rs/toolchain@v1
