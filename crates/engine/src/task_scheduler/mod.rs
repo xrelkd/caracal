@@ -8,7 +8,6 @@ use tokio::{
     sync::{mpsc, oneshot},
     task::JoinHandle,
 };
-use uuid::Uuid;
 
 pub use self::error::{Error, Result};
 use self::{event::Event, worker::Worker};
@@ -42,7 +41,7 @@ impl TaskScheduler {
         &self,
         new_task: model::CreateTask,
         start_immediately: bool,
-    ) -> Result<Uuid> {
+    ) -> Result<u64> {
         let (sender, receiver) = oneshot::channel();
         if self.event_sender.send(Event::AddUri { new_task, start_immediately, sender }).is_err() {
             return Err(Error::TaskSchedulerClosed);
@@ -52,7 +51,7 @@ impl TaskScheduler {
     }
 
     /// # Errors
-    pub async fn pause_task(&self, task_id: Uuid) -> Result<Option<Uuid>> {
+    pub async fn pause_task(&self, task_id: u64) -> Result<Option<u64>> {
         let (sender, receiver) = oneshot::channel();
         if self.event_sender.send(Event::PauseTask { task_id, sender }).is_err() {
             return Err(Error::TaskSchedulerClosed);
@@ -69,7 +68,7 @@ impl TaskScheduler {
     }
 
     /// # Errors
-    pub async fn resume_task(&self, task_id: Uuid) -> Result<Option<Uuid>> {
+    pub async fn resume_task(&self, task_id: u64) -> Result<Option<u64>> {
         let (sender, receiver) = oneshot::channel();
         if self.event_sender.send(Event::ResumeTask { task_id, sender }).is_err() {
             return Err(Error::TaskSchedulerClosed);
@@ -86,7 +85,7 @@ impl TaskScheduler {
     }
 
     /// # Errors
-    pub async fn remove_task(&self, task_id: Uuid) -> Result<Option<Uuid>> {
+    pub async fn remove_task(&self, task_id: u64) -> Result<Option<u64>> {
         let (sender, receiver) = oneshot::channel();
         if self.event_sender.send(Event::RemoveTask { task_id, sender }).is_err() {
             return Err(Error::TaskSchedulerClosed);
@@ -95,7 +94,7 @@ impl TaskScheduler {
     }
 
     /// # Errors
-    pub async fn get_task_status(&self, task_id: Uuid) -> Result<Option<model::TaskStatus>> {
+    pub async fn get_task_status(&self, task_id: u64) -> Result<Option<model::TaskStatus>> {
         let (sender, receiver) = oneshot::channel();
         if self.event_sender.send(Event::GetTaskStatus { task_id, sender }).is_err() {
             return Err(Error::TaskSchedulerClosed);
@@ -104,7 +103,7 @@ impl TaskScheduler {
     }
 
     /// # Errors
-    pub async fn get_all_tasks(&self) -> Result<Vec<Uuid>> {
+    pub async fn get_all_tasks(&self) -> Result<Vec<u64>> {
         let (sender, receiver) = oneshot::channel();
         if self.event_sender.send(Event::GetAllTasks { sender }).is_err() {
             return Err(Error::TaskSchedulerClosed);
@@ -122,7 +121,7 @@ impl TaskScheduler {
     }
 
     /// # Errors
-    pub async fn get_pending_tasks(&self) -> Result<Vec<Uuid>> {
+    pub async fn get_pending_tasks(&self) -> Result<Vec<u64>> {
         let (sender, receiver) = oneshot::channel();
         if self.event_sender.send(Event::GetPendingTasks { sender }).is_err() {
             return Err(Error::TaskSchedulerClosed);
@@ -131,7 +130,7 @@ impl TaskScheduler {
     }
 
     /// # Errors
-    pub async fn get_downloading_tasks(&self) -> Result<Vec<Uuid>> {
+    pub async fn get_downloading_tasks(&self) -> Result<Vec<u64>> {
         let (sender, receiver) = oneshot::channel();
         if self.event_sender.send(Event::GetDownloadingTasks { sender }).is_err() {
             return Err(Error::TaskSchedulerClosed);
@@ -140,7 +139,7 @@ impl TaskScheduler {
     }
 
     /// # Errors
-    pub async fn get_paused_tasks(&self) -> Result<Vec<Uuid>> {
+    pub async fn get_paused_tasks(&self) -> Result<Vec<u64>> {
         let (sender, receiver) = oneshot::channel();
         if self.event_sender.send(Event::GetPausedTasks { sender }).is_err() {
             return Err(Error::TaskSchedulerClosed);
@@ -149,7 +148,7 @@ impl TaskScheduler {
     }
 
     /// # Errors
-    pub async fn get_canceled_tasks(&self) -> Result<Vec<Uuid>> {
+    pub async fn get_canceled_tasks(&self) -> Result<Vec<u64>> {
         let (sender, receiver) = oneshot::channel();
         if self.event_sender.send(Event::GetCanceledTasks { sender }).is_err() {
             return Err(Error::TaskSchedulerClosed);
@@ -158,7 +157,7 @@ impl TaskScheduler {
     }
 
     /// # Errors
-    pub async fn get_completed_tasks(&self) -> Result<Vec<Uuid>> {
+    pub async fn get_completed_tasks(&self) -> Result<Vec<u64>> {
         let (sender, receiver) = oneshot::channel();
         if self.event_sender.send(Event::GetCompletedTasks { sender }).is_err() {
             return Err(Error::TaskSchedulerClosed);
@@ -175,7 +174,7 @@ impl TaskScheduler {
     }
 
     /// # Errors
-    pub fn increase_concurrent_number(&self, task_id: Uuid) -> Result<()> {
+    pub fn increase_concurrent_number(&self, task_id: u64) -> Result<()> {
         if self.event_sender.send(Event::IncreaseWorkerNumber { task_id }).is_err() {
             return Err(Error::TaskSchedulerClosed);
         }
@@ -183,7 +182,7 @@ impl TaskScheduler {
     }
 
     /// # Errors
-    pub fn decrease_concurrent_number(&self, task_id: Uuid) -> Result<()> {
+    pub fn decrease_concurrent_number(&self, task_id: u64) -> Result<()> {
         if self.event_sender.send(Event::DecreaseWorkerNumber { task_id }).is_err() {
             return Err(Error::TaskSchedulerClosed);
         }
