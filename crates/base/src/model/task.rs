@@ -2,7 +2,6 @@ use std::{fmt, path::PathBuf, time::Duration};
 
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
-use uuid::Uuid;
 
 use crate::model::Priority;
 
@@ -50,7 +49,7 @@ pub struct CreateTask {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct TaskStatus {
-    pub id: Uuid,
+    pub id: u64,
 
     pub file_path: PathBuf,
 
