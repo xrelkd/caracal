@@ -220,9 +220,11 @@ impl Cli {
                     concurrent_connections,
                     uris,
                 }) => {
-                    let output_directory = output_directory.clone().unwrap_or(
-                        std::env::current_dir().context(error::GetCurrentDirectorySnafu)?,
-                    );
+                    let output_directory = if let Some(path) = output_directory {
+                        tokio::fs::canonicalize(path).await.ok()
+                    } else {
+                        None
+                    };
                     let start_immediately = !pause;
                     let client = create_grpc_client(&config).await?;
                     for uri in uris {
@@ -300,6 +302,7 @@ impl Cli {
                     let config::Profiles { ssh_servers, minio_aliases } =
                         config.load_profiles().await.context(error::ConfigSnafu)?;
                     let downloader_factory = DownloaderFactory::builder()
+                        .context(error::BuildDownloaderFactorySnafu)?
                         .http_user_agent(config.downloader.http.user_agent)
                         .default_worker_number(u64::from(
                             config.downloader.http.concurrent_connections,
