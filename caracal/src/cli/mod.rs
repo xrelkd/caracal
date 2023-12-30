@@ -4,7 +4,7 @@ mod ui;
 use std::{io::Write, path::PathBuf, time::Duration};
 
 use caracal_base::{model, model::Priority};
-use caracal_engine::DownloaderFactory;
+use caracal_engine::{DownloaderFactory, MINIMUM_CHUNK_SIZE};
 use caracal_grpc_client as grpc;
 use caracal_grpc_client::Task as _;
 use clap::{CommandFactory, Parser, Subcommand};
@@ -19,8 +19,6 @@ use crate::{
     error::Error,
     shadow,
 };
-
-const MINIMUM_CHUNK_SIZE: u64 = 100 * 1024;
 
 #[derive(Parser)]
 #[command(
@@ -136,6 +134,18 @@ pub enum Commands {
 
     #[clap(about = "Remove tasks")]
     Remove {
+        #[arg(help = "Task ID")]
+        ids: Vec<u64>,
+    },
+
+    #[clap(about = "Increase concurrent number of tasks")]
+    IncreaseConcurrentNumber {
+        #[arg(help = "Task ID")]
+        ids: Vec<u64>,
+    },
+
+    #[clap(about = "Decrease concurrent number of tasks")]
+    DecreaseConcurrentNumber {
         #[arg(help = "Task ID")]
         ids: Vec<u64>,
     },
@@ -295,6 +305,23 @@ impl Cli {
                     for id in ids {
                         println!("{id} is removed");
                     }
+                    drop(client);
+                    Ok(())
+                }
+                Some(Commands::IncreaseConcurrentNumber { ids }) => {
+                    let client = create_grpc_client(&config).await?;
+                    for &id in &ids {
+                        let _ = client.increase_concurrent_number(id).await?;
+                    }
+                    drop(client);
+                    Ok(())
+                }
+                Some(Commands::DecreaseConcurrentNumber { ids }) => {
+                    let client = create_grpc_client(&config).await?;
+                    for &id in &ids {
+                        let _ = client.decrease_concurrent_number(id).await?;
+                    }
+
                     drop(client);
                     Ok(())
                 }

@@ -5,7 +5,7 @@ mod metrics;
 
 use std::{future::Future, net::SocketAddr, path::PathBuf, pin::Pin};
 
-use caracal_engine::{DownloaderFactory, TaskScheduler};
+use caracal_engine::{DownloaderFactory, TaskScheduler, MINIMUM_CHUNK_SIZE};
 use futures::FutureExt;
 use sigfinn::{ExitStatus, LifecycleManager, Shutdown};
 use snafu::ResultExt;
@@ -17,8 +17,6 @@ pub use self::{
     error::{Error, Result},
 };
 use crate::metrics::Metrics;
-
-const MINIMUM_CHUNK_SIZE: u64 = 100 * 1024;
 
 /// # Errors
 ///

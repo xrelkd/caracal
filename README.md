@@ -253,6 +253,10 @@ emit_stderr = false
 # Set the log level, available values are "ERROR", "WARN", "INFO", "DEBUG", "TRACE"
 level = "INFO"
 
+[downloader]
+# Path of default output directory
+default_output_directory = "/path/to/default/output/directory"
+
 [downloader.http]
 # The user-agent which will be passed to HTTP server
 user_agent = "Caracal/0.2.0"

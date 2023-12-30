@@ -114,11 +114,11 @@ impl Worker {
                 Event::TaskCompleted { task_id } => {
                     event_handler.on_task_completed(task_id).await;
                 }
-                Event::IncreaseWorkerNumber { task_id } => {
-                    event_handler.increase_worker_number(task_id);
+                Event::IncreaseConcurrentNumber { task_id } => {
+                    event_handler.increase_concurrent_number(task_id);
                 }
-                Event::DecreaseWorkerNumber { task_id } => {
-                    event_handler.decrease_worker_number(task_id);
+                Event::DecreaseConcurrentNumber { task_id } => {
+                    event_handler.decrease_concurrent_number(task_id);
                 }
             }
         }
@@ -444,14 +444,14 @@ impl EventHandler {
     }
 
     #[inline]
-    fn increase_worker_number(&mut self, task_id: u64) {
+    fn increase_concurrent_number(&mut self, task_id: u64) {
         if let Some(downloader) = self.downloaders.get(&task_id) {
             downloader.add_worker();
         }
     }
 
     #[inline]
-    fn decrease_worker_number(&mut self, task_id: u64) {
+    fn decrease_concurrent_number(&mut self, task_id: u64) {
         if let Some(downloader) = self.downloaders.get(&task_id) {
             downloader.remove_worker();
         }

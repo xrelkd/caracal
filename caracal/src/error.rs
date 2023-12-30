@@ -89,6 +89,18 @@ impl From<caracal_grpc_client::error::RemoveTaskError> for Error {
     }
 }
 
+impl From<caracal_grpc_client::error::IncreaseConcurrentNumberError> for Error {
+    fn from(error: caracal_grpc_client::error::IncreaseConcurrentNumberError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
+impl From<caracal_grpc_client::error::DecreaseConcurrentNumberError> for Error {
+    fn from(error: caracal_grpc_client::error::DecreaseConcurrentNumberError) -> Self {
+        Self::Operation { error: error.to_string() }
+    }
+}
+
 impl From<caracal_grpc_client::error::GetTaskStatusError> for Error {
     fn from(error: caracal_grpc_client::error::GetTaskStatusError) -> Self {
         Self::Operation { error: error.to_string() }

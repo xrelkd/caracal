@@ -21,6 +21,6 @@ pub enum Event {
     GetCompletedTasks { sender: oneshot::Sender<Vec<u64>> },
     GetCanceledTasks { sender: oneshot::Sender<Vec<u64>> },
     TaskCompleted { task_id: u64 },
-    IncreaseWorkerNumber { task_id: u64 },
-    DecreaseWorkerNumber { task_id: u64 },
+    IncreaseConcurrentNumber { task_id: u64 },
+    DecreaseConcurrentNumber { task_id: u64 },
 }

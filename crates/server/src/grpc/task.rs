@@ -198,6 +198,24 @@ impl proto::Task for TaskService {
         }
         Ok(tonic::Response::new(proto::GetAllTaskStatusesResponse { statuses: task_statuses }))
     }
+
+    async fn increase_concurrent_number(
+        &self,
+        request: tonic::Request<proto::IncreaseConcurrentNumberRequest>,
+    ) -> Result<tonic::Response<proto::IncreaseConcurrentNumberResponse>, tonic::Status> {
+        let proto::IncreaseConcurrentNumberRequest { task_id } = request.into_inner();
+        self.task_scheduler.increase_concurrent_number(task_id).map_err(service_shutdown_status)?;
+        Ok(tonic::Response::new(proto::IncreaseConcurrentNumberResponse { ok: true }))
+    }
+
+    async fn decrease_concurrent_number(
+        &self,
+        request: tonic::Request<proto::DecreaseConcurrentNumberRequest>,
+    ) -> Result<tonic::Response<proto::DecreaseConcurrentNumberResponse>, tonic::Status> {
+        let proto::DecreaseConcurrentNumberRequest { task_id } = request.into_inner();
+        self.task_scheduler.decrease_concurrent_number(task_id).map_err(service_shutdown_status)?;
+        Ok(tonic::Response::new(proto::DecreaseConcurrentNumberResponse { ok: true }))
+    }
 }
 
 #[allow(clippy::needless_pass_by_value)]
