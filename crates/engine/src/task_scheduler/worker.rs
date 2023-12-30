@@ -26,6 +26,7 @@ pub struct Worker {
 
 impl Worker {
     pub async fn serve(self) {
+        tracing::info!("Starting Task scheduler");
         let Self { factory, event_sender, mut event_receiver, max_concurrent_task_number } = self;
 
         let mut event_handler = EventHandler {
@@ -54,12 +55,14 @@ impl Worker {
             }
         });
 
+        tracing::info!("Started Task scheduler");
         while let Some(event) = event_receiver.recv().await {
             match event {
                 Event::CheckProgress => {
                     event_handler.check_progress().await;
                 }
                 Event::Shutdown => {
+                    tracing::info!("Stopping Task scheduler");
                     event_handler.on_shutdown().await;
                     break;
                 }
@@ -125,6 +128,7 @@ impl Worker {
 
         // we do not care the result, drop it.
         drop(timer.await);
+        tracing::info!("Stopped Task scheduler");
     }
 }
 
