@@ -331,7 +331,7 @@ impl Cli {
                     let downloader_factory = DownloaderFactory::builder()
                         .context(error::BuildDownloaderFactorySnafu)?
                         .http_user_agent(config.downloader.http.user_agent)
-                        .default_worker_number(u64::from(
+                        .default_concurrent_number(u64::from(
                             config.downloader.http.concurrent_connections,
                         ))
                         .minimum_chunk_size(MINIMUM_CHUNK_SIZE)

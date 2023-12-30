@@ -229,9 +229,11 @@ caracal-daemon default-config > $XDG_CONFIG_HOME/caracal/caracal-daemon.toml
 <details>
 <summary>Example of <b>$XDG_CONFIG_HOME/caracal/caracal.toml</b></summary>
 
+**NOTE**: `~` in a file path will be resolved to `$HOME`.
+
 ```toml
 # File paths to profiles, see profile file configuration
-profile_files = ["/path/to/profile/file", "/path/to/profile/file2"]
+profile_files = ["/path/to/profile/file", "/path/to/profile/file2", "~/path/to/my/profile"]
 
 [daemon]
 # Endpoint of gRPC server
@@ -439,10 +441,119 @@ host   = "0.0.0.0"
 port   = 37002
 ```
 
+**NOTE**: In order to connect the `caracal-daemon` in container, `daemon.server_endpoint` in `caracal.toml` should be set as `http://127.0.0.1:37000`.
+
 2. Run `docker compose up` to start the container.
 3. Run `caracal add-uri https://www.rust-lang.org/` to create a new task, the downloaded file is placed on `/downloads` in the container.
 4. Run `caracal status` to display the status of tasks.
 5. Run `docker compose down` to stop the container.
+
+</details>
+
+## Kubernetes
+
+<details>
+<summary>Deploy on <b>Kubernetes</b></summary>
+
+Save the following contents to `caracal.yaml` and execute `kubectl apply -f caracal.yaml` to deploy `caracal-daemon` on Kubernetes cluster:
+
+```yaml
+# https://kubernetes.io/docs/concepts/configuration/configmap/
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: caracal
+
+data:
+  caracal-daemon.toml: |
+    profile_files = []
+
+    [log]
+    emit_journald = false
+    emit_stdout = true
+    emit_stderr = false
+    level = "INFO"
+
+    [task_scheduler]
+    concurrent_number = 10
+
+    [downloader]
+    default_output_directory = "/tmp"
+
+    [downloader.http]
+    user_agent = "Caracal/0.2.0"
+    concurrent_connections = 5
+
+    [grpc]
+    enable_http = true
+    enable_local_socket = false
+    host = "0.0.0.0"
+    port = 37000
+
+    [metrics]
+    enable = true
+    host = "0.0.0.0"
+    port = 37002
+
+---
+# https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caracal
+  labels:
+    app.kubernetes.io/name: caracal
+spec:
+  selector:
+    matchLabels:
+      app: caracal
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: caracal
+    spec:
+      restartPolicy: Always
+      volumes:
+        - name: config
+          configMap:
+            name: caracal
+            items:
+              - key: caracal-daemon.toml
+                path: caracal-daemon.toml
+      containers:
+        - name: caracal
+          image: ghcr.io/xrelkd/caracal:build-2023.12.30-0e31748
+          imagePullPolicy: IfNotPresent
+          command:
+            - "caracal-daemon"
+            - "--config=/etc/caracal/caracal-daemon.toml"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/caracal/
+          ports:
+            - containerPort: 37000
+              name: grpc
+            - containerPort: 37002
+              name: metrics
+---
+# https://kubernetes.io/docs/concepts/services-networking/service/
+apiVersion: v1
+kind: Service
+metadata:
+  name: caracal
+
+spec:
+  selector:
+    app: caracal
+  type: ClusterIP
+  ports:
+    - name: grpc
+      protocol: TCP
+      port: 37000
+      targetPort: 37000
+---
+```
 
 </details>
 

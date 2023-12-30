@@ -36,11 +36,20 @@ pub async fn serve_with_shutdown(
     let lifecycle_manager = LifecycleManager::<Error>::new();
 
     let (task_scheduler, task_scheduler_worker) = {
+        tracing::info!(
+            "Setting {} as default output directory",
+            task_scheduler.default_output_directory.display()
+        );
+        tracing::info!("Setting {} as default HTTP user-agent", task_scheduler.http.user_agent);
+        tracing::info!(
+            "Setting concurrent number of a task to {}",
+            task_scheduler.http.concurrent_connections
+        );
         let downloader_factory = DownloaderFactory::builder()
             .context(error::BuildDownloaderFactorySnafu)?
             .http_user_agent(task_scheduler.http.user_agent)
             .default_output_directory_path(task_scheduler.default_output_directory)
-            .default_worker_number(u64::from(task_scheduler.http.concurrent_connections))
+            .default_concurrent_number(u64::from(task_scheduler.http.concurrent_connections))
             .minimum_chunk_size(MINIMUM_CHUNK_SIZE)
             .ssh_servers(ssh_servers)
             .minio_aliases(minio_aliases)
