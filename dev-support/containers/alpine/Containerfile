@@ -41,9 +41,10 @@ RUN <<EOF
 
 set -eu
 
-# check if executable works in this container
+# check if executables work in this container
 /usr/bin/caracal version
+/usr/bin/caracal-daemon version
 
 EOF
 
-ENTRYPOINT [ "/usr/bin/caracal", "version" ]
+ENTRYPOINT [ "/usr/bin/caracal-daemon" ]
