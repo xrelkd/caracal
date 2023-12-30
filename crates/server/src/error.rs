@@ -19,6 +19,9 @@ pub enum Error {
     #[snafu(display("Error occurs while starting dbus service, error: {source}"))]
     StartDBusService { source: zbus::Error },
 
+    #[snafu(display("Error occurs while building DownloaderFactory, error: {source}"))]
+    BuildDownloaderFactory { source: caracal_engine::Error },
+
     #[snafu(display("{source}"))]
     Metrics { source: caracal_metrics::Error },
 }

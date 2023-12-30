@@ -1,7 +1,4 @@
-use std::{
-    path::{Path, PathBuf},
-    time::Duration,
-};
+use std::{path::PathBuf, time::Duration};
 
 use caracal_base::model;
 use caracal_engine::TaskScheduler;
@@ -10,21 +7,11 @@ use time::OffsetDateTime;
 
 pub struct TaskService {
     task_scheduler: TaskScheduler,
-
-    default_output_directory: PathBuf,
 }
 
 impl TaskService {
     #[inline]
-    pub fn new<P>(task_scheduler: TaskScheduler, default_output_directory: P) -> Self
-    where
-        P: AsRef<Path>,
-    {
-        Self {
-            task_scheduler,
-            default_output_directory: default_output_directory.as_ref().to_path_buf(),
-        }
-    }
+    pub const fn new(task_scheduler: TaskScheduler) -> Self { Self { task_scheduler } }
 }
 
 #[tonic::async_trait]
@@ -48,8 +35,7 @@ impl proto::Task for TaskService {
         let new_task = model::CreateTask {
             uri,
             filename: filename.map(PathBuf::from),
-            output_directory: output_directory
-                .map_or_else(|| self.default_output_directory.clone(), PathBuf::from),
+            output_directory: output_directory.map(PathBuf::from),
             concurrent_number,
             connection_timeout: connection_timeout.map(Duration::from_secs),
             priority: priority.map_or(model::Priority::Normal, |v| {
