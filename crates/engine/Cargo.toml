@@ -44,7 +44,7 @@ opendal = { version = "0.43", features = [
 
 bytes = "1"
 humansize = "2"
-snafu = "0.7"
+snafu = "0.8"
 time = { version = "0.3", features = [
   "formatting",
   "macros",
