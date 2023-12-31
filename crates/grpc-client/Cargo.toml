@@ -24,7 +24,7 @@ tonic       = { version = "0.10", features = ["gzip"] }
 prost-types = "0.12"
 
 semver = "1"
-snafu  = "0.7"
+snafu  = "0.8"
 
 caracal-base  = { path = "../base" }
 caracal-proto = { path = "../proto" }

@@ -35,7 +35,7 @@ humantime = "2"
 indicatif = "0.17"
 resolve-path = "0.1"
 shadow-rs = "0.25"
-snafu = "0.7"
+snafu = "0.8"
 time = { version = "0.3", features = [
   "formatting",
   "macros",
