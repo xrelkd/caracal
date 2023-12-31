@@ -34,7 +34,7 @@ reqwest = { version = "0.11", default-features = false, features = [
   "rustls-tls",
   "stream",
 ] }
-opendal = { version = "0.43", features = [
+opendal = { version = "0.44", features = [
   "rustls",
   "services-fs",
   "services-http",
