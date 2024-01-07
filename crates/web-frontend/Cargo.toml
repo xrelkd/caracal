@@ -1,0 +1,20 @@
+[package]
+name                 = "caracal-web-frontend"
+description          = "Caracal Web Frontend"
+version.workspace    = true
+authors.workspace    = true
+homepage.workspace   = true
+readme.workspace     = true
+repository.workspace = true
+license.workspace    = true
+edition.workspace    = true
+categories.workspace = true
+keywords.workspace   = true
+
+[dependencies]
+gloo-net             = "0.5"
+wasm-bindgen-futures = "0.4"
+yew                  = { version = "0.21", features = ["csr"] }
+
+[lints]
+workspace = true

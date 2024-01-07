@@ -23,6 +23,7 @@ members = [
   "crates/metrics",
   "crates/proto",
   "crates/server",
+  "crates/web-frontend",
 ]
 
 [workspace.lints.rust]
