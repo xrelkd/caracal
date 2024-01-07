@@ -47,7 +47,7 @@ in
 
     cargo --version
     rustc --version
-    xvfb-run --auto-servernum cargo test ${UNIT_TEST_ARGUMENTS} --no-fail-fast "$@" -- \
+    cargo test ${UNIT_TEST_ARGUMENTS} --no-fail-fast "$@" -- \
       --nocapture \
       --test
   '';
@@ -61,6 +61,6 @@ in
     cargo --version
     rustc --version
     cargo nextest --version
-    xvfb-run --auto-servernum cargo nextest run --workspace --no-fail-fast --no-capture "$@"
+    cargo nextest run --workspace --no-fail-fast --no-capture "$@"
   '';
 }
