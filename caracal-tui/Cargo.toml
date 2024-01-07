@@ -22,7 +22,7 @@ toml       = "0.8"
 
 futures      = "0.3"
 sigfinn      = "0.2"
-tokio        = { version = "1", features = ["rt-multi-thread", "sync"] }
+tokio        = { version = "1", features = ["macros", "rt-multi-thread", "sync"] }
 tokio-stream = "0.1"
 
 crossterm = { version = "0.27", features = ["event-stream"] }
