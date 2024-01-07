@@ -16,7 +16,7 @@ mkdir -p "$DIST/usr/share/bash-completion/completions/"
 mkdir -p "$DIST/usr/share/zsh/vendor-completions/"
 mkdir -p "$DIST/usr/share/fish/vendor_completions.d/"
 
-for cmd in caracal caracal-daemon; do
+for cmd in caracal caracal-daemon caracal-tui; do
     cp -v "target/$TARGET/release/${cmd}" "$DIST/usr/bin"
 
     "$DIST/usr/bin/${cmd}" completions bash >"$DIST/usr/share/bash-completion/completions/${cmd}"
