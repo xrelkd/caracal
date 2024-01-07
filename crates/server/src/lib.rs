@@ -8,6 +8,7 @@ use std::{future::Future, net::SocketAddr, path::PathBuf, pin::Pin};
 
 use caracal_engine::{DownloaderFactory, TaskScheduler, MINIMUM_CHUNK_SIZE};
 use futures::FutureExt;
+use include_dir::include_dir;
 use sigfinn::{ExitStatus, LifecycleManager, Shutdown};
 use snafu::ResultExt;
 use tokio::{
@@ -21,6 +22,9 @@ pub use self::{
     error::{Error, Result},
 };
 use crate::metrics::Metrics;
+
+pub static FRONTEND_STATIC_ASSETS_DIR: include_dir::Dir<'_> =
+    include_dir!("$OUT_DIR/frontend-dist");
 
 /// # Errors
 ///
@@ -234,6 +238,7 @@ fn create_web_server_future(
 
             let router = axum::Router::new()
                 .merge(web::controller::api_v1_router())
+                .merge(web::controller::static_assets_router())
                 .layer(axum::Extension(task_scheduler))
                 .layer(middleware_stack)
                 .into_make_service_with_connect_info::<SocketAddr>();
