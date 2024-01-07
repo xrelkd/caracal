@@ -3,6 +3,7 @@
 , lib
 , rustPlatform
 , protobuf
+, trunk
 , installShellFiles
 }:
 
@@ -18,6 +19,7 @@ rustPlatform.buildRustPackage {
 
   nativeBuildInputs = [
     protobuf
+    trunk
 
     installShellFiles
   ];

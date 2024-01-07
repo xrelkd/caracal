@@ -20,6 +20,8 @@ pkgs.mkShell {
     cargo-nextest
     rustToolchain
 
+    trunk
+
     tokei
 
     protobuf
