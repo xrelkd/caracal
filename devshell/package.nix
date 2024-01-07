@@ -4,6 +4,7 @@
 , rustPlatform
 , protobuf
 , trunk
+, wasm-bindgen-cli
 , installShellFiles
 }:
 
@@ -19,7 +20,9 @@ rustPlatform.buildRustPackage {
 
   nativeBuildInputs = [
     protobuf
+
     trunk
+    wasm-bindgen-cli
 
     installShellFiles
   ];

@@ -21,6 +21,7 @@ pkgs.mkShell {
     rustToolchain
 
     trunk
+    wasm-bindgen-cli
 
     tokei
 
