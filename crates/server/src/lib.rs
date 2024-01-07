@@ -2,6 +2,7 @@ pub mod config;
 mod error;
 mod grpc;
 mod metrics;
+mod web;
 
 use std::{future::Future, net::SocketAddr, path::PathBuf, pin::Pin};
 
@@ -9,7 +10,10 @@ use caracal_engine::{DownloaderFactory, TaskScheduler, MINIMUM_CHUNK_SIZE};
 use futures::FutureExt;
 use sigfinn::{ExitStatus, LifecycleManager, Shutdown};
 use snafu::ResultExt;
-use tokio::{net::UnixListener, task::JoinHandle};
+use tokio::{
+    net::{TcpListener, UnixListener},
+    task::JoinHandle,
+};
 use tokio_stream::wrappers::UnixListenerStream;
 
 pub use self::{
@@ -30,6 +34,7 @@ pub async fn serve_with_shutdown(
         grpc_local_socket,
         grpc_access_token,
         metrics: metrics_config,
+        web: web_config,
         dbus: _,
     }: Config,
 ) -> Result<()> {
@@ -84,6 +89,9 @@ pub async fn serve_with_shutdown(
             ),
         );
     }
+
+    let _handle = lifecycle_manager
+        .spawn("Web server", create_web_server_future(web_config.listen_address, task_scheduler));
 
     if metrics_config.enable {
         let metrics = Metrics::new()?;
@@ -209,6 +217,48 @@ fn create_task_scheduler_future(
             drop(task_scheduler_worker.await);
 
             ExitStatus::Success
+        }
+        .boxed()
+    }
+}
+
+fn create_web_server_future(
+    listen_address: SocketAddr,
+    task_scheduler: TaskScheduler,
+) -> impl FnOnce(Shutdown) -> Pin<Box<dyn Future<Output = ExitStatus<Error>> + Send>> {
+    move |shutdown_signal| {
+        async move {
+            tracing::info!("Listening Web server on {listen_address}");
+
+            let middleware_stack = tower::ServiceBuilder::new();
+
+            let router = axum::Router::new()
+                .merge(web::controller::api_v1_router())
+                .layer(axum::Extension(task_scheduler))
+                .layer(middleware_stack)
+                .into_make_service_with_connect_info::<SocketAddr>();
+
+            let maybe_listener =
+                TcpListener::bind(&listen_address).await.context(error::BindWebServerSnafu);
+            let listener = match maybe_listener {
+                Ok(listener) => listener,
+                Err(err) => {
+                    return ExitStatus::FatalError(err);
+                }
+            };
+
+            let result = axum::serve(listener, router)
+                .with_graceful_shutdown(shutdown_signal)
+                .await
+                .context(error::ServeBindWebServerSnafu);
+
+            match result {
+                Ok(()) => {
+                    tracing::info!("Stopped Web server gracefully");
+                    ExitStatus::Success
+                }
+                Err(err) => ExitStatus::Error(err),
+            }
         }
         .boxed()
     }

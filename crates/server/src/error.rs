@@ -22,6 +22,12 @@ pub enum Error {
     #[snafu(display("Error occurs while building DownloaderFactory, error: {source}"))]
     BuildDownloaderFactory { source: caracal_engine::Error },
 
+    #[snafu(display("Error occurs while binding web server, error: {source}"))]
+    BindWebServer { source: std::io::Error },
+
+    #[snafu(display("Error occurs while serving web server, error: {source}"))]
+    ServeBindWebServer { source: std::io::Error },
+
     #[snafu(display("{source}"))]
     Metrics { source: caracal_metrics::Error },
 }

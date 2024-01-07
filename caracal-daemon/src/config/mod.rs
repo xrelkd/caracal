@@ -3,6 +3,7 @@ mod error;
 mod grpc;
 mod mertrics;
 mod task_scheduler;
+mod web;
 
 use std::{
     borrow::Cow,
@@ -18,7 +19,7 @@ use snafu::ResultExt;
 
 pub use self::{
     dbus::DBusConfig, error::Error, grpc::GrpcConfig, mertrics::MetricsConfig,
-    task_scheduler::TaskSchedulerConfig,
+    task_scheduler::TaskSchedulerConfig, web::WebConfig,
 };
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -40,6 +41,9 @@ pub struct Config {
 
     #[serde(default)]
     pub dbus: DBusConfig,
+
+    #[serde(default)]
+    pub web: WebConfig,
 
     #[serde(default)]
     pub metrics: MetricsConfig,
@@ -134,6 +138,7 @@ impl Config {
 
         let dbus = caracal_server::config::DBusConfig::from(self.dbus);
         let metrics = caracal_server::config::MetricsConfig::from(self.metrics);
+        let web = caracal_server::config::WebConfig::from(self.web);
         let task_scheduler = caracal_server::config::TaskSchedulerConfig {
             http: caracal_server::config::HttpConfig {
                 user_agent: self.downloader.http.user_agent,
@@ -154,6 +159,7 @@ impl Config {
             grpc_local_socket,
             grpc_access_token,
             dbus,
+            web,
             metrics,
         })
     }
