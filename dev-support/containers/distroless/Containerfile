@@ -35,5 +35,6 @@ FROM distroless as caracal
 
 COPY --from=builder /build/target/release/caracal /usr/bin
 COPY --from=builder /build/target/release/caracal-daemon /usr/bin
+COPY --from=builder /build/target/release/caracal-tui /usr/bin
 
 ENTRYPOINT [ "/usr/bin/caracal-daemon" ]
