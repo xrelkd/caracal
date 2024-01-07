@@ -37,6 +37,8 @@
             stable.rust-src
             stable.rust-std
 
+            targets.wasm32-unknown-unknown.stable.rust-std
+
             default.rustfmt
           ];
 
