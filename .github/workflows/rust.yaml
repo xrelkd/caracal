@@ -116,10 +116,8 @@ jobs:
           nix develop --command cargo nextest --version
 
       - name: Test with cargo-nextest
-        uses: coactions/setup-xvfb@v1
-        with:
-          run: |
-            nix develop --command cargo nextest-all ${{ matrix.mode == 'release' && '--release' || '' }}
+        run: |
+          nix develop --command cargo nextest-all ${{ matrix.mode == 'release' && '--release' || '' }}
 
   doc:
     name: Doc
