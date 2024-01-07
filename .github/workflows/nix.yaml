@@ -40,3 +40,4 @@ jobs:
         run: |
           ./result/bin/caracal version
           ./result/bin/caracal-daemon version
+          ./result/bin/caracal-tui version

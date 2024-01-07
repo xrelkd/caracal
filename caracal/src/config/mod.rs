@@ -53,8 +53,10 @@ impl Config {
             .context(error::ParseConfigSnafu { filename: path.as_ref().to_path_buf() })?;
 
         if let Some(ref file_path) = config.daemon.access_token_file_path {
-            if let Ok(token) = std::fs::read_to_string(file_path) {
-                config.daemon.access_token = Some(token.trim_end().to_string());
+            if let Ok(file_path) = file_path.try_resolve().map(Cow::into_owned) {
+                if let Ok(token) = std::fs::read_to_string(file_path) {
+                    config.daemon.access_token = Some(token.trim_end().to_string());
+                }
             }
         }
 
