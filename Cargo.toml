@@ -15,6 +15,7 @@ resolver = "2"
 members = [
   "caracal",
   "caracal-daemon",
+  "caracal-tui",
   "crates/base",
   "crates/cli",
   "crates/engine",
