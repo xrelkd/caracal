@@ -28,6 +28,9 @@ members = [
 [workspace.lints.rust]
 box_pointers = "allow"
 
+# SAFETY: allow `async_fn_in_trait`
+async_fn_in_trait = "allow"
+
 # TODO: deny `unused_crate_dependencies` after https://github.com/rust-lang/rust/issues/95513 being solved
 unused_crate_dependencies = "allow"
 
