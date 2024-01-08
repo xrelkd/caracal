@@ -687,7 +687,6 @@ dependencies = [
 name = "caracal-metrics"
 version = "0.3.1"
 dependencies = [
- "async-trait",
  "axum 0.7.3",
  "bytes",
  "lazy_static",
