@@ -20,6 +20,7 @@ pkgs.mkShell {
     cargo-nextest
     rustToolchain
 
+    binaryen
     trunk
     wasm-bindgen-cli
 
