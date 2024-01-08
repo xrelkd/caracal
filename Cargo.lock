@@ -716,7 +716,6 @@ dependencies = [
 name = "caracal-server"
 version = "0.3.1"
 dependencies = [
- "async-trait",
  "axum 0.7.3",
  "caracal-base",
  "caracal-engine",
