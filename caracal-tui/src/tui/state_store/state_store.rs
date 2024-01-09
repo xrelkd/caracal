@@ -65,7 +65,8 @@ impl StateStore {
                 Action::GetAllTaskStatuses => {
                     state.tick_timer();
                     if let Some(ref client) = client {
-                        if let Ok(task_statuses) = client.get_all_task_statuses().await {
+                        if let Ok(mut task_statuses) = client.get_all_task_statuses().await {
+                            task_statuses.sort_unstable_by_key(|status| status.id);
                             state.set_task_statuses(task_statuses);
                         }
                         if let Ok(version) = client.get_version().await {
