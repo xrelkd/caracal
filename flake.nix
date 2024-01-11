@@ -1,5 +1,5 @@
 {
-  description = "Caracal - download manager written in Rust Programming Language";
+  description = "Caracal - File downloader written in Rust Programming Language";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -17,7 +17,7 @@
   outputs = { self, nixpkgs, flake-utils, fenix, crane }:
     let
       name = "caracal";
-      version = "0.3.0";
+      version = "0.3.1";
     in
     (flake-utils.lib.eachDefaultSystem
       (system:
