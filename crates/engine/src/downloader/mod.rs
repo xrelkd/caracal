@@ -251,7 +251,7 @@ impl Downloader {
                 file_path: file_path.clone(),
                 chunk_receiver: chunk_receiver.clone(),
                 progress_updater: ProgressUpdater::from(event_sender.clone()),
-                worker_event_receiver,
+                event_receiver: worker_event_receiver,
             };
             let _handle = join_set.spawn(worker.serve());
         }
@@ -311,7 +311,7 @@ impl Downloader {
                             sink: sink.clone(),
                             source: source.clone(),
                             file_path: file_path.clone(),
-                            worker_event_receiver,
+                            event_receiver: worker_event_receiver,
                         };
 
                         join_set.spawn(worker.serve())

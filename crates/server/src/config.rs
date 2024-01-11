@@ -18,6 +18,8 @@ pub struct Config {
 
     pub dbus: DBusConfig,
 
+    pub web: WebConfig,
+
     pub metrics: MetricsConfig,
 }
 
@@ -42,6 +44,13 @@ pub struct DBusConfig {
     pub enable: bool,
 
     pub identifier: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+pub struct WebConfig {
+    pub enable: bool,
+
+    pub listen_address: SocketAddr,
 }
 
 #[derive(Clone, Debug)]

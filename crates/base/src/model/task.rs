@@ -63,6 +63,7 @@ pub struct TaskStatus {
 
     pub priority: Priority,
 
+    #[serde(with = "time::serde::rfc3339")]
     pub creation_timestamp: OffsetDateTime,
 }
 

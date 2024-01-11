@@ -23,7 +23,7 @@ rustPlatform.buildRustPackage {
   ];
 
   postInstall = ''
-    for cmd in caracal caracal-daemon; do
+    for cmd in caracal caracal-daemon caracal-tui; do
       installShellCompletion --cmd $cmd \
         --bash <($out/bin/$cmd completions bash) \
         --fish <($out/bin/$cmd completions fish) \

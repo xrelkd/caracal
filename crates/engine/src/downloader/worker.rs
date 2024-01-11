@@ -21,8 +21,8 @@ pub struct Worker {
     pub source: Fetcher,
     pub file_path: PathBuf,
     pub chunk_receiver: async_channel::Receiver<Chunk>,
+    pub event_receiver: mpsc::UnboundedReceiver<WorkerEvent>,
     pub progress_updater: ProgressUpdater,
-    pub worker_event_receiver: mpsc::UnboundedReceiver<WorkerEvent>,
 }
 
 impl Worker {
@@ -33,8 +33,8 @@ impl Worker {
             sink,
             file_path,
             chunk_receiver,
+            mut event_receiver,
             progress_updater,
-            mut worker_event_receiver,
         } = self;
 
         while let Ok(chunk) = chunk_receiver.recv().await {
@@ -55,7 +55,7 @@ impl Worker {
 
             loop {
                 let new_bytes = stream.bytes();
-                let new_event = worker_event_receiver.recv();
+                let new_event = event_receiver.recv();
                 futures::pin_mut!(new_bytes);
                 futures::pin_mut!(new_event);
 

@@ -48,11 +48,14 @@ pub const CLI_CONFIG_NAME: &str = "caracal.toml";
 pub const DAEMON_PROGRAM_NAME: &str = "caracal-daemon";
 pub const DAEMON_CONFIG_NAME: &str = "caracal-daemon.toml";
 
+pub const TUI_PROGRAM_NAME: &str = "caracal-tui";
+pub const TUI_CONFIG_NAME: &str = "caracal-tui.toml";
+
 pub const DEFAULT_GRPC_PORT: u16 = 37000;
 pub const DEFAULT_GRPC_HOST: IpAddr = IpAddr::V4(Ipv4Addr::LOCALHOST);
 
-pub const DEFAULT_WEBUI_PORT: u16 = 37001;
-pub const DEFAULT_WEBUI_HOST: IpAddr = IpAddr::V4(Ipv4Addr::LOCALHOST);
+pub const DEFAULT_WEB_PORT: u16 = 37001;
+pub const DEFAULT_WEB_HOST: IpAddr = IpAddr::V4(Ipv4Addr::LOCALHOST);
 
 pub const DEFAULT_METRICS_PORT: u16 = 37002;
 pub const DEFAULT_METRICS_HOST: IpAddr = IpAddr::V4(Ipv4Addr::LOCALHOST);

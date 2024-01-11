@@ -24,8 +24,6 @@ futures = "0.3"
 sigfinn = "0.2"
 tokio   = { version = "1", features = ["rt-multi-thread", "sync"] }
 
-reqwest = { version = "0.11", default-features = false, features = ["stream"] }
-
 clap = { version = "4", features = ["derive", "env"] }
 clap_complete = "4"
 comfy-table = "7"
@@ -34,8 +32,8 @@ humansize = "2"
 humantime = "2"
 indicatif = "0.17"
 resolve-path = "0.1"
-shadow-rs = "0.25"
-snafu = "0.7"
+shadow-rs = "0.26"
+snafu = "0.8"
 time = { version = "0.3", features = [
   "formatting",
   "macros",
@@ -49,7 +47,7 @@ caracal-engine      = { path = "../crates/engine" }
 caracal-grpc-client = { path = "../crates/grpc-client" }
 
 [build-dependencies]
-shadow-rs = "0.25"
+shadow-rs = "0.26"
 
 [lints]
 workspace = true

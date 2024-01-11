@@ -15,6 +15,7 @@ echo "Copying release files..."
 mkdir "$DIST"
 cp -v "target/$TARGET/release/caracal" "$DIST"
 cp -v "target/$TARGET/release/caracal-daemon" "$DIST"
+cp -v "target/$TARGET/release/caracal-tui" "$DIST"
 cp \
     LICENSE \
     README.md \

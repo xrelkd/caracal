@@ -3,6 +3,7 @@ mod error;
 mod grpc;
 mod mertrics;
 mod task_scheduler;
+mod web;
 
 use std::{
     borrow::Cow,
@@ -18,7 +19,7 @@ use snafu::ResultExt;
 
 pub use self::{
     dbus::DBusConfig, error::Error, grpc::GrpcConfig, mertrics::MetricsConfig,
-    task_scheduler::TaskSchedulerConfig,
+    task_scheduler::TaskSchedulerConfig, web::WebConfig,
 };
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -42,6 +43,9 @@ pub struct Config {
     pub dbus: DBusConfig,
 
     #[serde(default)]
+    pub web: WebConfig,
+
+    #[serde(default)]
     pub metrics: MetricsConfig,
 }
 
@@ -61,8 +65,16 @@ impl Config {
         let data = std::fs::read_to_string(&path)
             .context(error::OpenConfigSnafu { filename: path.as_ref().to_path_buf() })?;
 
-        let config: Self = toml::from_str(&data)
+        let mut config: Self = toml::from_str(&data)
             .context(error::ParseConfigSnafu { filename: path.as_ref().to_path_buf() })?;
+
+        if let Some(ref file_path) = config.grpc.access_token_file_path {
+            if let Ok(file_path) = file_path.try_resolve().map(Cow::into_owned) {
+                if let Ok(token) = std::fs::read_to_string(file_path) {
+                    config.grpc.access_token = Some(token.trim_end().to_string());
+                }
+            }
+        }
 
         Ok(config)
     }
@@ -126,6 +138,7 @@ impl Config {
 
         let dbus = caracal_server::config::DBusConfig::from(self.dbus);
         let metrics = caracal_server::config::MetricsConfig::from(self.metrics);
+        let web = caracal_server::config::WebConfig::from(self.web);
         let task_scheduler = caracal_server::config::TaskSchedulerConfig {
             http: caracal_server::config::HttpConfig {
                 user_agent: self.downloader.http.user_agent,
@@ -146,6 +159,7 @@ impl Config {
             grpc_local_socket,
             grpc_access_token,
             dbus,
+            web,
             metrics,
         })
     }

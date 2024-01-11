@@ -17,7 +17,7 @@ prost-types = "0.12"
 tonic       = { version = "0.10", features = ["gzip"] }
 
 mime  = "0.3"
-snafu = "0.7"
+snafu = "0.8"
 time  = { version = "0.3", features = ["formatting", "macros"] }
 
 caracal-base = { path = "../base" }

@@ -18,6 +18,7 @@
 <summary>Table of contents</summary>
 
 - [Features](#features)
+- [Screenshots](#screenshots)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Configuration](#configuration)
@@ -34,6 +35,13 @@
 - [x] Support parallel downloading to accelerate download speed
 - [x] Support broken-point continuingly-transferring
 - [x] Support daemonizing
+- [x] Provide terminal user interface (TUI)
+
+## Screenshots
+
+- Terminal user interface (TUI)
+
+![screenshot tui](docs/_static/screenshot-tui.png)
 
 ## Installation
 
@@ -70,6 +78,9 @@ caracal version
 
 # Show version.
 caracal-daemon version
+
+# Show version.
+caracal-tui version
 ```
 
 </details>
@@ -92,6 +103,7 @@ cd caracal
 
 cargo install --path caracal
 cargo install --path caracal-daemon
+cargo install --path caracal-tui
 ```
 
 </details>
@@ -209,11 +221,28 @@ caracal resume --all
 caracal remove 1 2 3
 ```
 
+### Terminal user interface (TUI)
+
+- **NOTE**: Remember to start `caracal-daemon`. Terminal user interface does not provide standalone mode, it provides user interface for user to interact with `caracal-daemon`.
+
+```bash
+# Start `caracal-daemon` and put it in the background.
+caracal-daemon &
+
+# Show version.
+caracal-tui version
+
+# Start terminal user interface.
+caracal-tui
+```
+
 ## Configuration
 
 The configuration file of `caracal` is placed on `$XDG_CONFIG_HOME/caracal/caracal.toml`.
 
 The configuration file of `caracal-daemon` is placed on `$XDG_CONFIG_HOME/caracal/caracal-daemon.toml`.
+
+The configuration file of `caracal-tui` is placed on `$XDG_CONFIG_HOME/caracal/caracal-tui.toml`.
 
 ```bash
 # Create directory to store configuration files.
@@ -224,6 +253,9 @@ caracal default-config > $XDG_CONFIG_HOME/caracal/caracal.toml
 
 # Generate default configuration and place it on `$XDG_CONFIG_HOME/caracal/caracal-daemon.toml`.
 caracal-daemon default-config > $XDG_CONFIG_HOME/caracal/caracal-daemon.toml
+
+# Generate default configuration and place it on `$XDG_CONFIG_HOME/caracal/caracal-tui.toml`.
+caracal-tui default-config > $XDG_CONFIG_HOME/caracal/caracal-tui.toml
 ```
 
 <details>
@@ -320,6 +352,36 @@ enable = true
 host = "127.0.0.1"
 # Port of metrics
 port = 37002
+```
+
+</details>
+
+<details>
+<summary>Example of <b>$XDG_CONFIG_HOME/caracal/caracal-tui.toml</b></summary>
+
+**NOTE**: `~` in a file path will be resolved to `$HOME`.
+
+```toml
+[daemon]
+# Endpoint of gRPC server
+# Caracal connect to gRPC server via local socket with file path like "/path/to/caracal-daemon/grpc.sock"
+# Caracal connect to gRPC server via HTTP with URI like "http://www.my.server.com/"
+server_endpoint = "/path/to/caracal-daemon/grpc.sock"
+# Access token, remove this line to disable authentication
+access_token    = "my-access-token"
+# File path of access token, remove this line to disable authentication
+# `access_token_file_path` is preferred if both `access_token` and `access_token_file_path` are provided.
+access_token_file_path = "/path/to/access-token"
+
+[log]
+# Emit log to systemd-journald
+emit_journald = true
+# Emit log to stdout
+emit_stdout = false
+# Emit log to stderr
+emit_stderr = false
+# Set the log level, available values are "ERROR", "WARN", "INFO", "DEBUG", "TRACE"
+level = "INFO"
 ```
 
 </details>
@@ -523,7 +585,7 @@ spec:
                 path: caracal-daemon.toml
       containers:
         - name: caracal
-          image: ghcr.io/xrelkd/caracal:build-2023.12.30-0e31748
+          image: ghcr.io/xrelkd/caracal:latest
           imagePullPolicy: IfNotPresent
           command:
             - "caracal-daemon"
