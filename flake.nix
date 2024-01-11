@@ -1,5 +1,5 @@
 {
-  description = "Caracal - download manager written in Rust Programming Language";
+  description = "Caracal - File downloader written in Rust Programming Language";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
