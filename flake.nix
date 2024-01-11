@@ -17,7 +17,7 @@
   outputs = { self, nixpkgs, flake-utils, fenix, crane }:
     let
       name = "caracal";
-      version = "0.3.0";
+      version = "0.3.1";
     in
     (flake-utils.lib.eachDefaultSystem
       (system:
