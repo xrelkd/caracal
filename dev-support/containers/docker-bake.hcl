@@ -2,19 +2,10 @@ group "default" {
   targets = ["caracal", "caracal-distroless"]
 }
 
-variable "TAG" {
-  default = "develop"
-}
-
-variable "CONTAINER_REGISTRY" {
-  default = "ghcr.io/xrelkd"
-}
-
 target "caracal" {
   dockerfile = "dev-support/containers/alpine/Containerfile"
   platforms  = ["linux/amd64"]
   target     = "caracal"
-  tags       = ["${CONTAINER_REGISTRY}/caracal:${TAG}"]
   contexts = {
     sccache = "docker-image://ghcr.io/thxnet/ci-containers/sccache:0.5.4"
     rust    = "docker-image://docker.io/library/rust:1.74.0-alpine3.18"
@@ -42,7 +33,6 @@ target "caracal-distroless" {
   dockerfile = "dev-support/containers/distroless/Containerfile"
   platforms  = ["linux/amd64"]
   target     = "caracal"
-  tags       = ["${CONTAINER_REGISTRY}/caracal:${TAG}-distroless"]
   contexts = {
     sccache    = "docker-image://ghcr.io/thxnet/ci-containers/sccache:0.5.4"
     rust       = "docker-image://docker.io/library/rust:1.74-slim-buster"
