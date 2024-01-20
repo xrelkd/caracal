@@ -3,6 +3,9 @@
 , lib
 , rustPlatform
 , protobuf
+, trunk
+, binaryen
+, wasm-bindgen-cli
 , installShellFiles
 }:
 
@@ -18,6 +21,10 @@ rustPlatform.buildRustPackage {
 
   nativeBuildInputs = [
     protobuf
+
+    binaryen
+    trunk
+    wasm-bindgen-cli
 
     installShellFiles
   ];
