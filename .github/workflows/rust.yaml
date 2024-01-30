@@ -64,6 +64,20 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@v2
 
+      - name: Pre Cache
+        run: |
+          rm -rf ~/.cargo/registry/index/ ~/.cargo/registry/cache/ ~/.cargo/git/db/ ./target/
+
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ./target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
 
@@ -74,10 +88,6 @@ jobs:
       - name: Run cargo clippy
         run: |
           nix develop --command cargo clippy-all
-
-      - name: Run sccache stat for check
-        shell: bash
-        run: ${SCCACHE_PATH} --show-stats
 
   test:
     name: Test
@@ -100,6 +110,20 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@v2
 
+      - name: Pre Cache
+        run: |
+          rm -rf ~/.cargo/registry/index/ ~/.cargo/registry/cache/ ~/.cargo/git/db/ ./target/
+
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ./target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
 
@@ -110,10 +134,6 @@ jobs:
       - name: Test with cargo-nextest
         run: |
           nix develop --command cargo nextest-all ${{ matrix.mode == 'release' && '--release' || '' }}
-
-      - name: Run sccache stat for check
-        shell: bash
-        run: ${SCCACHE_PATH} --show-stats
 
   doc:
     name: Doc
@@ -129,13 +149,23 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@v2
 
+      - name: Pre Cache
+        run: |
+          rm -rf ~/.cargo/registry/index/ ~/.cargo/registry/cache/ ~/.cargo/git/db/ ./target/
+
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ./target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
 
       - name: Run cargo doc
         run: |
           nix develop --command cargo doc-all
-
-      - name: Run sccache stat for check
-        shell: bash
-        run: ${SCCACHE_PATH} --show-stats
