@@ -7,14 +7,13 @@ target "caracal" {
   platforms  = ["linux/amd64"]
   target     = "caracal"
   contexts = {
-    rust   = "docker-image://docker.io/library/rust:1.75.0-alpine3.19"
+    rust   = "docker-image://docker.io/library/rust:1.76.0-alpine3.19"
     alpine = "docker-image://docker.io/library/alpine:3.19"
   }
   args = {
-    RUSTC_WRAPPER         = "/usr/bin/sccache"
+    RUSTC_WRAPPER         = "sccache"
     AWS_ACCESS_KEY_ID     = null
     AWS_SECRET_ACCESS_KEY = null
-    SCCACHE_REGION        = null
     SCCACHE_BUCKET        = null
     SCCACHE_ENDPOINT      = null
     SCCACHE_S3_USE_SSL    = null
