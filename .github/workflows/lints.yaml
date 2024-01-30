@@ -23,6 +23,8 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v9
 
+      - uses: DeterminateSystems/magic-nix-cache-action@v2
+
       - name: Install treefmt
         run: nix profile install 'nixpkgs#treefmt'
 
