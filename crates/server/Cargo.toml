@@ -34,7 +34,7 @@ http       = "1"
 tower      = { version = "0.4", features = ["timeout"] }
 tower-http = { version = "0.5", features = ["trace"] }
 
-zbus = { version = "3", default-features = false, features = ["tokio"] }
+zbus = { version = "4", default-features = false, features = ["tokio"] }
 
 hex = "0.4"
 humansize = "2"
