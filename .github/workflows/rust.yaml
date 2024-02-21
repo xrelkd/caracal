@@ -24,6 +24,8 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  SCCACHE_GHA_ENABLED: true
+  RUSTC_WRAPPER: "sccache"
 
 concurrency:
   group: rust-${{ github.ref }}
@@ -38,6 +40,8 @@ jobs:
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v9
+
+      - uses: DeterminateSystems/magic-nix-cache-action@v3
 
       - name: Show rustfmt version
         run: |
@@ -58,18 +62,24 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v9
 
+      - uses: DeterminateSystems/magic-nix-cache-action@v3
+
       - name: Pre Cache
         run: |
-          rm -rf ~/.cargo/registry/index/ ~/.cargo/registry/cache/ ~/.cargo/git/db/
+          rm -rf ~/.cargo/registry/index/ ~/.cargo/registry/cache/ ~/.cargo/git/db/ ./target/
 
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+            ./target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('flake.lock', '**/Cargo.lock') }}
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Show cargo clippy version
         run: |
@@ -98,18 +108,24 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v9
 
+      - uses: DeterminateSystems/magic-nix-cache-action@v3
+
       - name: Pre Cache
         run: |
-          rm -rf ~/.cargo/registry/index/ ~/.cargo/registry/cache/ ~/.cargo/git/db/
+          rm -rf ~/.cargo/registry/index/ ~/.cargo/registry/cache/ ~/.cargo/git/db/ ./target/
 
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+            ./target/
+          key: ${{ runner.os }}-cargo-${{ matrix.mode }}-${{ hashFiles('flake.lock', '**/Cargo.lock') }}
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Show cargo-nextest version
         run: |
@@ -127,24 +143,28 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: "true"
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v9
 
+      - uses: DeterminateSystems/magic-nix-cache-action@v3
+
       - name: Pre Cache
         run: |
-          rm -rf ~/.cargo/registry/index/ ~/.cargo/registry/cache/ ~/.cargo/git/db/
+          rm -rf ~/.cargo/registry/index/ ~/.cargo/registry/cache/ ~/.cargo/git/db/ ./target/
 
       - name: Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+            ./target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('flake.lock', '**/Cargo.lock') }}
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Run cargo doc
         run: |

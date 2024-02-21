@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use async_trait::async_trait;
 use caracal_base::model;
 use caracal_proto as proto;
 use tonic::Request;
@@ -14,7 +13,6 @@ use crate::{
     Client,
 };
 
-#[async_trait]
 pub trait Task {
     async fn add_uri(
         &self,
@@ -49,7 +47,6 @@ pub trait Task {
     ) -> Result<bool, DecreaseConcurrentNumberError>;
 }
 
-#[async_trait]
 impl Task for Client {
     async fn add_uri(
         &self,

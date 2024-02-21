@@ -61,7 +61,7 @@ cd ~/bin
 
 # Download and extract caracal to `~/bin/`.
 # NOTE: replace the version with the version you want to install
-export CARACAL_VERSION=v0.3.1
+export CARACAL_VERSION=$(basename $(curl -s -w %{redirect_url} https://github.com/xrelkd/caracal/releases/latest))
 
 # NOTE: the architecture of your machine,
 # Available values are `x86_64-unknown-linux-musl`, `x86_64-apple-darwin`, `aarch64-apple-darwin`.

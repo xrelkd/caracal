@@ -1,5 +1,5 @@
 [workspace.package]
-version     = "0.3.1"
+version     = "0.3.2"
 authors     = ["xrelkd <46590321+xrelkd@users.noreply.github.com>"]
 homepage    = "https://github.com/xrelkd/caracal"
 repository  = "https://github.com/xrelkd/caracal"
@@ -27,6 +27,9 @@ members = [
 
 [workspace.lints.rust]
 box_pointers = "allow"
+
+# SAFETY: allow `async_fn_in_trait`
+async_fn_in_trait = "allow"
 
 # TODO: deny `unused_crate_dependencies` after https://github.com/rust-lang/rust/issues/95513 being solved
 unused_crate_dependencies = "allow"
