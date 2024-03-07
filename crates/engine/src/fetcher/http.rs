@@ -69,7 +69,10 @@ impl Fetcher {
             .send()
             .await
             .context(error::FetchRangeFromHttpSnafu)?;
-        Ok(ByteStream::from(resp))
+        let content_length = end - start + 1;
+        dbg!((start, end, content_length, resp.status(), resp.headers()));
+        assert_eq!(resp.status(), reqwest::StatusCode::PARTIAL_CONTENT);
+        Ok(ByteStream::new(resp, content_length))
     }
 
     pub async fn fetch_all(&mut self) -> Result<ByteStream> {
@@ -85,15 +88,48 @@ impl Fetcher {
 #[derive(Debug)]
 pub struct ByteStream {
     response: reqwest::Response,
+    received: u64,
+    content_length: Option<u64>,
     buffer: Bytes,
 }
 
 impl ByteStream {
+    pub fn new(response: reqwest::Response, content_length: u64) -> Self {
+        Self { response, received: 0, content_length: Some(content_length), buffer: Bytes::new() }
+    }
+
     pub async fn bytes(&mut self) -> Result<Option<&[u8]>> {
         match self.response.chunk().await.context(error::FetchBytesFromHttpSnafu) {
-            Ok(Some(mut bytes)) => {
-                std::mem::swap(&mut self.buffer, &mut bytes);
-                Ok(Some(self.buffer.as_ref()))
+            Ok(Some(bytes)) => {
+                if let Some(content_length) = self.content_length {
+                    if self.received + bytes.len() as u64 > content_length {
+                        let remaining =
+                            usize::try_from(content_length - self.received).unwrap_or_default();
+                        dbg!((
+                            content_length,
+                            self.received,
+                            remaining,
+                            bytes.len(),
+                            self.response.status(),
+                            self.response.headers()
+                        ));
+                        assert_eq!(self.response.status(), reqwest::StatusCode::PARTIAL_CONTENT);
+                        if remaining == 0 {
+                            return Ok(None);
+                        }
+                        self.received += remaining as u64;
+                        self.buffer = bytes.slice(0..remaining);
+                        assert_eq!(self.buffer.len(), remaining);
+                    } else {
+                        self.received += bytes.len() as u64;
+                        self.buffer = bytes;
+                    }
+                    Ok(Some(self.buffer.as_ref()))
+                } else {
+                    self.received += bytes.len() as u64;
+                    self.buffer = bytes;
+                    Ok(Some(self.buffer.as_ref()))
+                }
             }
             Ok(None) => Ok(None),
             Err(err) => Err(err),
@@ -102,5 +138,8 @@ impl ByteStream {
 }
 
 impl From<reqwest::Response> for ByteStream {
-    fn from(response: reqwest::Response) -> Self { Self { response, buffer: Bytes::new() } }
+    fn from(response: reqwest::Response) -> Self {
+        let content_length = response.content_length();
+        Self { response, received: 0, content_length, buffer: Bytes::new() }
+    }
 }
