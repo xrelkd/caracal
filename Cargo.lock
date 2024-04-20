@@ -489,7 +489,7 @@ checksum = "514de17de45fdb8dc022b1a7975556c53c86f9f0aa5f534b98977b171857c2c9"
 
 [[package]]
 name = "caracal"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "caracal-base",
  "caracal-cli",
@@ -519,7 +519,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-base"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "bytes",
  "directories",
@@ -534,7 +534,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-cli"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "caracal-base",
  "http 1.1.0",
@@ -550,7 +550,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-daemon"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "caracal-base",
  "caracal-cli",
@@ -574,7 +574,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-engine"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "async-channel",
  "bytes",
@@ -595,7 +595,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-grpc-client"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "caracal-base",
  "caracal-proto",
@@ -611,7 +611,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-metrics"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "axum 0.7.5",
  "bytes",
@@ -626,7 +626,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-proto"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "caracal-base",
  "prost",
@@ -640,7 +640,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-server"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "axum 0.7.5",
  "caracal-base",
@@ -668,7 +668,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-tui"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "caracal-base",
  "caracal-cli",
