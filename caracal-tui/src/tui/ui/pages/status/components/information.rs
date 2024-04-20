@@ -17,7 +17,7 @@ impl From<&State> for Props {
     fn from(state: &State) -> Self {
         Self {
             server_endpoint: state.server_endpoint().clone(),
-            daemon_version: state.daemon_version().map(Clone::clone),
+            daemon_version: state.daemon_version().cloned(),
         }
     }
 }
