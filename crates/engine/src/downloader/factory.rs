@@ -180,6 +180,7 @@ impl Factory {
 
             let sink = OpenOptions::new()
                 .create(true)
+                .truncate(false)
                 .write(true)
                 .open(&full_path)
                 .await
@@ -229,6 +230,7 @@ impl Factory {
 
             let sink = OpenOptions::new()
                 .create(true)
+                .truncate(false)
                 .write(true)
                 .open(&full_path)
                 .await

@@ -2,6 +2,9 @@
 , cargoArgs
 , unitTestArgs
 , pkgs
+, lib
+, stdenv
+, darwin
 , ...
 }:
 
@@ -10,6 +13,11 @@ let
 in
 pkgs.mkShell {
   name = "dev-shell";
+
+  buildInputs = lib.optionals stdenv.isDarwin [
+    darwin.apple_sdk.frameworks.Security
+    darwin.apple_sdk.frameworks.SystemConfiguration
+  ];
 
   nativeBuildInputs = with pkgs; [
     cargo-ext.cargo-build-all

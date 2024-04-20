@@ -37,6 +37,7 @@ impl ControlFile {
 
         let file = tokio::fs::OpenOptions::new()
             .create(true)
+            .truncate(true)
             .write(true)
             .read(false)
             .open(&file_path)
