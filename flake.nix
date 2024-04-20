@@ -74,10 +74,12 @@
           packages = rec {
             default = caracal;
             caracal = pkgs.callPackage ./devshell/package.nix {
+              inherit (pkgs) darwin;
               inherit (cargoToml.workspace.package) version;
               inherit name rustPlatform;
             };
             container = pkgs.callPackage ./devshell/container.nix {
+              inherit (pkgs) darwin;
               inherit (cargoToml.workspace.package) version;
               inherit name caracal;
             };
