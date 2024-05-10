@@ -33,7 +33,7 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v11
 
-      - uses: DeterminateSystems/magic-nix-cache-action@v5
+      - uses: DeterminateSystems/magic-nix-cache-action@v6
 
       - name: Build Nix Flake
         run: nix build
