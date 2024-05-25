@@ -35,7 +35,7 @@ humansize = "2"
 humantime = "2"
 resolve-path = "0.1"
 semver = "1"
-shadow-rs = "0.27"
+shadow-rs = "0.28"
 snafu = "0.8"
 time = { version = "0.3", features = [
   "formatting",
@@ -49,7 +49,7 @@ caracal-cli         = { path = "../crates/cli" }
 caracal-grpc-client = { path = "../crates/grpc-client" }
 
 [build-dependencies]
-shadow-rs = "0.27"
+shadow-rs = "0.28"
 
 [lints]
 workspace = true
