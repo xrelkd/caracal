@@ -27,7 +27,7 @@ impl From<&State> for Props {
 pub struct TaskStatusList {
     /// Sending actions to the state store
     action_tx: UnboundedSender<Action>,
-    /// State Mapped TaskStatus Props
+    /// State Mapped `TaskStatus` Props
     props: Props,
     // Internal Component State
     /// Table with optional selection and current offset
