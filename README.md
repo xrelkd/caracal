@@ -444,7 +444,7 @@ docker run -d ghcr.io/xrelkd/caracal:latest
 <details>
 <summary>Run with <b>Docker Compose</b></summary>
 
-We use `Docker Compose` to configurate `caracal-daemon` service.
+We use `Docker Compose` to configure `caracal-daemon` service.
 
 1. Create `docker-compose.yaml` and `caracal-daemon.toml` with the following contents.
 
