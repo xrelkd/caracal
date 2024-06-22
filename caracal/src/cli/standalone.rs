@@ -87,19 +87,13 @@ fn create_task_future(
                 Ok(d) => d,
                 Err(error) => {
                     eprintln!("{error}");
-                    return sigfinn::ExitStatus::Error(Error::Downloader {
-                        uri: Box::new(task.uri),
-                        error,
-                    });
+                    return ExitStatus::Error(Error::Downloader { uri: Box::new(task.uri), error });
                 }
             };
 
             if let Err(error) = downloader.start().await {
                 tracing::error!("{error}");
-                return sigfinn::ExitStatus::Error(Error::Downloader {
-                    uri: Box::new(task.uri),
-                    error,
-                });
+                return ExitStatus::Error(Error::Downloader { uri: Box::new(task.uri), error });
             }
 
             let mut shutdown = shutdown.into_stream();
@@ -146,12 +140,12 @@ fn create_task_future(
                         progress.total_chunk_count(),
                         progress.filename().display()
                     ));
-                    sigfinn::ExitStatus::Success
+                    ExitStatus::Success
                 }
-                Ok(_) => sigfinn::ExitStatus::Success,
+                Ok(_) => ExitStatus::Success,
                 Err(error) => {
                     tracing::error!("{error}");
-                    sigfinn::ExitStatus::Error(Error::Downloader { uri: Box::new(task.uri), error })
+                    ExitStatus::Error(Error::Downloader { uri: Box::new(task.uri), error })
                 }
             }
         }
