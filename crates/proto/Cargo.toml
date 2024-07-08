@@ -14,7 +14,7 @@ keywords.workspace   = true
 [dependencies]
 prost       = "0.13"
 prost-types = "0.13"
-tonic       = { version = "0.11", features = ["gzip"] }
+tonic       = { version = "0.12", features = ["gzip"] }
 
 snafu = "0.8"
 time  = { version = "0.3", features = ["formatting", "macros"] }

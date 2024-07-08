@@ -20,7 +20,7 @@ http  = "1"
 tower = "0.4"
 
 prost-types = "0.13"
-tonic       = { version = "0.11", features = ["gzip"] }
+tonic       = { version = "0.12", features = ["gzip"] }
 
 semver = "1"
 snafu  = "0.8"
