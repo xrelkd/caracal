@@ -623,7 +623,7 @@ name = "caracal-proto"
 version = "0.3.4"
 dependencies = [
  "caracal-base",
- "prost 0.12.6",
+ "prost 0.13.0",
  "prost-build 0.13.0",
  "prost-types 0.13.0",
  "snafu 0.8.4",
