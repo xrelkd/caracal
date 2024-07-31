@@ -625,7 +625,7 @@ dependencies = [
  "caracal-grpc-client",
  "clap",
  "clap_complete",
- "crossterm",
+ "crossterm 0.28.0",
  "futures",
  "http 1.1.0",
  "http-serde",
@@ -770,7 +770,7 @@ version = "7.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b34115915337defe99b2aff5c2ce6771e5fbc4079f4b506301f5cf394c8452f7"
 dependencies = [
- "crossterm",
+ "crossterm 0.27.0",
  "strum",
  "strum_macros",
  "unicode-width",
@@ -922,10 +922,26 @@ checksum = "f476fe445d41c9e991fd07515a6f463074b782242ccf4a5b7b1d1012e70824df"
 dependencies = [
  "bitflags 2.6.0",
  "crossterm_winapi",
- "futures-core",
  "libc",
  "mio 0.8.11",
  "parking_lot",
+ "signal-hook",
+ "signal-hook-mio",
+ "winapi",
+]
+
+[[package]]
+name = "crossterm"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11b0533cb6d95d1301523bfa592dd15a501323a026fcb12a0cd720a2291470d1"
+dependencies = [
+ "bitflags 2.6.0",
+ "crossterm_winapi",
+ "futures-core",
+ "mio 1.0.1",
+ "parking_lot",
+ "rustix",
  "signal-hook",
  "signal-hook-mio",
  "winapi",
@@ -1939,6 +1955,7 @@ checksum = "4569e456d394deccd22ce1c1913e6ea0e54519f577285001215d33557431afe4"
 dependencies = [
  "hermit-abi 0.3.9",
  "libc",
+ "log",
  "wasi",
  "windows-sys 0.52.0",
 ]
@@ -2489,7 +2506,7 @@ dependencies = [
  "bitflags 2.6.0",
  "cassowary",
  "compact_str",
- "crossterm",
+ "crossterm 0.27.0",
  "itertools",
  "lru",
  "paste",
@@ -2963,12 +2980,13 @@ dependencies = [
 
 [[package]]
 name = "signal-hook-mio"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29ad2e15f37ec9a6cc544097b78a1ec90001e9f71b81338ca39f430adaca99af"
+checksum = "34db1a06d485c9142248b7a054f034b349b212551f3dfd19c94d45a754a217cd"
 dependencies = [
  "libc",
  "mio 0.8.11",
+ "mio 1.0.1",
  "signal-hook",
 ]
 
