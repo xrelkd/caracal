@@ -60,11 +60,11 @@ impl Fetcher {
         Metadata { length: self.length, filename: self.file_path.file_name_or_fallback() }
     }
 
-    pub async fn fetch_all(&mut self) -> Result<ByteStream> {
+    pub async fn fetch_all(&self) -> Result<ByteStream> {
         self.fetch_bytes(0, self.length - 1).await
     }
 
-    pub async fn fetch_bytes(&mut self, start: u64, end: u64) -> Result<ByteStream> {
+    pub async fn fetch_bytes(&self, start: u64, end: u64) -> Result<ByteStream> {
         self.operator
             .reader_with(&self.file_path.to_string_lossy())
             .range(start..=end)

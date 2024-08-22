@@ -61,7 +61,7 @@ impl Fetcher {
 
     pub fn fetch_metadata(&self) -> Metadata { self.metadata.clone() }
 
-    pub async fn fetch_bytes(&mut self, start: u64, end: u64) -> Result<ByteStream> {
+    pub async fn fetch_bytes(&self, start: u64, end: u64) -> Result<ByteStream> {
         let resp = self
             .client
             .get(self.uri.to_string())
@@ -72,7 +72,7 @@ impl Fetcher {
         Ok(ByteStream::from(resp))
     }
 
-    pub async fn fetch_all(&mut self) -> Result<ByteStream> {
+    pub async fn fetch_all(&self) -> Result<ByteStream> {
         self.client
             .get(self.uri.to_string())
             .send()
