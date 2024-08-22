@@ -444,14 +444,14 @@ impl EventHandler {
     }
 
     #[inline]
-    fn increase_concurrent_number(&mut self, task_id: u64) {
+    fn increase_concurrent_number(&self, task_id: u64) {
         if let Some(downloader) = self.downloaders.get(&task_id) {
             downloader.add_worker();
         }
     }
 
     #[inline]
-    fn decrease_concurrent_number(&mut self, task_id: u64) {
+    fn decrease_concurrent_number(&self, task_id: u64) {
         if let Some(downloader) = self.downloaders.get(&task_id) {
             downloader.remove_worker();
         }
