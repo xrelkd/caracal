@@ -25,8 +25,8 @@ sigfinn      = "0.2"
 tokio        = { version = "1", features = ["macros", "rt-multi-thread", "sync"] }
 tokio-stream = "0.1"
 
-crossterm = { version = "0.27", features = ["event-stream"] }
-ratatui   = { version = "0.26", features = ["all-widgets"] }
+crossterm = { version = "0.28", features = ["event-stream"] }
+ratatui   = { version = "0.27", features = ["all-widgets"] }
 
 clap = { version = "4", features = ["derive", "env"] }
 clap_complete = "4"
@@ -35,7 +35,7 @@ humansize = "2"
 humantime = "2"
 resolve-path = "0.1"
 semver = "1"
-shadow-rs = "0.28"
+shadow-rs = "0.33"
 snafu = "0.8"
 time = { version = "0.3", features = [
   "formatting",
@@ -49,7 +49,7 @@ caracal-cli         = { path = "../crates/cli" }
 caracal-grpc-client = { path = "../crates/grpc-client" }
 
 [build-dependencies]
-shadow-rs = "0.28"
+shadow-rs = "0.33"
 
 [lints]
 workspace = true
