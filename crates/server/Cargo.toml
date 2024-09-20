@@ -32,7 +32,7 @@ tonic = { version = "0.12", features = ["gzip"] }
 axum       = "0.7"
 http       = "1"
 tower      = { version = "0.4", features = ["timeout"] }
-tower-http = { version = "0.5", features = ["trace"] }
+tower-http = { version = "0.6", features = ["trace"] }
 
 zbus = { version = "4", default-features = false, features = ["tokio"] }
 
