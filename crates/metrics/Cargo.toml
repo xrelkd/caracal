@@ -16,7 +16,7 @@ tokio = { version = "1", features = ["net"] }
 
 axum       = "0.7"
 tower      = { version = "0.4", features = ["timeout"] }
-tower-http = { version = "0.5", features = ["trace"] }
+tower-http = { version = "0.6", features = ["trace"] }
 
 bytes       = "1"
 lazy_static = "1"
