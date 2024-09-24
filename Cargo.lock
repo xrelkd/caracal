@@ -555,7 +555,7 @@ dependencies = [
  "snafu 0.8.4",
  "tokio",
  "tonic",
- "tower 0.4.13",
+ "tower 0.5.1",
  "tracing",
 ]
 
@@ -570,7 +570,7 @@ dependencies = [
  "prometheus",
  "snafu 0.8.4",
  "tokio",
- "tower 0.4.13",
+ "tower 0.5.1",
  "tower-http",
 ]
 
@@ -610,7 +610,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tonic",
- "tower 0.4.13",
+ "tower 0.5.1",
  "tower-http",
  "tracing",
  "zbus",
