@@ -3,7 +3,6 @@ mod utils;
 mod proto {
     // SAFETY: allow: prost
     #![allow(
-        box_pointers,
         unreachable_pub,
         unused_qualifications,
         unused_results,
