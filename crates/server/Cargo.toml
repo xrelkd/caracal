@@ -34,7 +34,7 @@ http       = "1"
 tower      = { version = "0.5", features = ["timeout"] }
 tower-http = { version = "0.6", features = ["trace"] }
 
-zbus = { version = "4", default-features = false, features = ["tokio"] }
+zbus = { version = "5", default-features = false, features = ["tokio"] }
 
 lazy_static = "1"
 prometheus = "0.13"
