@@ -203,7 +203,8 @@ impl Cli {
                         .write_all(Self::command().render_long_version().as_bytes())
                         .expect("Failed to write to stdout");
 
-                    if let Ok(client) = create_grpc_client(&config).await {
+                    let maybe_client = create_grpc_client(&config).await;
+                    if let Ok(ref client) = maybe_client {
                         let client_version =
                             Self::command().get_version().unwrap_or_default().to_string();
                         let server_version = client.get_version().await.map_or_else(
@@ -217,9 +218,8 @@ impl Cli {
                         std::io::stdout()
                             .write_all(info.as_bytes())
                             .expect("Failed to write to stdout");
-
-                        drop(client);
                     }
+                    drop(maybe_client);
                     Ok(())
                 }
                 Some(Commands::AddUri {
