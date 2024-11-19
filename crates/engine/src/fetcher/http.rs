@@ -92,8 +92,13 @@ impl ByteStream {
     pub async fn bytes(&mut self) -> Result<Option<&[u8]>> {
         match self.response.chunk().await.context(error::FetchBytesFromHttpSnafu) {
             Ok(Some(mut bytes)) => {
-                std::mem::swap(&mut self.buffer, &mut bytes);
-                Ok(Some(self.buffer.as_ref()))
+                if bytes.is_empty() {
+                    Ok(None)
+                } else {
+                    self.buffer.clear();
+                    std::mem::swap(&mut self.buffer, &mut bytes);
+                    Ok(Some(self.buffer.as_ref()))
+                }
             }
             Ok(None) => Ok(None),
             Err(err) => Err(err),
