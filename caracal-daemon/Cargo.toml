@@ -27,7 +27,7 @@ clap          = { version = "4", features = ["derive", "env"] }
 clap_complete = "4"
 http          = "1"
 resolve-path  = "0.1"
-shadow-rs     = "0.36"
+shadow-rs     = "0.37"
 snafu         = "0.8"
 
 caracal-base   = { path = "../crates/base" }
@@ -36,7 +36,7 @@ caracal-engine = { path = "../crates/engine" }
 caracal-server = { path = "../crates/server" }
 
 [build-dependencies]
-shadow-rs = "0.36"
+shadow-rs = "0.37"
 
 [lints]
 workspace = true
