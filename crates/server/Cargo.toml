@@ -29,7 +29,7 @@ tokio-stream = { version = "0.1", features = ["net"] }
 
 tonic = { version = "0.12", features = ["gzip"] }
 
-axum       = "0.7"
+axum       = "0.8"
 http       = "1"
 tower      = { version = "0.5", features = ["timeout"] }
 tower-http = { version = "0.6", features = ["trace"] }
