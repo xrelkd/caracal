@@ -27,7 +27,7 @@ tokio = { version = "1", features = [
 ] }
 tokio-stream = { version = "0.1", features = ["net"] }
 
-tonic = { version = "0.12", features = ["gzip"] }
+tonic = { version = "0.13", features = ["gzip"] }
 
 axum       = "0.8"
 http       = "1"
