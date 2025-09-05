@@ -416,7 +416,7 @@ dependencies = [
  "serde",
  "shadow-rs",
  "sigfinn",
- "snafu 0.8.7",
+ "snafu 0.8.9",
  "time",
  "tokio",
  "toml",
@@ -436,7 +436,7 @@ dependencies = [
  "mime",
  "semver",
  "serde",
- "snafu 0.8.7",
+ "snafu 0.8.9",
  "time",
 ]
 
@@ -448,7 +448,7 @@ dependencies = [
  "http 1.3.1",
  "serde",
  "serde_with",
- "snafu 0.8.7",
+ "snafu 0.8.9",
  "tokio",
  "toml",
  "tracing",
@@ -472,7 +472,7 @@ dependencies = [
  "resolve-path",
  "serde",
  "shadow-rs",
- "snafu 0.8.7",
+ "snafu 0.8.9",
  "tokio",
  "toml",
  "tracing",
@@ -494,7 +494,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "snafu 0.8.7",
+ "snafu 0.8.9",
  "time",
  "tokio",
  "tracing",
@@ -511,7 +511,7 @@ dependencies = [
  "hyper-util",
  "prost-types",
  "semver",
- "snafu 0.8.7",
+ "snafu 0.8.9",
  "tokio",
  "tonic",
  "tower 0.5.2",
@@ -527,7 +527,7 @@ dependencies = [
  "lazy_static",
  "mime",
  "prometheus",
- "snafu 0.8.7",
+ "snafu 0.8.9",
  "tokio",
  "tower 0.5.2",
  "tower-http",
@@ -541,7 +541,7 @@ dependencies = [
  "prost",
  "prost-build",
  "prost-types",
- "snafu 0.8.7",
+ "snafu 0.8.9",
  "time",
  "tonic",
  "tonic-build",
@@ -564,7 +564,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sigfinn",
- "snafu 0.8.7",
+ "snafu 0.8.9",
  "time",
  "tokio",
  "tokio-stream",
@@ -596,7 +596,7 @@ dependencies = [
  "serde",
  "shadow-rs",
  "sigfinn",
- "snafu 0.8.7",
+ "snafu 0.8.9",
  "time",
  "tokio",
  "tokio-stream",
@@ -3105,11 +3105,11 @@ dependencies = [
 
 [[package]]
 name = "snafu"
-version = "0.8.7"
+version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0062a372b26c4a6e9155d099a3416d732514fd47ae2f235b3695b820afcee74a"
+checksum = "6e84b3f4eacbf3a1ce05eac6763b4d629d60cbc94d632e4092c54ade71f1e1a2"
 dependencies = [
- "snafu-derive 0.8.7",
+ "snafu-derive 0.8.9",
 ]
 
 [[package]]
@@ -3126,9 +3126,9 @@ dependencies = [
 
 [[package]]
 name = "snafu-derive"
-version = "0.8.7"
+version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e5fd9e3263fc19d73abd5107dbd4d43e37949212d2b15d4d334ee5db53022b8"
+checksum = "c1c97747dbf44bb1ca44a561ece23508e99cb592e862f22222dcf42f51d1e451"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
