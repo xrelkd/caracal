@@ -220,7 +220,7 @@ impl Downloader {
         Ok(summary)
     }
 
-    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::cognitive_complexity, clippy::too_many_lines)]
     async fn serve_with_multiple_workers(
         ServeWithMultipleWorkerOptions {
             worker_number,

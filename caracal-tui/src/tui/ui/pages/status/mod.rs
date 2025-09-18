@@ -48,7 +48,7 @@ impl Component for StatusPage {
         }
     }
 
-    fn name(&self) -> &str { "Status Page" }
+    fn name(&self) -> &'static str { "Status Page" }
 
     fn handle_key_event(&mut self, key: KeyEvent) {
         if key.kind != KeyEventKind::Press {

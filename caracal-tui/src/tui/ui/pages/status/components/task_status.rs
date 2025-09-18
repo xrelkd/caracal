@@ -88,7 +88,7 @@ impl Component for TaskStatusList {
         Self { props: Props::from(state), ..self }
     }
 
-    fn name(&self) -> &str { "Task Status List" }
+    fn name(&self) -> &'static str { "Task Status List" }
 
     fn handle_key_event(&mut self, key: KeyEvent) {
         if key.kind != KeyEventKind::Press {
@@ -206,7 +206,7 @@ impl ComponentRender<RenderProps> for TaskStatusList {
                 Cell::from(status.file_path.file_name().unwrap_or_default().to_string_lossy()),
                 Cell::new(humansize::format_size(total_bytes, humansize::BINARY)),
                 Cell::new(humansize::format_size(
-                    if received_bytes >= total_bytes { 0 } else { total_bytes - received_bytes },
+                    total_bytes.saturating_sub(received_bytes),
                     humansize::BINARY,
                 )),
                 Cell::new(progress_percentage),
