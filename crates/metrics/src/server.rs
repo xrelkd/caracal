@@ -1,4 +1,4 @@
-use std::{future::Future, net::SocketAddr, str::FromStr};
+use std::{future::Future, net::SocketAddr, str::FromStr, sync::LazyLock};
 
 use axum::{
     body::Body,
@@ -8,7 +8,6 @@ use axum::{
     routing, Router,
 };
 use bytes::{BufMut, BytesMut};
-use lazy_static::lazy_static;
 use prometheus::{Encoder, TextEncoder};
 use snafu::ResultExt;
 use tokio::net::TcpListener;
@@ -18,12 +17,13 @@ use crate::{
     traits,
 };
 
-lazy_static! {
-    static ref OPENMETRICS_TEXT: mime::Mime =
-        mime::Mime::from_str("application/openmetrics-text; version=1.0.0; charset=utf-8")
-            .expect("is valid mime type; qed");
-    static ref ENCODER: TextEncoder = TextEncoder::new();
-}
+// FIXME: use `OPENMETRICS_TEXT`
+#[allow(dead_code)]
+pub static OPENMETRICS_TEXT: LazyLock<mime::Mime> = LazyLock::new(|| {
+    mime::Mime::from_str("application/openmetrics-text; version=1.0.0; charset=utf-8")
+        .expect("is valid mime type; qed")
+});
+pub static ENCODER: LazyLock<TextEncoder> = LazyLock::new(TextEncoder::new);
 
 async fn metrics<Metrics>(Extension(metrics): Extension<Metrics>) -> Response<Body>
 where
@@ -79,14 +79,14 @@ where
 
 #[cfg(test)]
 mod tests {
-    use lazy_static::initialize;
+    use std::sync::LazyLock;
 
     use crate::server::{ENCODER, OPENMETRICS_TEXT};
 
     #[test]
-    fn test_lazy_static() {
-        initialize(&OPENMETRICS_TEXT);
-        initialize(&ENCODER);
+    fn test_once_cell_lazy() {
+        let _ = LazyLock::force(&OPENMETRICS_TEXT);
+        let _ = LazyLock::force(&ENCODER);
     }
 
     #[test]

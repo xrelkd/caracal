@@ -12,6 +12,7 @@ pub struct TransferStatus {
 }
 
 impl TransferStatus {
+    #[allow(clippy::result_large_err)]
     pub fn new(content_length: u64, chunk_size: u64) -> Result<Self, Error> {
         let chunks = InitialChunks::new(0, content_length - 1, chunk_size)?
             .map(|chunk| (chunk.start, chunk))
@@ -47,11 +48,7 @@ impl TransferStatus {
 
     pub fn remaining(&self) -> u64 {
         let total_received = self.total_received();
-        if self.content_length < total_received {
-            0
-        } else {
-            self.content_length - total_received
-        }
+        self.content_length.saturating_sub(total_received)
     }
 
     pub fn split(&mut self) -> Option<(Chunk, Chunk)> {
@@ -99,7 +96,7 @@ impl TransferStatus {
     #[must_use]
     pub const fn concurrent_number(&self) -> usize { self.concurrent_number }
 
-    pub fn update_concurrent_number(&mut self, concurrent_number: usize) {
+    pub const fn update_concurrent_number(&mut self, concurrent_number: usize) {
         self.concurrent_number = concurrent_number;
     }
 }
@@ -117,6 +114,7 @@ impl InitialChunks {
     /// * `start` - the first byte of the file, typically 0
     /// * `end` - the highest value in bytes, typically content-length - 1
     /// * `chunk_size` - the desired size of the chunks
+    #[allow(clippy::result_large_err)]
     pub const fn new(start: u64, end: u64, chunk_size: u64) -> Result<Self, Error> {
         if chunk_size == 0 {
             return Err(Error::BadChunkSize { value: chunk_size });

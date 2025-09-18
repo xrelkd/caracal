@@ -1,15 +1,14 @@
+use std::sync::LazyLock;
+
 use caracal_proto as proto;
-use lazy_static::lazy_static;
 use tonic::{Request, Response, Status};
 
-lazy_static! {
-    static ref GET_SYSTEM_VERSION_RESPONSE: proto::GetSystemVersionResponse =
-        proto::GetSystemVersionResponse {
-            major: caracal_base::PROJECT_SEMVER.major,
-            minor: caracal_base::PROJECT_SEMVER.minor,
-            patch: caracal_base::PROJECT_SEMVER.patch
-        };
-}
+pub static GET_SYSTEM_VERSION_RESPONSE: LazyLock<proto::GetSystemVersionResponse> =
+    LazyLock::new(|| proto::GetSystemVersionResponse {
+        major: caracal_base::PROJECT_SEMVER.major,
+        minor: caracal_base::PROJECT_SEMVER.minor,
+        patch: caracal_base::PROJECT_SEMVER.patch,
+    });
 
 pub struct SystemService {}
 

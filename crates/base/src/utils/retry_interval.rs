@@ -23,7 +23,7 @@ impl RetryInterval {
         self
     }
 
-    pub fn reset(&mut self) { self.count = 0; }
+    pub const fn reset(&mut self) { self.count = 0; }
 
     #[must_use]
     pub const fn limit(&self) -> usize { self.limit }

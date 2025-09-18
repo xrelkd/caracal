@@ -42,7 +42,7 @@ impl Component for InformationArea {
         Self { props: Props::from(state) }
     }
 
-    fn name(&self) -> &str { "Information" }
+    fn name(&self) -> &'static str { "Information" }
 
     fn handle_key_event(&mut self, _key: KeyEvent) {}
 }

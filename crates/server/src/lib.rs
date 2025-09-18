@@ -25,6 +25,7 @@ use crate::metrics::Metrics;
 /// # Errors
 ///
 /// This function will return an error if the server fails to start.
+#[allow(clippy::cognitive_complexity)]
 pub async fn serve_with_shutdown(
     Config {
         task_scheduler,

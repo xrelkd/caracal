@@ -17,6 +17,7 @@ pub struct Fetcher {
 }
 
 impl Fetcher {
+    #[allow(clippy::cognitive_complexity)]
     pub async fn new(client: reqwest::Client, uri: http::Uri) -> Result<Self> {
         let resp =
             client.head(uri.to_string()).send().await.context(error::FetchHttpHeaderSnafu)?;

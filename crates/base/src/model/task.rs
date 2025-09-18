@@ -87,11 +87,7 @@ impl ProgressChunk {
     #[must_use]
     pub const fn remaining(&self) -> u64 {
         let len = self.len();
-        if len >= self.received {
-            len - self.received
-        } else {
-            0
-        }
+        len.saturating_sub(self.received)
     }
 
     #[must_use]

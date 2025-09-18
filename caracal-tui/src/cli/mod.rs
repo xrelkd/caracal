@@ -48,7 +48,7 @@ impl Default for Cli {
 }
 
 impl Cli {
-    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::result_large_err, clippy::too_many_lines)]
     pub fn run(self) -> Result<(), Error> {
         let Self { commands, log_level, config_file } = self;
 
@@ -105,8 +105,7 @@ mod tests {
 
     #[test]
     fn test_command_simple() {
-        if let Some(Commands::Version { .. }) =
-            Cli::parse_from(["program_name", "version"]).commands
+        if matches!(Cli::parse_from(["program_name", "version"]).commands, Some(Commands::Version))
         {
             // everything is good.
         } else {

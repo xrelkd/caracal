@@ -43,7 +43,7 @@ impl DownloaderStatus {
     pub fn chunks(&self) -> Vec<model::ProgressChunk> { self.chunks.clone() }
 
     #[must_use]
-    pub fn total_chunk_count(&self) -> usize { self.chunks.len() }
+    pub const fn total_chunk_count(&self) -> usize { self.chunks.len() }
 
     #[must_use]
     pub fn completed_chunk_count(&self) -> usize {
@@ -53,11 +53,7 @@ impl DownloaderStatus {
     #[must_use]
     pub fn remaining(&self) -> u64 {
         let total_received = self.total_received();
-        if self.content_length < total_received {
-            0
-        } else {
-            self.content_length - total_received
-        }
+        self.content_length.saturating_sub(total_received)
     }
 
     #[inline]

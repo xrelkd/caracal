@@ -18,14 +18,10 @@ impl Chunk {
 
     pub const fn remaining(&self) -> u64 {
         let len = self.len();
-        if len >= self.received {
-            len - self.received
-        } else {
-            0
-        }
+        len.saturating_sub(self.received)
     }
 
-    pub fn split(&mut self) -> Option<Self> {
+    pub const fn split(&mut self) -> Option<Self> {
         if self.received >= self.len() || self.is_completed {
             None
         } else {
@@ -45,7 +41,7 @@ impl Chunk {
         }
     }
 
-    pub fn freeze(&mut self) -> Option<Self> {
+    pub const fn freeze(&mut self) -> Option<Self> {
         if self.received == 0 {
             None
         } else {

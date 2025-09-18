@@ -81,7 +81,7 @@ pub fn build_table() -> Table {
 
     if let Some(width) = table.width() {
         let _ = table.set_width(width - 10);
-    };
+    }
 
     table
 }
