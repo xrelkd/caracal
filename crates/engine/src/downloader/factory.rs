@@ -41,6 +41,7 @@ pub struct Builder {
 
 impl Builder {
     /// # Errors
+    #[allow(clippy::result_large_err)]
     pub fn new() -> Result<Self, Error> {
         Ok(Self {
             default_concurrent_number: 5,
@@ -95,6 +96,7 @@ impl Builder {
         self
     }
 
+    #[allow(clippy::result_large_err)]
     pub fn build(self) -> Result<Factory, Error> {
         let Self {
             http_user_agent,
@@ -146,6 +148,7 @@ pub struct Factory {
 impl Factory {
     /// # Errors
     #[inline]
+    #[allow(clippy::result_large_err)]
     pub fn builder() -> Result<Builder, Error> { Builder::new() }
 
     /// # Errors

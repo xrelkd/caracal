@@ -12,6 +12,8 @@ pub trait Component {
     where
         Self: Sized;
 
+    // FIXME: Use this method or remove it.
+    #[allow(dead_code)]
     fn name(&self) -> &str;
 
     fn handle_key_event(&mut self, key: KeyEvent);

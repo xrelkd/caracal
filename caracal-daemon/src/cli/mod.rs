@@ -115,8 +115,7 @@ mod tests {
 
     #[test]
     fn test_command_simple() {
-        if let Some(Commands::Version { .. }) =
-            Cli::parse_from(["program_name", "version"]).commands
+        if matches!(Cli::parse_from(["program_name", "version"]).commands, Some(Commands::Version))
         {
             // everything is good.
         } else {

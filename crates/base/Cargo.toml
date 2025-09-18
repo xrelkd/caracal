@@ -17,8 +17,7 @@ serde = { version = "1", features = ["derive"] }
 http = "1"
 
 bytes       = "1"
-directories = "5"
-lazy_static = "1"
+directories = "6"
 mime        = "0.3"
 semver      = "1"
 snafu       = "0.8"

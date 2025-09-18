@@ -27,6 +27,7 @@ impl StateStore {
         (Self { state_tx, server_endpoint, access_token }, state_rx)
     }
 
+    #[allow(clippy::cognitive_complexity)]
     pub async fn serve(
         self,
         mut action_rx: mpsc::UnboundedReceiver<Action>,

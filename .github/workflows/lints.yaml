@@ -18,12 +18,12 @@ jobs:
     name: Lint format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v14
+        uses: DeterminateSystems/nix-installer-action@v20
 
-      - uses: DeterminateSystems/magic-nix-cache-action@v8
+      - uses: DeterminateSystems/magic-nix-cache-action@v13
 
       - name: Install treefmt
         run: nix profile install 'nixpkgs#treefmt'
@@ -69,18 +69,18 @@ jobs:
     name: Lint commit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Run commitlint
-        uses: wagoid/commitlint-github-action@v6.1.2
+        uses: wagoid/commitlint-github-action@v6.2.1
 
   codespell:
     name: Codespell
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: codespell-project/codespell-problem-matcher@v1
 

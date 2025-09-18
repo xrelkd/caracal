@@ -28,6 +28,8 @@ pub struct AppRouter {
 }
 
 impl AppRouter {
+    // FIXME: Use this method or remove it.
+    #[allow(dead_code)]
     fn get_active_page_component(&self) -> &dyn Component {
         match self.props.active_page {
             ActivePage::StatusPage => &self.status_page,

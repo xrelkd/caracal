@@ -41,5 +41,5 @@ impl State {
 
     pub fn mark_disconnected(&mut self) { self.daemon_version = None; }
 
-    pub fn tick_timer(&mut self) { self.timer += 1; }
+    pub const fn tick_timer(&mut self) { self.timer += 1; }
 }

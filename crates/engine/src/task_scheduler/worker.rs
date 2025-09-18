@@ -24,6 +24,7 @@ pub struct Worker {
 }
 
 impl Worker {
+    #[allow(clippy::cognitive_complexity)]
     pub async fn serve(self) {
         tracing::info!("Starting Task scheduler");
         let Self { factory, event_sender, mut event_receiver, max_concurrent_task_number } = self;
@@ -192,6 +193,7 @@ impl EventHandler {
         let _results = future::join_all(futs).await;
     }
 
+    #[allow(clippy::cognitive_complexity)]
     async fn try_start_task(&mut self) {
         if self.downloaders.len() < self.max_concurrent_task_number {
             // start downloader
@@ -254,6 +256,7 @@ impl EventHandler {
         let _ = sender.send(task_id);
     }
 
+    #[allow(clippy::cognitive_complexity)]
     async fn remove_task(&mut self, task_id: u64, sender: oneshot::Sender<Option<u64>>) {
         let task_id = if let Some(mut downloader) = self.downloaders.remove(&task_id) {
             tracing::info!("Removing task {task_id}");
@@ -274,6 +277,7 @@ impl EventHandler {
         let _ = sender.send(task_id);
     }
 
+    #[allow(clippy::cognitive_complexity)]
     async fn pause_task(&mut self, task_id: u64, sender: oneshot::Sender<Option<u64>>) {
         let task_id = if let Some(mut downloader) = self.downloaders.remove(&task_id) {
             tracing::info!("Pausing task {task_id}");
@@ -457,7 +461,7 @@ impl EventHandler {
         }
     }
 
-    fn next_task_id(&mut self) -> u64 {
+    const fn next_task_id(&mut self) -> u64 {
         let id = self.next_task_id;
         self.next_task_id += 1;
         id

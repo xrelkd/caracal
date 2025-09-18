@@ -5,6 +5,7 @@ use snafu::Snafu;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
+#[allow(clippy::result_large_err)]
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub))]
 pub enum Error {
