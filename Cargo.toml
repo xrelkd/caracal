@@ -49,7 +49,7 @@ sigfinn = "0.2"
 
 axum = "0.8"
 prost = "0.13"
-prost-build = "0.13"
+prost-build = "0.14"
 prost-types = "0.13"
 tonic = { version = "0.12", features = ["gzip"] }
 tonic-build = { version = "0.12", default-features = false, features = [
