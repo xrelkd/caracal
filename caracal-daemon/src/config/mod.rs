@@ -68,12 +68,11 @@ impl Config {
         let mut config: Self = toml::from_str(&data)
             .context(error::ParseConfigSnafu { filename: path.as_ref().to_path_buf() })?;
 
-        if let Some(ref file_path) = config.grpc.access_token_file_path {
-            if let Ok(file_path) = file_path.try_resolve().map(Cow::into_owned) {
-                if let Ok(token) = std::fs::read_to_string(file_path) {
-                    config.grpc.access_token = Some(token.trim_end().to_string());
-                }
-            }
+        if let Some(ref file_path) = config.grpc.access_token_file_path
+            && let Ok(file_path) = file_path.try_resolve().map(Cow::into_owned)
+            && let Ok(token) = std::fs::read_to_string(file_path)
+        {
+            config.grpc.access_token = Some(token.trim_end().to_string());
         }
 
         Ok(config)

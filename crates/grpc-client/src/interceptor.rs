@@ -1,6 +1,6 @@
 use std::{fmt, sync::Arc};
 
-use tonic::{metadata::AsciiMetadataValue, Request, Status};
+use tonic::{Request, Status, metadata::AsciiMetadataValue};
 
 #[derive(Clone, Debug, Default)]
 pub struct Interceptor {
@@ -24,7 +24,7 @@ impl Interceptor {
 
 impl tonic::service::Interceptor for Interceptor {
     fn call(&mut self, mut req: Request<()>) -> Result<Request<()>, Status> {
-        if let Some(ref token) = self.authorization_metadata_value.as_ref() {
+        if let Some(token) = self.authorization_metadata_value.as_ref() {
             drop(req.metadata_mut().insert("authorization", token.clone()));
         }
         Ok(req)
