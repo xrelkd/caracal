@@ -50,7 +50,7 @@ impl Fetcher {
 
         Ok(Self {
             operator,
-            filename: filename.to_string(),
+            filename: filename.clone(),
             metadata: Metadata {
                 length: metadata.content_length(),
                 filename: metadata.content_disposition().map_or_else(
