@@ -15,6 +15,7 @@ keywords.workspace   = true
 prost       = { workspace = true }
 prost-types = { workspace = true }
 tonic       = { workspace = true, features = ["gzip"] }
+tonic-prost = { workspace = true }
 
 snafu = { workspace = true }
 time  = { workspace = true, features = ["formatting", "macros"] }
@@ -22,11 +23,8 @@ time  = { workspace = true, features = ["formatting", "macros"] }
 caracal-base = { path = "../base" }
 
 [build-dependencies]
-prost-build = { workspace = true }
-tonic-build = { workspace = true, default-features = false, features = [
-  "prost",
-  "transport",
-] }
+tonic-prost-build = { workspace = true }
+prost-build       = { workspace = true }
 
 [lints]
 workspace = true
