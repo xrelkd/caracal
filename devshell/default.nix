@@ -36,7 +36,7 @@ pkgs.mkShell {
     jq
 
     hclfmt
-    nixpkgs-fmt
+    nixfmt
     nodePackages.prettier
     shfmt
     taplo
