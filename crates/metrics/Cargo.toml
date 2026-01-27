@@ -14,14 +14,14 @@ keywords.workspace   = true
 [dependencies]
 tokio = { version = "1", features = ["net"] }
 
-axum       = "0.8"
-tower      = { version = "0.5", features = ["timeout"] }
-tower-http = { version = "0.6", features = ["trace"] }
+axum       = { workspace = true }
+tower      = { workspace = true }
+tower-http = { workspace = true }
 
-bytes      = "1"
-mime       = "0.3"
-prometheus = "0.14"
-snafu      = "0.8"
+bytes      = { workspace = true }
+mime       = { workspace = true }
+prometheus = { workspace = true }
+snafu      = { workspace = true }
 
 [lints]
 workspace = true
