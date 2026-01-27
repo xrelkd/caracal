@@ -2,7 +2,7 @@ use std::{
     collections::HashMap,
     fmt,
     path::{Path, PathBuf},
-    sync::{atomic::AtomicBool, Arc},
+    sync::{Arc, atomic::AtomicBool},
     time::Duration,
 };
 
@@ -10,13 +10,13 @@ use caracal_base::{
     model,
     profile::{minio::MinioAlias, ssh::SshConfig},
 };
-use futures::{future, FutureExt};
+use futures::{FutureExt, future};
 use snafu::{OptionExt, ResultExt};
 use tokio::fs::OpenOptions;
 
 pub use crate::error::Error;
 use crate::{
-    downloader::{control_file::ControlFile, Downloader, TransferStatus},
+    downloader::{Downloader, TransferStatus, control_file::ControlFile},
     error,
     ext::UriExt,
     fetcher::Fetcher,

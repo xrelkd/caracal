@@ -1,12 +1,12 @@
 use std::{fmt, path::PathBuf};
 
-use opendal::{services, Operator};
+use opendal::{Operator, services};
 use snafu::ResultExt;
 
 use crate::{
     error,
     error::Result,
-    fetcher::{generic::ByteStream, Metadata},
+    fetcher::{Metadata, generic::ByteStream},
 };
 
 #[derive(Clone, Debug)]

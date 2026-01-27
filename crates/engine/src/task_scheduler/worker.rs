@@ -5,11 +5,11 @@ use std::{
 };
 
 use caracal_base::model;
-use futures::{future, FutureExt};
+use futures::{FutureExt, future};
 use tokio::sync::{mpsc, oneshot};
 
 use crate::{
-    downloader::DownloaderFactory, ext::UriExt, task_scheduler::Event, Downloader, DownloaderStatus,
+    Downloader, DownloaderStatus, downloader::DownloaderFactory, ext::UriExt, task_scheduler::Event,
 };
 
 #[derive(Debug)]

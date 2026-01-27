@@ -1,11 +1,12 @@
 use std::{future::Future, net::SocketAddr, str::FromStr, sync::LazyLock};
 
 use axum::{
+    Router,
     body::Body,
     extract::Extension,
-    http::{header, HeaderValue},
+    http::{HeaderValue, header},
     response::Response,
-    routing, Router,
+    routing,
 };
 use bytes::{BufMut, BytesMut};
 use prometheus::{Encoder, TextEncoder};

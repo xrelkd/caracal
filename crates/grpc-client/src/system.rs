@@ -1,7 +1,7 @@
 use caracal_proto as proto;
 use tonic::Request;
 
-use crate::{error::GetSystemVersionError, Client};
+use crate::{Client, error::GetSystemVersionError};
 
 pub trait System {
     async fn get_version(&self) -> Result<semver::Version, GetSystemVersionError>;

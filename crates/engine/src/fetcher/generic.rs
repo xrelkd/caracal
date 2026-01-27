@@ -22,11 +22,7 @@ impl ByteStream {
 
         let n = self.reader.read_buf(&mut self.buffer).await.context(error::ReadFromReaderSnafu)?;
 
-        if n == 0 {
-            Ok(None)
-        } else {
-            Ok(Some(self.buffer.as_ref()))
-        }
+        if n == 0 { Ok(None) } else { Ok(Some(self.buffer.as_ref())) }
     }
 
     #[inline]

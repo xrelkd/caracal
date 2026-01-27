@@ -1,6 +1,6 @@
 use std::fmt;
 
-use tonic::{metadata::AsciiMetadataValue, Request, Status};
+use tonic::{Request, Status, metadata::AsciiMetadataValue};
 
 use crate::metrics;
 
