@@ -1,9 +1,9 @@
 use std::{fs::OpenOptions, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DisplayFromStr};
+use serde_with::{DisplayFromStr, serde_as};
 use tracing_subscriber::{
-    layer::SubscriberExt, registry::LookupSpan, util::SubscriberInitExt, Layer,
+    Layer, layer::SubscriberExt, registry::LookupSpan, util::SubscriberInitExt,
 };
 
 #[serde_as]

@@ -6,7 +6,7 @@ mod web;
 
 use std::{future::Future, net::SocketAddr, path::PathBuf, pin::Pin};
 
-use caracal_engine::{DownloaderFactory, TaskScheduler, MINIMUM_CHUNK_SIZE};
+use caracal_engine::{DownloaderFactory, MINIMUM_CHUNK_SIZE, TaskScheduler};
 use futures::FutureExt;
 use sigfinn::{ExitStatus, LifecycleManager, Shutdown};
 use snafu::ResultExt;
@@ -119,13 +119,12 @@ fn create_grpc_local_socket_server_future(
     move |signal| {
         async move {
             tracing::info!("Listening Caracal gRPC endpoint on {}", local_socket.display());
-            if let Some(local_socket_parent) = local_socket.parent() {
-                if let Err(err) = tokio::fs::create_dir_all(&local_socket_parent)
+            if let Some(local_socket_parent) = local_socket.parent()
+                && let Err(err) = tokio::fs::create_dir_all(&local_socket_parent)
                     .await
                     .context(error::CreateUnixListenerSnafu { socket_path: local_socket.clone() })
-                {
-                    return ExitStatus::FatalError(err);
-                }
+            {
+                return ExitStatus::FatalError(err);
             }
 
             let uds_stream = match UnixListener::bind(&local_socket)

@@ -12,21 +12,19 @@ categories.workspace = true
 keywords.workspace   = true
 
 [dependencies]
-prost       = "0.13"
-prost-types = "0.13"
-tonic       = { version = "0.12", features = ["gzip"] }
+prost       = { workspace = true }
+prost-types = { workspace = true }
+tonic       = { workspace = true, features = ["gzip"] }
+tonic-prost = { workspace = true }
 
-snafu = "0.8"
-time  = { version = "0.3", features = ["formatting", "macros"] }
+snafu = { workspace = true }
+time  = { workspace = true, features = ["formatting", "macros"] }
 
 caracal-base = { path = "../base" }
 
 [build-dependencies]
-prost-build = "0.13"
-tonic-build = { version = "0.12", default-features = false, features = [
-  "prost",
-  "transport",
-] }
+tonic-prost-build = { workspace = true }
+prost-build       = { workspace = true }
 
 [lints]
 workspace = true

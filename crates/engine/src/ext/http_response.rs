@@ -14,12 +14,11 @@ impl HttpResponseExt for reqwest::Response {
                 if let Some(value) = content_disposition.params.get("filename*") {
                     let mut parts = value.split("UTF-8''");
                     let _ = parts.next();
-                    if let Some(part) = parts.next() {
-                        if let Ok(s) = urlencoding::decode(part) {
-                            if !s.is_empty() {
-                                return Some(PathBuf::from(s.to_string()));
-                            }
-                        }
+                    if let Some(part) = parts.next()
+                        && let Ok(s) = urlencoding::decode(part)
+                        && !s.is_empty()
+                    {
+                        return Some(PathBuf::from(s.to_string()));
                     }
                 }
                 if let Some(value) = content_disposition.params.get("filename") {

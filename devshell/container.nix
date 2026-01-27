@@ -1,9 +1,10 @@
-{ name
-, version
-, dockerTools
-, caracal
-, buildEnv
-, ...
+{
+  name,
+  version,
+  dockerTools,
+  caracal,
+  buildEnv,
+  ...
 }:
 
 dockerTools.buildImage {

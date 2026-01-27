@@ -12,16 +12,16 @@ categories.workspace = true
 keywords.workspace   = true
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
+serde = { workspace = true }
 
-http = "1"
+http = { workspace = true }
 
-bytes       = "1"
-directories = "6"
-mime        = "0.3"
-semver      = "1"
-snafu       = "0.8"
-time        = { version = "0.3", features = ["formatting", "local-offset", "macros"] }
+bytes       = { workspace = true }
+directories = { workspace = true }
+mime        = { workspace = true }
+semver      = { workspace = true }
+snafu       = { workspace = true }
+time        = { workspace = true }
 
 [lints]
 workspace = true

@@ -1,12 +1,12 @@
 use std::{fmt, path::PathBuf};
 
-use opendal::{services, Operator};
+use opendal::{Operator, services};
 use snafu::ResultExt;
 
 use crate::{
     error,
     error::Result,
-    fetcher::{generic::ByteStream, Metadata},
+    fetcher::{Metadata, generic::ByteStream},
 };
 
 #[derive(Clone, Debug)]
@@ -50,7 +50,7 @@ impl Fetcher {
 
         Ok(Self {
             operator,
-            filename: filename.to_string(),
+            filename: filename.clone(),
             metadata: Metadata {
                 length: metadata.content_length(),
                 filename: metadata.content_disposition().map_or_else(

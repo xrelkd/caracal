@@ -8,14 +8,14 @@ use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
 
 use crate::tui::{
+    State,
     state_store::Action,
     ui::{
+        Error,
         components::{Component, ComponentRender},
         error,
         pages::AppRouter,
-        Error,
     },
-    State,
 };
 
 const RENDERING_TICK_RATE: Duration = Duration::from_millis(250);

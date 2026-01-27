@@ -12,32 +12,32 @@ categories.workspace = true
 keywords.workspace   = true
 
 [dependencies]
-tracing            = "0.1"
-tracing-journald   = "0.3"
-tracing-subscriber = "0.3"
+tracing            = { workspace = true }
+tracing-journald   = { workspace = true }
+tracing-subscriber = { workspace = true }
 
-http-serde = "2"
-serde      = { version = "1", features = ["derive"] }
-toml       = "0.9"
+http-serde = { workspace = true }
+serde      = { workspace = true, features = ["derive"] }
+toml       = { workspace = true }
 
-futures      = "0.3"
-sigfinn      = "0.2"
-tokio        = { version = "1", features = ["macros", "rt-multi-thread", "sync"] }
-tokio-stream = "0.1"
+futures      = { workspace = true }
+sigfinn      = { workspace = true }
+tokio        = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
+tokio-stream = { workspace = true }
 
-crossterm = { version = "0.29", features = ["event-stream"] }
-ratatui   = { version = "0.27", features = ["all-widgets"] }
+crossterm = { workspace = true, features = ["event-stream"] }
+ratatui   = { workspace = true, features = ["all-widgets"] }
 
-clap = { version = "4", features = ["derive", "env"] }
-clap_complete = "4"
-http = "1"
-humansize = "2"
-humantime = "2"
-resolve-path = "0.1"
-semver = "1"
-shadow-rs = "1.3"
-snafu = "0.8"
-time = { version = "0.3", features = [
+clap = { workspace = true, features = ["derive", "env"] }
+clap_complete = { workspace = true }
+http = { workspace = true }
+humansize = { workspace = true }
+humantime = { workspace = true }
+resolve-path = { workspace = true }
+semver = { workspace = true }
+shadow-rs = { workspace = true }
+snafu = { workspace = true }
+time = { workspace = true, features = [
   "formatting",
   "macros",
   "parsing",
@@ -49,7 +49,7 @@ caracal-cli         = { path = "../crates/cli" }
 caracal-grpc-client = { path = "../crates/grpc-client" }
 
 [build-dependencies]
-shadow-rs = "1.3"
+shadow-rs = { workspace = true }
 
 [lints]
 workspace = true

@@ -1,6 +1,6 @@
 mod v1;
 
-use axum::{routing, Router};
+use axum::{Router, routing};
 
 pub fn v1() -> Router {
     Router::new().nest(

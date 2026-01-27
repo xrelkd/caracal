@@ -11,8 +11,8 @@ use std::{
     io::SeekFrom,
     path::PathBuf,
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
+        atomic::{AtomicBool, Ordering},
     },
 };
 
@@ -21,7 +21,7 @@ use snafu::ResultExt;
 use tokio::{
     fs::File,
     io::{AsyncSeekExt, AsyncWriteExt},
-    sync::{mpsc, oneshot, Mutex},
+    sync::{Mutex, mpsc, oneshot},
     task::{JoinHandle, JoinSet},
 };
 
@@ -319,12 +319,12 @@ impl Downloader {
                     next_worker_id += 1;
 
                     if let Some((origin_chunk, new_chunk)) = transfer_status.split() {
-                        if let Some(worker_id) = chunk_to_worker.get(&origin_chunk.start) {
-                            if let Some(worker) = worker_event_senders.get(worker_id) {
-                                let (sender, wait) = oneshot::channel();
-                                drop(worker.send(WorkerEvent::Stop(sender)));
-                                let _ = wait.await;
-                            }
+                        if let Some(worker_id) = chunk_to_worker.get(&origin_chunk.start)
+                            && let Some(worker) = worker_event_senders.get(worker_id)
+                        {
+                            let (sender, wait) = oneshot::channel();
+                            drop(worker.send(WorkerEvent::Stop(sender)));
+                            let _ = wait.await;
                         }
                         let _ = chunk_sender.send(new_chunk).await;
                         let _ = chunk_sender.send(origin_chunk).await;
@@ -333,12 +333,12 @@ impl Downloader {
                 }
                 Event::RemoveWorker => {
                     if let Some((origin_chunk, new_chunk)) = transfer_status.freeze() {
-                        if let Some(worker_id) = chunk_to_worker.get(&origin_chunk.start) {
-                            if let Some(worker) = worker_event_senders.remove(worker_id) {
-                                let (sender, wait) = oneshot::channel();
-                                drop(worker.send(WorkerEvent::Remove(sender)));
-                                let _ = wait.await;
-                            }
+                        if let Some(worker_id) = chunk_to_worker.get(&origin_chunk.start)
+                            && let Some(worker) = worker_event_senders.remove(worker_id)
+                        {
+                            let (sender, wait) = oneshot::channel();
+                            drop(worker.send(WorkerEvent::Remove(sender)));
+                            let _ = wait.await;
                         }
                         let _ = chunk_sender.send(new_chunk).await;
                     }

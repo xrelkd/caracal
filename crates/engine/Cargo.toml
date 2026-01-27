@@ -12,45 +12,24 @@ categories.workspace = true
 keywords.workspace   = true
 
 [dependencies]
-tracing = "0.1"
+tracing = { workspace = true }
 
-serde      = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde      = { workspace = true }
+serde_json = { workspace = true }
 
-async-channel = "2"
-futures = "0.3"
-tokio = { version = "1", features = [
-  "fs",
-  "macros",
-  "rt-multi-thread",
-  "sync",
-] }
+async-channel = { workspace = true }
+futures       = { workspace = true }
+tokio         = { workspace = true }
 
-http = "1"
-mailparse = "0.16"
-reqwest = { version = "0.11", default-features = false, features = [
-  "json",
-  "rustls",
-  "rustls-tls",
-  "stream",
-] }
-opendal = { version = "0.45", default-features = false, features = [
-  "rustls",
-  "services-fs",
-  "services-http",
-  "services-s3",
-  "services-sftp",
-] }
+http      = { workspace = true }
+mailparse = { workspace = true }
+reqwest   = { workspace = true }
+opendal   = { workspace = true }
 
-bytes = "1"
-snafu = "0.8"
-time = { version = "0.3", features = [
-  "formatting",
-  "macros",
-  "parsing",
-  "serde",
-] }
-urlencoding = "2"
+bytes       = { workspace = true }
+snafu       = { workspace = true }
+time        = { workspace = true }
+urlencoding = { workspace = true }
 
 caracal-base = { path = "../base" }
 

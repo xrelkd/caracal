@@ -17,7 +17,7 @@ pub struct DownloaderStatus {
 
 impl DownloaderStatus {
     #[must_use]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             file_path: PathBuf::new(),
             content_length: 0,

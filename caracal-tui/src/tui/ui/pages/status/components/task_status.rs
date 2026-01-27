@@ -3,10 +3,10 @@ use std::time::SystemTime;
 use caracal_base::{ext::ProgressChunks, model};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
+    Frame,
     prelude::*,
     style::{Modifier, Style},
     widgets::{Block, Borders, Cell, Row, Table, TableState},
-    Frame,
 };
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -41,13 +41,10 @@ impl TaskStatusList {
             return;
         }
 
-        let i = self.table_state.selected().map_or(0, |i| {
-            if i >= self.task_statuses().len() - 1 {
-                0
-            } else {
-                i + 1
-            }
-        });
+        let i = self
+            .table_state
+            .selected()
+            .map_or(0, |i| if i >= self.task_statuses().len() - 1 { 0 } else { i + 1 });
         self.table_state.select(Some(i));
     }
 
@@ -57,13 +54,10 @@ impl TaskStatusList {
             return;
         }
 
-        let i = self.table_state.selected().map_or(0, |i| {
-            if i == 0 {
-                self.task_statuses().len() - 1
-            } else {
-                i - 1
-            }
-        });
+        let i = self
+            .table_state
+            .selected()
+            .map_or(0, |i| if i == 0 { self.task_statuses().len() - 1 } else { i - 1 });
         self.table_state.select(Some(i));
     }
 
@@ -184,18 +178,10 @@ impl ComponentRender<RenderProps> for TaskStatusList {
             let received_bytes = status.chunks.received_bytes();
             let total_bytes = {
                 let v = status.chunks.total_bytes();
-                if v < received_bytes {
-                    received_bytes
-                } else {
-                    v
-                }
+                if v < received_bytes { received_bytes } else { v }
             };
             let progress_percentage = if total_bytes == 0 {
-                if received_bytes == 0 {
-                    String::from("0.00%")
-                } else {
-                    String::from("100.00%")
-                }
+                if received_bytes == 0 { String::from("0.00%") } else { String::from("100.00%") }
             } else {
                 format!("{:.2}%", (received_bytes as f64 / total_bytes as f64) * 100.0)
             };

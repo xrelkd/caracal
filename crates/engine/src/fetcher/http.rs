@@ -1,5 +1,5 @@
 use bytes::Bytes;
-use reqwest::{header, StatusCode};
+use reqwest::{StatusCode, header};
 use snafu::ResultExt;
 
 use crate::{

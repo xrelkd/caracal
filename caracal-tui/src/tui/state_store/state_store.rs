@@ -7,7 +7,7 @@ use snafu::OptionExt;
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
 
-use crate::tui::state_store::{error, Action, Error, State};
+use crate::tui::state_store::{Action, Error, State, error};
 
 #[derive(Debug)]
 pub struct StateStore {
@@ -87,38 +87,38 @@ impl StateStore {
                     }
                 }
                 Action::IncreaseConcurrentNumber { task_id } => {
-                    if let Some(ref client) = client {
-                        if let Err(err) = client.increase_concurrent_number(task_id).await {
-                            tracing::warn!("{err}");
-                        }
+                    if let Some(ref client) = client
+                        && let Err(err) = client.increase_concurrent_number(task_id).await
+                    {
+                        tracing::warn!("{err}");
                     }
                 }
                 Action::DecreaseConcurrentNumber { task_id } => {
-                    if let Some(ref client) = client {
-                        if let Err(err) = client.decrease_concurrent_number(task_id).await {
-                            tracing::warn!("{err}");
-                        }
+                    if let Some(ref client) = client
+                        && let Err(err) = client.decrease_concurrent_number(task_id).await
+                    {
+                        tracing::warn!("{err}");
                     }
                 }
                 Action::RemoveTask { task_id } => {
-                    if let Some(ref client) = client {
-                        if let Err(err) = client.remove(task_id).await {
-                            tracing::warn!("{err}");
-                        }
+                    if let Some(ref client) = client
+                        && let Err(err) = client.remove(task_id).await
+                    {
+                        tracing::warn!("{err}");
                     }
                 }
                 Action::PauseTask { task_id } => {
-                    if let Some(ref client) = client {
-                        if let Err(err) = client.pause(task_id).await {
-                            tracing::warn!("{err}");
-                        }
+                    if let Some(ref client) = client
+                        && let Err(err) = client.pause(task_id).await
+                    {
+                        tracing::warn!("{err}");
                     }
                 }
                 Action::ResumeTask { task_id } => {
-                    if let Some(ref client) = client {
-                        if let Err(err) = client.resume(task_id).await {
-                            tracing::warn!("{err}");
-                        }
+                    if let Some(ref client) = client
+                        && let Err(err) = client.resume(task_id).await
+                    {
+                        tracing::warn!("{err}");
                     }
                 }
                 _ => continue,

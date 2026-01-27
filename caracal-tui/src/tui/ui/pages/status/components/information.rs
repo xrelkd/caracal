@@ -1,5 +1,5 @@
 use crossterm::event::KeyEvent;
-use ratatui::{prelude::*, widgets::Paragraph, Frame};
+use ratatui::{Frame, prelude::*, widgets::Paragraph};
 use tokio::sync::mpsc::UnboundedSender;
 
 use crate::tui::{
@@ -53,19 +53,23 @@ pub struct RenderProps {
 
 impl ComponentRender<RenderProps> for InformationArea {
     fn render(&self, frame: &mut Frame<'_>, props: RenderProps) {
-        let [info_keys_container, info_values_container, keybind_keys_container, keybind_values_container] =
-            *Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints(
-                    [
-                        Constraint::Percentage(10),
-                        Constraint::Percentage(30),
-                        Constraint::Max(10),
-                        Constraint::Percentage(15),
-                    ]
-                    .as_ref(),
-                )
-                .split(props.area)
+        let [
+            info_keys_container,
+            info_values_container,
+            keybind_keys_container,
+            keybind_values_container,
+        ] = *Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(
+                [
+                    Constraint::Percentage(10),
+                    Constraint::Percentage(30),
+                    Constraint::Max(10),
+                    Constraint::Percentage(15),
+                ]
+                .as_ref(),
+            )
+            .split(props.area)
         else {
             panic!("The main layout should have 5 chunks")
         };

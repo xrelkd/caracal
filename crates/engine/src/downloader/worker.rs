@@ -5,7 +5,7 @@ use snafu::ResultExt;
 use tokio::{
     fs::File,
     io::{AsyncSeekExt, AsyncWriteExt},
-    sync::{mpsc, oneshot, Mutex},
+    sync::{Mutex, mpsc, oneshot},
 };
 
 use crate::{

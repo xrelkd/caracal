@@ -5,12 +5,12 @@ use caracal_proto as proto;
 use tonic::Request;
 
 use crate::{
+    Client,
     error::{
         AddUriError, DecreaseConcurrentNumberError, GetAllTaskStatusesError, GetTaskStatusError,
         IncreaseConcurrentNumberError, PauseAllTasksError, PauseTaskError, RemoveTaskError,
         ResumeAllTasksError, ResumeTaskError,
     },
-    Client,
 };
 
 pub trait Task {
