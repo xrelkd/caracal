@@ -29,6 +29,10 @@ pkgs.mkShell {
     cargo-nextest
     rustToolchain
 
+    nodejs
+    pnpm
+    typescript
+
     tokei
 
     protobuf
