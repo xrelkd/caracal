@@ -54,17 +54,17 @@ fn build_webui(
 
     if !node_modules_path.exists() {
         // Install frontend dependencies
-        let install_output = Command::new("yarn").current_dir(UI_DIR).output()?;
+        let install_output = Command::new("pnpm").arg("install").current_dir(UI_DIR).output()?;
         if !install_output.status.success() {
-            eprintln!("npm install failed: {install_output:?}");
+            eprintln!("pnpm install failed: {install_output:?}");
             panic!("Failed to install frontend dependencies");
         }
     }
 
     // Build the frontend
-    let build_output = Command::new("yarn").arg("build").current_dir(&source_dir).output()?;
+    let build_output = Command::new("pnpm").arg("build").current_dir(&source_dir).output()?;
     if !build_output.status.success() {
-        eprintln!("yarn build failed: {build_output:?}");
+        eprintln!("pnpm build failed: {build_output:?}");
         panic!("Failed to build frontend assets");
     }
 
