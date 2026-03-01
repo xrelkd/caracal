@@ -22,6 +22,7 @@ mime        = { workspace = true }
 semver      = { workspace = true }
 snafu       = { workspace = true }
 time        = { workspace = true }
+utoipa      = { workspace = true }
 
 [lints]
 workspace = true
