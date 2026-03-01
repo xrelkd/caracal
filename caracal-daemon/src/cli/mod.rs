@@ -1,8 +1,9 @@
-use std::{io::Write, path::PathBuf};
+use std::{fmt::Display, io::Write, path::PathBuf, str::FromStr};
 
-use clap::{CommandFactory, Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand, ValueEnum, builder::PossibleValue};
 use snafu::ResultExt;
 use tokio::runtime::Runtime;
+use utoipa::OpenApi;
 
 use crate::{config::Config, error, error::Error, shadow};
 
@@ -41,6 +42,15 @@ pub enum Commands {
 
     #[clap(about = "Output default configuration")]
     DefaultConfig,
+
+    #[clap(name = "openapi", about = "Output OpenAPI specification")]
+    OpenApi {
+        #[arg(default_value = "json", help = "Possible format (json, yaml)")]
+        format: OpenApiFormat,
+
+        #[arg(short = 'o', help = "Output file path")]
+        output: Option<PathBuf>,
+    },
 }
 
 impl Default for Cli {
@@ -70,6 +80,23 @@ impl Cli {
                     .expect("Failed to write to stdout");
                 Ok(())
             }
+            Some(Commands::OpenApi { format, output }) => {
+                let spec = caracal_server::ApiDoc::openapi();
+                let spec_content = match format {
+                    OpenApiFormat::Json => spec.to_pretty_json().expect("spec is serializable"),
+                    OpenApiFormat::Yaml => spec.to_yaml().expect("spec is serializable"),
+                };
+                let spec_content = spec_content.as_bytes();
+                match output {
+                    Some(file_path) => {
+                        std::fs::write(file_path, spec_content).expect("Failed to write to file");
+                    }
+                    None => std::io::stdout()
+                        .write_all(spec_content)
+                        .expect("Failed to write to stdout"),
+                }
+                Ok(())
+            }
             None => {
                 let config = self.load_config();
                 run_daemon(config)
@@ -84,6 +111,44 @@ impl Cli {
             config.log.level = log_level;
         }
         config
+    }
+}
+
+#[derive(Clone, Copy, Default, Parser)]
+pub enum OpenApiFormat {
+    #[default]
+    Json,
+    Yaml,
+}
+
+impl Display for OpenApiFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.to_possible_value().expect("no values are skipped").get_name().fmt(f)
+    }
+}
+
+impl FromStr for OpenApiFormat {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        for variant in Self::value_variants() {
+            if variant.to_possible_value().expect("value is always available").matches(s, true) {
+                return Ok(*variant);
+            }
+        }
+        Err(format!("invalid variant: {s}"))
+    }
+}
+
+impl ValueEnum for OpenApiFormat {
+    fn value_variants<'a>() -> &'a [Self] { &[Self::Json, Self::Yaml] }
+
+    fn to_possible_value(&self) -> Option<PossibleValue> {
+        let value = match self {
+            Self::Json => PossibleValue::new("json"),
+            Self::Yaml => PossibleValue::new("yaml"),
+        };
+        Some(value)
     }
 }
 
