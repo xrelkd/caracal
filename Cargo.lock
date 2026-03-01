@@ -471,6 +471,7 @@ dependencies = [
  "caracal-engine",
  "caracal-metrics",
  "caracal-proto",
+ "caracal-web-ui",
  "futures",
  "http 1.4.0",
  "prometheus",

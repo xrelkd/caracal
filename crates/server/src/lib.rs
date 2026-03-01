@@ -236,6 +236,7 @@ fn create_web_server_future(
             let router = axum::Router::new()
                 .merge(web::controller::api_v1_router())
                 .merge(web::swagger::ui_router())
+                .fallback(axum::routing::get(web::controller::web_ui))
                 .layer(axum::Extension(task_scheduler))
                 .layer(middleware_stack)
                 .into_make_service_with_connect_info::<SocketAddr>();

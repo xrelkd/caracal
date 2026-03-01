@@ -47,6 +47,7 @@ caracal-base    = { path = "../base" }
 caracal-engine  = { path = "../engine" }
 caracal-metrics = { path = "../metrics" }
 caracal-proto   = { path = "../proto" }
+caracal-web-ui  = { path = "../web-ui" }
 
 [lints]
 workspace = true
