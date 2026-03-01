@@ -23,6 +23,7 @@ members = [
   "crates/metrics",
   "crates/proto",
   "crates/server",
+  "crates/web-ui",
 ]
 
 [workspace.dependencies]

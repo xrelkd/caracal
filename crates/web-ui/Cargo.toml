@@ -1,0 +1,21 @@
+[package]
+name                 = "caracal-web-ui"
+description          = "Caracal Web UI"
+version.workspace    = true
+authors.workspace    = true
+homepage.workspace   = true
+readme.workspace     = true
+repository.workspace = true
+license.workspace    = true
+edition.workspace    = true
+categories.workspace = true
+keywords.workspace   = true
+
+[dependencies]
+static-files = "0.3"
+
+[build-dependencies]
+static-files = "0.3"
+
+[lints]
+workspace = true
