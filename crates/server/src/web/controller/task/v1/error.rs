@@ -3,8 +3,9 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
+use utoipa::ToSchema;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToSchema)]
 pub enum CreateTaskError {
     Internal,
 }
@@ -22,7 +23,7 @@ impl IntoResponse for CreateTaskError {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToSchema)]
 pub enum GetAllTaskStatusesError {
     Internal,
 }
@@ -40,7 +41,7 @@ impl IntoResponse for GetAllTaskStatusesError {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToSchema)]
 pub enum GetTaskError {
     NotFound,
     Internal,
@@ -60,7 +61,7 @@ impl IntoResponse for GetTaskError {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToSchema)]
 pub enum RemoveTaskError {
     NotFound,
     Internal,
@@ -80,7 +81,7 @@ impl IntoResponse for RemoveTaskError {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToSchema)]
 pub enum ResumeTaskStatusesError {
     NotFound,
     Internal,
@@ -100,7 +101,7 @@ impl IntoResponse for ResumeTaskStatusesError {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToSchema)]
 pub enum ResumeAllTasksError {
     Internal,
 }
@@ -118,7 +119,7 @@ impl IntoResponse for ResumeAllTasksError {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToSchema)]
 pub enum PauseTaskError {
     NotFound,
     Internal,
@@ -138,7 +139,7 @@ impl IntoResponse for PauseTaskError {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToSchema)]
 pub enum PauseAllTasksError {
     Internal,
 }

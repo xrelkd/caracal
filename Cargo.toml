@@ -75,25 +75,27 @@ ratatui   = { version = "0.27", features = ["all-widgets"] }
 
 zbus = { version = "5", default-features = false, features = ["tokio"] }
 
-bytes         = "1"
-clap          = { version = "4", features = ["derive", "env"] }
-clap_complete = "4"
-comfy-table   = "7"
-directories   = "6"
-http          = "1"
-humansize     = "2"
-humantime     = "2"
-hyper-util    = "0.1"
-indicatif     = "0.18"
-mailparse     = "0.16"
-mime          = "0.3"
-prometheus    = "0.14"
-resolve-path  = "0.1"
-semver        = "1"
-shadow-rs     = "1.7"
-snafu         = "0.8"
-time          = { version = "0.3", features = ["formatting", "local-offset", "macros"] }
-urlencoding   = "2"
+bytes             = "1"
+clap              = { version = "4", features = ["derive", "env"] }
+clap_complete     = "4"
+comfy-table       = "7"
+directories       = "6"
+http              = "1"
+humansize         = "2"
+humantime         = "2"
+hyper-util        = "0.1"
+indicatif         = "0.18"
+mailparse         = "0.16"
+mime              = "0.3"
+prometheus        = "0.14"
+resolve-path      = "0.1"
+semver            = "1"
+shadow-rs         = "1.7"
+snafu             = "0.8"
+time              = { version = "0.3", features = ["formatting", "local-offset", "macros"] }
+urlencoding       = "2"
+utoipa            = { version = "5", features = ["axum_extras", "yaml"] }
+utoipa-swagger-ui = { version = "9", features = ["axum"] }
 
 [workspace.lints.rust]
 async_fn_in_trait = "allow"
