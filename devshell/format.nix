@@ -7,8 +7,9 @@ pkgs.runCommandNoCC "check-format"
 
       shellcheck
 
+      clang-tools
+      biome
       nixpkgs-fmt
-      nodePackages.prettier
       shfmt
       taplo
       treefmt
@@ -19,7 +20,7 @@ pkgs.runCommandNoCC "check-format"
       --allow-missing-formatter \
       --fail-on-change \
       --no-cache \
-      --formatters prettier \
+      --formatters biome \
       --formatters clang-format \
       --formatters nix \
       --formatters shell \

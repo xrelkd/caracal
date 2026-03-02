@@ -8,9 +8,9 @@ command  = "clang-format"
 options  = ["-i", "--Werror", "--verbose"]
 includes = ["*.proto"]
 
-[formatter.prettier]
-command = "prettier"
-options = ["--write"]
+[formatter.biome]
+command = "biome"
+options = ["format", "--write"]
 includes = [
   "*.css",
   "*.html",
@@ -19,8 +19,10 @@ includes = [
   "*.jsx",
   "*.md",
   "*.mdx",
+  "*.mjs",
   "*.scss",
   "*.ts",
+  "*.tsx",
   "*.yaml",
 ]
 
