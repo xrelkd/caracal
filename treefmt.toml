@@ -19,8 +19,10 @@ includes = [
   "*.jsx",
   "*.md",
   "*.mdx",
+  "*.mjs",
   "*.scss",
   "*.ts",
+  "*.tsx",
   "*.yaml",
 ]
 
