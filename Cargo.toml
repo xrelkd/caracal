@@ -91,7 +91,7 @@ prometheus        = "0.14"
 resolve-path      = "0.1"
 semver            = "1"
 shadow-rs         = "1.7"
-snafu             = "0.8"
+snafu             = "0.9"
 time              = { version = "0.3", features = ["formatting", "local-offset", "macros"] }
 urlencoding       = "2"
 utoipa            = { version = "5", features = ["axum_extras", "yaml"] }
