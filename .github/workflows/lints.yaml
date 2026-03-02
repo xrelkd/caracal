@@ -28,9 +28,6 @@ jobs:
       - name: Install treefmt
         run: nix profile install 'nixpkgs#treefmt'
 
-      - name: Install prettier
-        run: nix profile install 'nixpkgs#nodePackages.prettier'
-
       - name: Install nixpkgs-fmt
         run: nix profile install 'nixpkgs#nixpkgs-fmt'
 
@@ -42,6 +39,9 @@ jobs:
 
       - name: Install clang-tools
         run: nix profile install 'nixpkgs#clang-tools'
+
+      - name: Install biome
+        run: nix profile install 'nixpkgs#biome'
 
       - name: Run shfmt, shellcheck, checkbashisms
         uses: luizm/action-sh-checker@v0.10.0
@@ -58,7 +58,7 @@ jobs:
             --allow-missing-formatter \
             --fail-on-change \
             --no-cache \
-            --formatters prettier \
+            --formatters biome \
             --formatters clang-format \
             --formatters nix \
             --formatters shell \
