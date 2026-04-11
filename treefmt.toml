@@ -23,8 +23,12 @@ includes = [
   "*.scss",
   "*.ts",
   "*.tsx",
-  "*.yaml",
 ]
+
+[formatter.prettier]
+command  = "prettier"
+options  = ["--write"]
+includes = ["*.yaml", "*.yml"]
 
 [formatter.toml]
 command  = "taplo"

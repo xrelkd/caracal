@@ -44,6 +44,7 @@ pkgs.mkShell {
     biome
     hclfmt
     nixfmt
+    prettier
     shfmt
     taplo
     treefmt
