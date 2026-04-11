@@ -1,14 +1,15 @@
 [workspace.package]
-version     = "0.3.8"
-authors     = ["xrelkd <46590321+xrelkd@users.noreply.github.com>"]
-homepage    = "https://github.com/xrelkd/caracal"
-repository  = "https://github.com/xrelkd/caracal"
-readme      = "README.md"
-license     = "GPL-3.0-only"
-edition     = "2024"
-description = "File downloader written in Rust Programming Language."
-categories  = ["download manager"]
-keywords    = ["download"]
+version      = "0.3.8"
+authors      = ["xrelkd <46590321+xrelkd@users.noreply.github.com>"]
+homepage     = "https://github.com/xrelkd/caracal"
+repository   = "https://github.com/xrelkd/caracal"
+readme       = "README.md"
+license      = "GPL-3.0-only"
+edition      = "2024"
+rust-version = "1.93"
+description  = "File downloader written in Rust Programming Language."
+categories   = ["download manager"]
+keywords     = ["download"]
 
 [workspace]
 resolver = "2"
