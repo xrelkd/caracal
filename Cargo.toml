@@ -1,14 +1,15 @@
 [workspace.package]
-version     = "0.3.8"
-authors     = ["xrelkd <46590321+xrelkd@users.noreply.github.com>"]
-homepage    = "https://github.com/xrelkd/caracal"
-repository  = "https://github.com/xrelkd/caracal"
-readme      = "README.md"
-license     = "GPL-3.0-only"
-edition     = "2024"
-description = "File downloader written in Rust Programming Language."
-categories  = ["download manager"]
-keywords    = ["download"]
+version      = "0.3.8"
+authors      = ["xrelkd <46590321+xrelkd@users.noreply.github.com>"]
+homepage     = "https://github.com/xrelkd/caracal"
+repository   = "https://github.com/xrelkd/caracal"
+readme       = "README.md"
+license      = "GPL-3.0-only"
+edition      = "2024"
+rust-version = "1.93"
+description  = "File downloader written in Rust Programming Language."
+categories   = ["download manager"]
+keywords     = ["download"]
 
 [workspace]
 resolver = "2"
@@ -75,26 +76,32 @@ ratatui   = { version = "0.27", features = ["all-widgets"] }
 
 zbus = { version = "5", default-features = false, features = ["tokio"] }
 
-bytes             = "1"
-clap              = { version = "4", features = ["derive", "env"] }
-clap_complete     = "4"
-comfy-table       = "7"
-directories       = "6"
-http              = "1"
-humansize         = "2"
-humantime         = "2"
-hyper-util        = "0.1"
-indicatif         = "0.18"
-mailparse         = "0.16"
-mime              = "0.3"
-prometheus        = "0.14"
-resolve-path      = "0.1"
-semver            = "1"
-shadow-rs         = "1.7"
-snafu             = "0.9"
-time              = { version = "0.3", features = ["formatting", "local-offset", "macros"] }
-urlencoding       = "2"
-utoipa            = { version = "5", features = ["axum_extras", "yaml"] }
+bytes = "1"
+clap = { version = "4", features = ["derive", "env"] }
+clap_complete = "4"
+comfy-table = "7"
+directories = "6"
+http = "1"
+humansize = "2"
+humantime = "2"
+hyper-util = "0.1"
+indicatif = "0.18"
+mailparse = "0.16"
+mime = "0.3"
+prometheus = "0.14"
+resolve-path = "0.1"
+semver = "1"
+shadow-rs = "1.7"
+snafu = "0.9"
+time = { version = "0.3", features = [
+  "formatting",
+  "local-offset",
+  "macros",
+  "parsing",
+  "serde",
+] }
+urlencoding = "2"
+utoipa = { version = "5", features = ["axum_extras", "yaml"] }
 utoipa-swagger-ui = { version = "9", features = ["axum", "vendored"] }
 
 [workspace.lints.rust]
@@ -124,6 +131,7 @@ rust_2021_prelude_collisions            = "deny"
 single_use_lifetimes                    = "deny"
 trivial_casts                           = "deny"
 trivial_numeric_casts                   = "deny"
+unfulfilled_lint_expectations           = "deny"
 unsafe_code                             = "deny"
 unsafe_op_in_unsafe_fn                  = "deny"
 unused_extern_crates                    = "deny"
@@ -153,18 +161,18 @@ deprecated                              = "deny"
 deprecated_where_clause_location        = "deny"
 deref_into_dyn_supertrait               = "deny"
 deref_nullptr                           = "deny"
+drop_bounds                             = "deny"
 dropping_copy_types                     = "deny"
 dropping_references                     = "deny"
-drop_bounds                             = "deny"
 duplicate_macro_attributes              = "deny"
 dyn_drop                                = "deny"
 elided_lifetimes_in_associated_constant = "deny"
 ellipsis_inclusive_range_patterns       = "deny"
 exported_private_dependencies           = "deny"
+for_loops_over_fallibles                = "deny"
 forbidden_lint_groups                   = "deny"
 forgetting_copy_types                   = "deny"
 forgetting_references                   = "deny"
-for_loops_over_fallibles                = "deny"
 function_item_references                = "deny"
 hidden_glob_reexports                   = "deny"
 improper_ctypes                         = "deny"
@@ -184,13 +192,13 @@ legacy_derive_helpers                   = "deny"
 map_unit_fn                             = "deny"
 mixed_script_confusables                = "deny"
 named_arguments_used_positionally       = "deny"
+no_mangle_generic_items                 = "deny"
 non_camel_case_types                    = "deny"
 non_fmt_panics                          = "deny"
 non_shorthand_field_patterns            = "deny"
 non_snake_case                          = "deny"
 non_upper_case_globals                  = "deny"
 noop_method_call                        = "deny"
-no_mangle_generic_items                 = "deny"
 opaque_hidden_inferred_bound            = "deny"
 overlapping_range_endpoints             = "deny"
 path_statements                         = "deny"
@@ -217,7 +225,6 @@ unreachable_code                        = "deny"
 unreachable_patterns                    = "deny"
 unstable_name_collisions                = "deny"
 unstable_syntax_pre_expansion           = "deny"
-unsupported_calling_conventions         = "deny"
 unused_allocation                       = "deny"
 unused_assignments                      = "deny"
 unused_associated_type_bounds           = "deny"

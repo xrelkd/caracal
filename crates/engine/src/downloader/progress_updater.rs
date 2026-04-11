@@ -19,6 +19,6 @@ impl ProgressUpdater {
     }
 
     pub fn update(&self, worker_id: u64, start: u64, end: u64, received: u64) {
-        drop(self.0.send(Event::UpdateChunkTranserProgress { worker_id, start, end, received }));
+        drop(self.0.send(Event::UpdateChunkTransferProgress { worker_id, start, end, received }));
     }
 }

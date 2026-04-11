@@ -44,11 +44,13 @@ pkgs.mkShell {
     biome
     hclfmt
     nixfmt
+    prettier
     shfmt
     taplo
     treefmt
 
     shellcheck
+    typos
 
     libgit2
     pkg-config

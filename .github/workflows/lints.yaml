@@ -25,24 +25,6 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@v13
 
-      - name: Install treefmt
-        run: nix profile install 'nixpkgs#treefmt'
-
-      - name: Install nixpkgs-fmt
-        run: nix profile install 'nixpkgs#nixpkgs-fmt'
-
-      - name: Install hclfmt
-        run: nix profile install 'nixpkgs#hclfmt'
-
-      - name: Install taplo
-        run: nix profile install 'nixpkgs#taplo'
-
-      - name: Install clang-tools
-        run: nix profile install 'nixpkgs#clang-tools'
-
-      - name: Install biome
-        run: nix profile install 'nixpkgs#biome'
-
       - name: Run shfmt, shellcheck, checkbashisms
         uses: luizm/action-sh-checker@v0.10.0
         env:
@@ -52,18 +34,8 @@ jobs:
           sh_checker_comment: true
           sh_checker_checkbashisms_enable: true
 
-      - name: Run treefmt
-        run: |
-          treefmt \
-            --allow-missing-formatter \
-            --fail-on-change \
-            --no-cache \
-            --formatters biome \
-            --formatters clang-format \
-            --formatters nix \
-            --formatters shell \
-            --formatters hcl \
-            --formatters toml
+      - name: Check format
+        run: nix build .#check-format
 
   commit:
     name: Lint commit
@@ -76,13 +48,11 @@ jobs:
       - name: Run commitlint
         uses: wagoid/commitlint-github-action@v6.2.1
 
-  codespell:
-    name: Codespell
+  typos:
+    name: Typos
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
-      - uses: codespell-project/codespell-problem-matcher@v1
-
-      - name: Codespell
-        uses: codespell-project/actions-codespell@v2
+      - name: Typos
+        uses: crate-ci/typos@master
