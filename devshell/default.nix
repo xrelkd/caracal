@@ -49,6 +49,7 @@ pkgs.mkShell {
     treefmt
 
     shellcheck
+    typos
 
     libgit2
     pkg-config
