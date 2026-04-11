@@ -282,7 +282,7 @@ impl Downloader {
                         break;
                     }
                 }
-                Event::UpdateChunkTranserProgress {
+                Event::UpdateChunkTransferProgress {
                     start,
                     received,
                     worker_id: _worker_id,
@@ -393,7 +393,7 @@ enum Event {
     GetStatus(oneshot::Sender<TransferStatus>),
     AddWorker,
     RemoveWorker,
-    UpdateChunkTranserProgress { worker_id: u64, start: u64, end: u64, received: u64 },
+    UpdateChunkTransferProgress { worker_id: u64, start: u64, end: u64, received: u64 },
     ChunkTransferStarted { worker_id: u64, chunk_start: u64 },
     ChunkTransferCompleted { worker_id: u64, chunk_start: u64 },
 }
