@@ -33,7 +33,12 @@ impl TransferStatus {
     }
 
     pub fn update_progress(&mut self, id: u64, received: u64) {
-        let _unused = self.chunks.get_mut(&id).map(|chunk| chunk.received = received);
+        if let Some(chunk) = self.chunks.get_mut(&id) {
+            chunk.received = received;
+            if received >= chunk.len() {
+                chunk.is_completed = true;
+            }
+        }
     }
 
     pub fn mark_chunk_completed(&mut self, id: u64) {

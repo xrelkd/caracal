@@ -1,31 +1,41 @@
 { pkgs }:
 
-pkgs.runCommandNoCC "check-format"
+pkgs.runCommand "check-format"
   {
     buildInputs = with pkgs; [
       fd
 
       shellcheck
 
-      nixpkgs-fmt
-      nodePackages.prettier
+      clang-tools
+      biome
+      prettier
+      nixfmt
+      hclfmt
       shfmt
       taplo
       treefmt
     ];
   }
   ''
+    # Copy source to a writable location
+    export HOME=$TMPDIR
+    cp -r ${./..} /tmp/check-format-src
+    chmod -R +w /tmp/check-format-src
+
+    cd /tmp/check-format-src
+
     treefmt \
       --allow-missing-formatter \
       --fail-on-change \
       --no-cache \
-      --formatters prettier \
       --formatters clang-format \
+      --formatters biome \
+      --formatters prettier \
       --formatters nix \
       --formatters shell \
       --formatters hcl \
-      --formatters toml \
-      -C ${./..}
+      --formatters toml
 
     # it worked!
     touch $out

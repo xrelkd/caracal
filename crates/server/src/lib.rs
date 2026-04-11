@@ -19,6 +19,7 @@ use tokio_stream::wrappers::UnixListenerStream;
 pub use self::{
     config::Config,
     error::{Error, Result},
+    web::ApiDoc,
 };
 use crate::metrics::Metrics;
 
@@ -234,6 +235,7 @@ fn create_web_server_future(
 
             let router = axum::Router::new()
                 .merge(web::controller::api_v1_router())
+                .merge(web::swagger::ui_router())
                 .layer(axum::Extension(task_scheduler))
                 .layer(middleware_stack)
                 .into_make_service_with_connect_info::<SocketAddr>();

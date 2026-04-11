@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://nfpm.goreleaser.com/schema.json
+
+name: "@NAME@"
+arch: "@ARCH@"
+platform: "linux"
+version: "@VERSION@"
+section: "admin"
+priority: "optional"
+maintainer: "xrelkd"
+description: |
+  Caracal - File downloader written in Rust Programming Language.
+  Statically linked binary.
+vendor: "Caracal"
+homepage: "https://github.com/xrelkd/caracal"
+license: "GPL-3.0"
+
+contents:
+  - src: ./usr/bin/caracal
+    dst: /usr/bin/caracal
+  - src: ./usr/bin/caracal-daemon
+    dst: /usr/bin/caracal-daemon
+  - src: ./usr/bin/caracal-tui
+    dst: /usr/bin/caracal-tui
+  - src: ./usr/share/bash-completion/completions/caracal.bash
+    dst: /usr/share/bash-completion/completions/caracal.bash
+  - src: ./usr/share/bash-completion/completions/caracal-daemon.bash
+    dst: /usr/share/bash-completion/completions/caracal-daemon.bash
+  - src: ./usr/share/bash-completion/completions/caracal-tui.bash
+    dst: /usr/share/bash-completion/completions/caracal-tui.bash
+  - src: ./usr/share/fish/vendor_completions.d/caracal.fish
+    dst: /usr/share/fish/vendor_completions.d/caracal.fish
+  - src: ./usr/share/fish/vendor_completions.d/caracal-daemon.fish
+    dst: /usr/share/fish/vendor_completions.d/caracal-daemon.fish
+  - src: ./usr/share/fish/vendor_completions.d/caracal-tui.fish
+    dst: /usr/share/fish/vendor_completions.d/caracal-tui.fish
+  - src: ./usr/share/zsh/site-functions/_caracal
+    dst: /usr/share/zsh/site-functions/_caracal
+  - src: ./usr/share/zsh/site-functions/_caracal-daemon
+    dst: /usr/share/zsh/site-functions/_caracal-daemon
+  - src: ./usr/share/zsh/site-functions/_caracal-tui
+    dst: /usr/share/zsh/site-functions/_caracal-tui

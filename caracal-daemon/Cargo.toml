@@ -29,6 +29,7 @@ http          = { workspace = true }
 resolve-path  = { workspace = true }
 shadow-rs     = { workspace = true }
 snafu         = { workspace = true }
+utoipa        = { workspace = true }
 
 caracal-base   = { path = "../crates/base" }
 caracal-cli    = { path = "../crates/cli" }

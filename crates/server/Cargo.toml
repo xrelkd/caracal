@@ -40,6 +40,8 @@ time = { workspace = true, features = [
   "parsing",
   "serde",
 ] }
+utoipa = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
 
 caracal-base    = { path = "../base" }
 caracal-engine  = { path = "../engine" }
