@@ -21,11 +21,11 @@ contents:
     dst: /usr/bin/caracal-daemon
   - src: ./usr/bin/caracal-tui
     dst: /usr/bin/caracal-tui
-  - src: ./usr/share/bash-completion/completions/caracal
+  - src: ./usr/share/bash-completion/completions/caracal.bash
     dst: /usr/share/bash-completion/completions/caracal.bash
-  - src: ./usr/share/bash-completion/completions/caracal-daemon
+  - src: ./usr/share/bash-completion/completions/caracal-daemon.bash
     dst: /usr/share/bash-completion/completions/caracal-daemon.bash
-  - src: ./usr/share/bash-completion/completions/caracal-tui
+  - src: ./usr/share/bash-completion/completions/caracal-tui.bash
     dst: /usr/share/bash-completion/completions/caracal-tui.bash
   - src: ./usr/share/fish/vendor_completions.d/caracal.fish
     dst: /usr/share/fish/vendor_completions.d/caracal.fish
@@ -39,14 +39,3 @@ contents:
     dst: /usr/share/zsh/site-functions/_caracal-daemon
   - src: ./usr/share/zsh/site-functions/_caracal-tui
     dst: /usr/share/zsh/site-functions/_caracal-tui
-
-overrides:
-  deb:
-    depends:
-      - bash-completion
-  rpm:
-    depends:
-      - bash-completion
-  apk:
-    depends:
-      - bash-completion

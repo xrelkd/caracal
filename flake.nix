@@ -144,21 +144,13 @@
               inherit (pkgs) darwin;
             };
             caracal-static = pkgs.pkgsStatic.callPackage ./devshell/package-static.nix {
-              inherit name version;
+              inherit name version completions;
               rustPlatform = rustPlatformMusl;
             };
-            completions = pkgs.runCommand "caracal-completions" { } ''
-              mkdir -p $out/share/{bash-completion/completions,fish/vendor_completions.d,zsh/site-functions}
-              ${caracal}/bin/caracal completions bash  > $out/share/bash-completion/completions/caracal
-              ${caracal}/bin/caracal completions fish  > $out/share/fish/vendor_completions.d/caracal.fish
-              ${caracal}/bin/caracal completions zsh   > $out/share/zsh/site-functions/_caracal
-              ${caracal}/bin/caracal-daemon completions bash  > $out/share/bash-completion/completions/caracal-daemon
-              ${caracal}/bin/caracal-daemon completions fish  > $out/share/fish/vendor_completions.d/caracal-daemon.fish
-              ${caracal}/bin/caracal-daemon completions zsh   > $out/share/zsh/site-functions/_caracal-daemon
-              ${caracal}/bin/caracal-tui completions bash  > $out/share/bash-completion/completions/caracal-tui
-              ${caracal}/bin/caracal-tui completions fish  > $out/share/fish/vendor_completions.d/caracal-tui.fish
-              ${caracal}/bin/caracal-tui completions zsh   > $out/share/zsh/site-functions/_caracal-tui
-            '';
+            completions = pkgs.callPackage ./devshell/package-completions.nix {
+              inherit caracal;
+              inherit (pkgs) runCommand installShellFiles;
+            };
             container = pkgs.callPackage ./devshell/container.nix {
               inherit name version caracal;
               inherit (pkgs) darwin;
