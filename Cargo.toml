@@ -72,7 +72,7 @@ opendal = { version = "0.45", default-features = false, features = [
 ] }
 
 crossterm = { version = "0.29", features = ["event-stream"] }
-ratatui   = { version = "0.27", features = ["all-widgets"] }
+ratatui   = { version = "0.30", features = ["all-widgets"] }
 
 zbus = { version = "5", default-features = false, features = ["tokio"] }
 
