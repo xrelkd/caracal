@@ -2,7 +2,7 @@ use std::{io, time::Duration};
 
 use crossterm::event::{Event, EventStream};
 use futures::FutureExt;
-use ratatui::{prelude::CrosstermBackend, terminal::Terminal};
+use ratatui::{Terminal, backend::CrosstermBackend};
 use snafu::ResultExt;
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt;

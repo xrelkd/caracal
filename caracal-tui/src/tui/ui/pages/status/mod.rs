@@ -78,7 +78,7 @@ impl ComponentRender<()> for StatusPage {
         let [information_area, task_status_list_area] = *Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Max(20), Constraint::Percentage(80)].as_ref())
-            .split(frame.size())
+            .split(frame.area())
         else {
             panic!("The main layout should have 2 chunks")
         };
