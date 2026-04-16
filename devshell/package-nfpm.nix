@@ -3,7 +3,7 @@
   version,
   lib,
   nfpm,
-  ocelot-static,
+  caracal-static,
   pkgs,
   stdenv,
   packager ? "deb",
@@ -36,13 +36,13 @@ stdenv.mkDerivation {
     mkdir -p "$staging/usr/share/fish/vendor_completions.d"
     mkdir -p "$staging/usr/share/zsh/site-functions"
 
-    cp ${ocelot-static}/bin/caracal "$staging/usr/bin/"
-    cp ${ocelot-static}/bin/caracal-daemon "$staging/usr/bin/"
-    cp ${ocelot-static}/bin/caracal-tui "$staging/usr/bin/"
+    cp ${caracal-static}/bin/caracal "$staging/usr/bin/"
+    cp ${caracal-static}/bin/caracal-daemon "$staging/usr/bin/"
+    cp ${caracal-static}/bin/caracal-tui "$staging/usr/bin/"
 
-    cp ${ocelot-static}/share/bash-completion/completions/* "$staging/usr/share/bash-completion/completions/"
-    cp ${ocelot-static}/share/fish/vendor_completions.d/* "$staging/usr/share/fish/vendor_completions.d/"
-    cp ${ocelot-static}/share/zsh/site-functions/* "$staging/usr/share/zsh/site-functions/"
+    cp ${caracal-static}/share/bash-completion/completions/* "$staging/usr/share/bash-completion/completions/"
+    cp ${caracal-static}/share/fish/vendor_completions.d/* "$staging/usr/share/fish/vendor_completions.d/"
+    cp ${caracal-static}/share/zsh/site-functions/* "$staging/usr/share/zsh/site-functions/"
 
     mkdir -p $out
     cd "$staging"
