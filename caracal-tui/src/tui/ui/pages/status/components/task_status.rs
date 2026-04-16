@@ -226,8 +226,8 @@ impl ComponentRender<RenderProps> for TaskStatusList {
                 .title("Tasks")
                 .title_alignment(Alignment::Center),
         )
-        .highlight_style(selected_style);
-        let mut app_task_status_list_state = self.table_state.clone();
+        .row_highlight_style(selected_style);
+        let mut app_task_status_list_state = self.table_state;
         frame.render_stateful_widget(table, rects[0], &mut app_task_status_list_state);
     }
 }
