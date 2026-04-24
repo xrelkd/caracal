@@ -91,7 +91,7 @@ mime = "0.3"
 prometheus = "0.14"
 resolve-path = "0.1"
 semver = "1"
-shadow-rs = "1.7"
+shadow-rs = "2.0"
 snafu = "0.9"
 time = { version = "0.3", features = [
   "formatting",
