@@ -199,7 +199,7 @@ dependencies = [
  "bytes",
  "form_urlencoded",
  "futures-util",
- "http 1.4.0",
+ "http 1.4.1",
  "http-body 1.0.1",
  "http-body-util",
  "hyper 1.9.0",
@@ -230,7 +230,7 @@ checksum = "08c78f31d7b1291f7ee735c1c6780ccde7785daae9a9206026862dab7d8792d1"
 dependencies = [
  "bytes",
  "futures-core",
- "http 1.4.0",
+ "http 1.4.1",
  "http-body 1.0.1",
  "http-body-util",
  "mime",
@@ -340,7 +340,7 @@ dependencies = [
  "clap_complete",
  "comfy-table",
  "futures",
- "http 1.4.0",
+ "http 1.4.1",
  "http-serde",
  "humansize",
  "humantime",
@@ -364,7 +364,7 @@ version = "0.3.10"
 dependencies = [
  "bytes",
  "directories",
- "http 1.4.0",
+ "http 1.4.1",
  "mime",
  "semver",
  "serde",
@@ -378,7 +378,7 @@ name = "caracal-cli"
 version = "0.3.10"
 dependencies = [
  "caracal-base",
- "http 1.4.0",
+ "http 1.4.1",
  "serde",
  "serde_with",
  "snafu 0.9.0",
@@ -400,7 +400,7 @@ dependencies = [
  "clap",
  "clap_complete",
  "futures",
- "http 1.4.0",
+ "http 1.4.1",
  "http-serde",
  "resolve-path",
  "serde",
@@ -422,7 +422,7 @@ dependencies = [
  "bytes",
  "caracal-base",
  "futures",
- "http 1.4.0",
+ "http 1.4.1",
  "mailparse",
  "opendal",
  "reqwest",
@@ -441,7 +441,7 @@ version = "0.3.10"
 dependencies = [
  "caracal-base",
  "caracal-proto",
- "http 1.4.0",
+ "http 1.4.1",
  "hyper-util",
  "prost-types",
  "semver",
@@ -491,7 +491,7 @@ dependencies = [
  "caracal-metrics",
  "caracal-proto",
  "futures",
- "http 1.4.0",
+ "http 1.4.1",
  "prometheus",
  "semver",
  "serde",
@@ -521,7 +521,7 @@ dependencies = [
  "clap_complete",
  "crossterm",
  "futures",
- "http 1.4.0",
+ "http 1.4.1",
  "http-serde",
  "humansize",
  "humantime",
@@ -1428,7 +1428,7 @@ dependencies = [
  "fnv",
  "futures-core",
  "futures-sink",
- "http 1.4.0",
+ "http 1.4.1",
  "indexmap 2.14.0",
  "slab",
  "tokio",
@@ -1517,9 +1517,9 @@ dependencies = [
 
 [[package]]
 name = "http"
-version = "1.4.0"
+version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3ba2a386d7f85a81f119ad7498ebe444d2e22c2af0b86b069416ace48b3311a"
+checksum = "8be7462df143984c4598a256ef469b251d7d7f9e271135073e78fc535414f3d0"
 dependencies = [
  "bytes",
  "itoa",
@@ -1543,7 +1543,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1efedce1fb8e6913f23e0c92de8e62cd5b772a67e7b3946df930a62566c93184"
 dependencies = [
  "bytes",
- "http 1.4.0",
+ "http 1.4.1",
 ]
 
 [[package]]
@@ -1554,7 +1554,7 @@ checksum = "b021d93e26becf5dc7e1b75b1bed1fd93124b374ceb73f43d4d4eafec896a64a"
 dependencies = [
  "bytes",
  "futures-core",
- "http 1.4.0",
+ "http 1.4.1",
  "http-body 1.0.1",
  "pin-project-lite",
 ]
@@ -1565,7 +1565,7 @@ version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f056c8559e3757392c8d091e796416e4649d8e49e88b8d76df6c002f05027fd"
 dependencies = [
- "http 1.4.0",
+ "http 1.4.1",
  "serde",
 ]
 
@@ -1631,7 +1631,7 @@ dependencies = [
  "futures-channel",
  "futures-core",
  "h2 0.4.13",
- "http 1.4.0",
+ "http 1.4.1",
  "http-body 1.0.1",
  "httparse",
  "httpdate",
@@ -1678,7 +1678,7 @@ dependencies = [
  "bytes",
  "futures-channel",
  "futures-util",
- "http 1.4.0",
+ "http 1.4.1",
  "http-body 1.0.1",
  "hyper 1.9.0",
  "libc",
@@ -4133,7 +4133,7 @@ dependencies = [
  "bytes",
  "flate2",
  "h2 0.4.13",
- "http 1.4.0",
+ "http 1.4.1",
  "http-body 1.0.1",
  "http-body-util",
  "hyper 1.9.0",
@@ -4217,7 +4217,7 @@ checksum = "4cfcf7e2740e6fc6d4d688b4ef00650406bb94adf4731e43c096c3a19fe40840"
 dependencies = [
  "bitflags 2.11.1",
  "bytes",
- "http 1.4.0",
+ "http 1.4.1",
  "http-body 1.0.1",
  "pin-project-lite",
  "tower-layer",
