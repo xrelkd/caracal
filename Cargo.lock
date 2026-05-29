@@ -349,7 +349,7 @@ dependencies = [
  "serde",
  "shadow-rs",
  "sigfinn",
- "snafu 0.9.0",
+ "snafu 0.9.1",
  "time",
  "tokio",
  "toml",
@@ -368,7 +368,7 @@ dependencies = [
  "mime",
  "semver",
  "serde",
- "snafu 0.9.0",
+ "snafu 0.9.1",
  "time",
  "utoipa",
 ]
@@ -381,7 +381,7 @@ dependencies = [
  "http 1.4.1",
  "serde",
  "serde_with",
- "snafu 0.9.0",
+ "snafu 0.9.1",
  "tokio",
  "toml",
  "tracing",
@@ -405,7 +405,7 @@ dependencies = [
  "resolve-path",
  "serde",
  "shadow-rs",
- "snafu 0.9.0",
+ "snafu 0.9.1",
  "tokio",
  "toml",
  "tracing",
@@ -428,7 +428,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "snafu 0.9.0",
+ "snafu 0.9.1",
  "time",
  "tokio",
  "tracing",
@@ -445,7 +445,7 @@ dependencies = [
  "hyper-util",
  "prost-types",
  "semver",
- "snafu 0.9.0",
+ "snafu 0.9.1",
  "tokio",
  "tonic",
  "tower",
@@ -460,7 +460,7 @@ dependencies = [
  "bytes",
  "mime",
  "prometheus",
- "snafu 0.9.0",
+ "snafu 0.9.1",
  "tokio",
  "tower",
  "tower-http",
@@ -474,7 +474,7 @@ dependencies = [
  "prost",
  "prost-build",
  "prost-types",
- "snafu 0.9.0",
+ "snafu 0.9.1",
  "time",
  "tonic",
  "tonic-prost",
@@ -497,7 +497,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sigfinn",
- "snafu 0.9.0",
+ "snafu 0.9.1",
  "time",
  "tokio",
  "tokio-stream",
@@ -531,7 +531,7 @@ dependencies = [
  "serde",
  "shadow-rs",
  "sigfinn",
- "snafu 0.9.0",
+ "snafu 0.9.1",
  "time",
  "tokio",
  "tokio-stream",
@@ -3608,11 +3608,11 @@ dependencies = [
 
 [[package]]
 name = "snafu"
-version = "0.9.0"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1d4bced6a69f90b2056c03dcff2c4737f98d6fb9e0853493996e1d253ca29c6"
+checksum = "d1a012328be2e3f5d5f6f3218147ca02588cea4cb865e876849ab6debcf36522"
 dependencies = [
- "snafu-derive 0.9.0",
+ "snafu-derive 0.9.1",
 ]
 
 [[package]]
@@ -3629,9 +3629,9 @@ dependencies = [
 
 [[package]]
 name = "snafu-derive"
-version = "0.9.0"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54254b8531cafa275c5e096f62d48c81435d1015405a91198ddb11e967301d40"
+checksum = "5f103c50866b8743da9429b8a581d81a27c2d3a9c4ac7df8f8571c1dd7896eda"
 dependencies = [
  "heck",
  "proc-macro2",
