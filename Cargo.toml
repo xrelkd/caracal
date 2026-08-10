@@ -79,7 +79,7 @@ zbus = { version = "5", default-features = false, features = ["tokio"] }
 bytes = "1"
 clap = { version = "4", features = ["derive", "env"] }
 clap_complete = "4"
-comfy-table = "7"
+comfy-table = "8"
 directories = "6"
 http = "1"
 humansize = "2"
