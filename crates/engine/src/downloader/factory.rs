@@ -51,7 +51,7 @@ impl Builder {
             minimum_chunk_size: 100 * 1024,
             minio_aliases: HashMap::new(),
             ssh_servers: HashMap::new(),
-            connection_timeout: Duration::from_secs(60),
+            connection_timeout: Duration::from_mins(1),
         })
     }
 
