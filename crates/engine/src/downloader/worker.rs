@@ -69,12 +69,22 @@ impl Worker {
                                 .with_context(|_| error::SeekFileSnafu {
                                     file_path: file_path.clone(),
                                 })?;
-                            sink.write_all(bytes).await.with_context(|_| {
-                                error::WriteFileSnafu { file_path: file_path.clone() }
-                            })?;
+                            received += if bytes.len() as u64 + chunk.start <= chunk.end {
+                                sink.write_all(bytes).await.with_context(|_| {
+                                    error::WriteFileSnafu { file_path: file_path.clone() }
+                                })?;
+                                bytes.len() as u64
+                            } else {
+                                let n = usize::try_from(chunk.remaining()).unwrap_or_default();
+                                if n > 0 {
+                                    sink.write_all(&bytes[..n]).await.with_context(|_| {
+                                        error::WriteFileSnafu { file_path: file_path.clone() }
+                                    })?;
+                                }
+                                n as u64
+                            };
                             drop(sink);
                         }
-                        received += bytes.len() as u64;
                         progress_updater.update(id, chunk.start, chunk.end, received);
                     }
                     future::Either::Left((Ok(None), _)) => {
