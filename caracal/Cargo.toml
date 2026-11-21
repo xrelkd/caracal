@@ -3,7 +3,6 @@ name                 = "caracal"
 description          = "Caracal file downloader"
 version.workspace    = true
 authors.workspace    = true
-homepage.workspace   = true
 readme.workspace     = true
 repository.workspace = true
 license.workspace    = true

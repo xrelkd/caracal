@@ -3,7 +3,6 @@ name                 = "caracal-daemon"
 description          = "Caracal daemon"
 version.workspace    = true
 authors.workspace    = true
-homepage.workspace   = true
 readme.workspace     = true
 repository.workspace = true
 license.workspace    = true
@@ -16,9 +15,8 @@ tracing            = { workspace = true }
 tracing-journald   = { workspace = true }
 tracing-subscriber = { workspace = true }
 
-http-serde = { workspace = true }
-serde      = { workspace = true, features = ["derive"] }
-toml       = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+toml  = { workspace = true }
 
 futures = { workspace = true }
 tokio   = { workspace = true, features = ["rt-multi-thread", "sync"] }

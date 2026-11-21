@@ -3,7 +3,6 @@ name                 = "caracal-server"
 description          = "Caracal server"
 version.workspace    = true
 authors.workspace    = true
-homepage.workspace   = true
 readme.workspace     = true
 repository.workspace = true
 license.workspace    = true
@@ -24,10 +23,9 @@ tokio-stream = { workspace = true }
 
 tonic = { workspace = true, features = ["gzip"] }
 
-axum       = { workspace = true }
-http       = { workspace = true }
-tower      = { workspace = true, features = ["timeout"] }
-tower-http = { workspace = true, features = ["trace"] }
+axum  = { workspace = true }
+http  = { workspace = true }
+tower = { workspace = true, features = ["timeout"] }
 
 zbus = { workspace = true, default-features = false, features = ["tokio"] }
 

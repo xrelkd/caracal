@@ -3,7 +3,6 @@ name                 = "caracal-base"
 description          = "Caracal"
 version.workspace    = true
 authors.workspace    = true
-homepage.workspace   = true
 readme.workspace     = true
 repository.workspace = true
 license.workspace    = true
@@ -20,7 +19,6 @@ bytes       = { workspace = true }
 directories = { workspace = true }
 mime        = { workspace = true }
 semver      = { workspace = true }
-snafu       = { workspace = true }
 time        = { workspace = true }
 utoipa      = { workspace = true }
 

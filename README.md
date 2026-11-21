@@ -556,7 +556,6 @@ data:
     enable = true
     host = "0.0.0.0"
     port = 37002
-
 ---
 # https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 apiVersion: apps/v1

@@ -46,7 +46,10 @@ pub enum Error {
     ParseLengthFromHttpHeader { value: String, source: std::num::ParseIntError },
 
     #[snafu(display("Error occurs while building OpenDAL operator, error: {source}"))]
-    BuildOpenDALOperator { source: opendal::Error },
+    BuildOpenDALOperator {
+        #[snafu(source(from(opendal::Error, Box::new)))]
+        source: Box<opendal::Error>,
+    },
 
     #[snafu(display("Error occurs while opening file `{}`, error: {source}", file_path.display()))]
     OpenFile { file_path: PathBuf, source: std::io::Error },
@@ -70,7 +73,10 @@ pub enum Error {
     ResizeFile { file_path: PathBuf, source: std::io::Error },
 
     #[snafu(display("Error occurs while creating reader, error: {source}"))]
-    CreateReader { source: opendal::Error },
+    CreateReader {
+        #[snafu(source(from(opendal::Error, Box::new)))]
+        source: Box<opendal::Error>,
+    },
 
     #[snafu(display("Error occurs while reading from reader, error: {source}"))]
     ReadFromReader { source: std::io::Error },
@@ -88,10 +94,16 @@ pub enum Error {
     FetchBytesFromHttp { source: reqwest::Error },
 
     #[snafu(display("Error occurs while fetching bytes from MinIO, error: {source}"))]
-    FetchBytesFromMinio { source: opendal::Error },
+    FetchBytesFromMinio {
+        #[snafu(source(from(opendal::Error, Box::new)))]
+        source: Box<opendal::Error>,
+    },
 
     #[snafu(display("Error occurs while getting metadata from SFTP server, error: {source}"))]
-    GetMetadataFromSftp { source: opendal::Error },
+    GetMetadataFromSftp {
+        #[snafu(source(from(opendal::Error, Box::new)))]
+        source: Box<opendal::Error>,
+    },
 
     #[snafu(display("Error occurs while fetching HTTP header, error: {source}"))]
     FetchHttpHeader { source: reqwest::Error },
@@ -100,10 +112,16 @@ pub enum Error {
     GetFileLength { file_path: PathBuf, source: std::io::Error },
 
     #[snafu(display("Error occurs while getting metadata from MinIO, error: {source}"))]
-    GetMetadataFromMinio { source: opendal::Error },
+    GetMetadataFromMinio {
+        #[snafu(source(from(opendal::Error, Box::new)))]
+        source: Box<opendal::Error>,
+    },
 
     #[snafu(display("Error occurs while getting metadata from file system, error: {source}"))]
-    GetMetadataFromFileSystem { source: opendal::Error },
+    GetMetadataFromFileSystem {
+        #[snafu(source(from(opendal::Error, Box::new)))]
+        source: Box<opendal::Error>,
+    },
 
     #[snafu(display("MinIO alias `{alias}` not found"))]
     MinioAliasNotFound { alias: String },
