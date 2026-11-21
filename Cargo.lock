@@ -345,7 +345,7 @@ checksum = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
 
 [[package]]
 name = "caracal"
-version = "0.3.10"
+version = "0.3.11"
 dependencies = [
  "caracal-base",
  "caracal-cli",
@@ -375,7 +375,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-base"
-version = "0.3.10"
+version = "0.3.11"
 dependencies = [
  "bytes",
  "directories",
@@ -390,7 +390,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-cli"
-version = "0.3.10"
+version = "0.3.11"
 dependencies = [
  "caracal-base",
  "http 1.5.0",
@@ -406,7 +406,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-daemon"
-version = "0.3.10"
+version = "0.3.11"
 dependencies = [
  "caracal-base",
  "caracal-cli",
@@ -431,7 +431,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-engine"
-version = "0.3.10"
+version = "0.3.11"
 dependencies = [
  "async-channel",
  "bytes",
@@ -452,7 +452,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-grpc-client"
-version = "0.3.10"
+version = "0.3.11"
 dependencies = [
  "caracal-base",
  "caracal-proto",
@@ -469,7 +469,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-metrics"
-version = "0.3.10"
+version = "0.3.11"
 dependencies = [
  "axum",
  "bytes",
@@ -483,7 +483,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-proto"
-version = "0.3.10"
+version = "0.3.11"
 dependencies = [
  "caracal-base",
  "prost",
@@ -498,7 +498,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-server"
-version = "0.3.10"
+version = "0.3.11"
 dependencies = [
  "axum",
  "caracal-base",
@@ -527,7 +527,7 @@ dependencies = [
 
 [[package]]
 name = "caracal-tui"
-version = "0.3.10"
+version = "0.3.11"
 dependencies = [
  "caracal-base",
  "caracal-cli",
@@ -572,8 +572,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43c5703da9466b66a946814e1adf53ea2c90f10063b86290cc9eb67ce3478a20"
 dependencies = [
  "find-msvc-tools",
- "jobserver",
- "libc",
  "shlex",
 ]
 
@@ -1412,19 +1410,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "git2"
-version = "0.20.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b88256088d75a56f8ecfa070513a775dd9107f6530ef14919dac831af9cfe2b"
-dependencies = [
- "bitflags 2.12.1",
- "libc",
- "libgit2-sys",
- "log",
- "url",
-]
-
-[[package]]
 name = "h2"
 version = "0.3.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1992,16 +1977,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "jobserver"
-version = "0.1.34"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9afb3de4395d6b3e67a780b6de64b51c978ecf11cb9a462c66be7d4ca9039d33"
-dependencies = [
- "getrandom 0.3.4",
- "libc",
-]
-
-[[package]]
 name = "js-sys"
 version = "0.3.95"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2049,18 +2024,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52ff2c0fe9bc6cb6b14a0592c2ff4fa9ceb83eea9db979b0487cd054946a2b8f"
 
 [[package]]
-name = "libgit2-sys"
-version = "0.18.3+1.9.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9b3acc4b91781bb0b3386669d325163746af5f6e4f73e6d2d630e09a35f3487"
-dependencies = [
- "cc",
- "libc",
- "libz-sys",
- "pkg-config",
-]
-
-[[package]]
 name = "libm"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2073,18 +2036,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e02f3bb43d335493c96bf3fd3a321600bf6bd07ed34bc64118e9293bdffea46c"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "libz-sys"
-version = "1.1.28"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc3a226e576f50782b3305c5ccf458698f92798987f551c6a02efe8276721e22"
-dependencies = [
- "cc",
- "libc",
- "pkg-config",
- "vcpkg",
 ]
 
 [[package]]
@@ -2680,12 +2631,6 @@ name = "pin-project-lite"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
-
-[[package]]
-name = "pkg-config"
-version = "0.3.33"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19f132c84eca552bf34cab8ec81f1c1dcc229b811638f9d283dceabe58c5569e"
 
 [[package]]
 name = "portable-atomic"
@@ -3574,7 +3519,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1dd39b4b2077bd36e60ca28c31d494046e747759cb9b507a7d177bb64787c39e"
 dependencies = [
  "const_format",
- "git2",
  "is_debug",
  "jiff",
 ]
@@ -4599,12 +4543,6 @@ name = "valuable"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
-
-[[package]]
-name = "vcpkg"
-version = "0.2.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
 name = "vec-strings"

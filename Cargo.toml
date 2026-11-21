@@ -1,5 +1,5 @@
 [workspace.package]
-version      = "0.3.10"
+version      = "0.3.11"
 authors      = ["xrelkd <46590321+xrelkd@users.noreply.github.com>"]
 homepage     = "https://github.com/xrelkd/caracal"
 repository   = "https://github.com/xrelkd/caracal"
@@ -91,7 +91,7 @@ mime = "0.3"
 prometheus = "0.14"
 resolve-path = "0.1"
 semver = "1"
-shadow-rs = "2.0"
+shadow-rs = { version = "2", default-features = false, features = ["build"] }
 snafu = "0.9"
 time = { version = "0.3", features = [
   "formatting",
