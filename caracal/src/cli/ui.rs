@@ -1,7 +1,7 @@
 use std::time::SystemTime;
 
 use caracal_base::{ext::ProgressChunks, model};
-use comfy_table::{Cell, ContentArrangement, Row, Table, TableComponent, presets::UTF8_FULL};
+use comfy_table::{Cell, ContentArrangement, Row, Table, presets::NOTHING};
 
 // SAFETY: the precision loss is acceptable
 #[allow(clippy::cast_precision_loss)]
@@ -48,28 +48,7 @@ pub fn render_task_statuses_table(task_statuses: &[model::TaskStatus]) -> String
 
 pub fn build_table() -> Table {
     let mut table = Table::new();
-    let _ = table
-        .load_preset(UTF8_FULL)
-        .remove_style(TableComponent::HeaderLines)
-        .remove_style(TableComponent::MiddleHeaderIntersections)
-        .remove_style(TableComponent::BottomBorder)
-        .remove_style(TableComponent::BottomBorderIntersections)
-        .remove_style(TableComponent::BottomLeftCorner)
-        .remove_style(TableComponent::BottomRightCorner)
-        .remove_style(TableComponent::HorizontalLines)
-        .remove_style(TableComponent::LeftBorder)
-        .remove_style(TableComponent::LeftBorderIntersections)
-        .remove_style(TableComponent::LeftHeaderIntersection)
-        .remove_style(TableComponent::MiddleIntersections)
-        .remove_style(TableComponent::RightBorder)
-        .remove_style(TableComponent::RightBorderIntersections)
-        .remove_style(TableComponent::RightHeaderIntersection)
-        .remove_style(TableComponent::TopBorder)
-        .remove_style(TableComponent::TopBorderIntersections)
-        .remove_style(TableComponent::TopLeftCorner)
-        .remove_style(TableComponent::TopRightCorner)
-        .remove_style(TableComponent::VerticalLines)
-        .set_content_arrangement(ContentArrangement::Dynamic);
+    let _ = table.load_style(NOTHING).set_content_arrangement(ContentArrangement::Dynamic);
 
     if let Some(width) = table.width() {
         let _ = table.set_width(width - 10);

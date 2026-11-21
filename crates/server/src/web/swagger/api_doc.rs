@@ -1,5 +1,3 @@
-#![allow(clippy::needless_for_each)]
-
 use caracal_base::model;
 use utoipa::OpenApi;
 

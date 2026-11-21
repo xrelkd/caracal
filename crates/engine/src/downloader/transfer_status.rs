@@ -62,12 +62,9 @@ impl TransferStatus {
         } else {
             let mut chunks: Vec<_> = self.chunks.values_mut().collect();
             chunks.sort_unstable_by_key(|c| c.remaining());
-            let (origin_chunk, new_chunk) = if let Some(origin_chunk) = chunks.pop() {
-                let new_chunk = origin_chunk.split();
-                (origin_chunk.clone(), new_chunk)
-            } else {
-                return None;
-            };
+            let origin_chunk = chunks.pop()?;
+            let new_chunk = origin_chunk.split();
+            let (origin_chunk, new_chunk) = (origin_chunk.clone(), new_chunk);
             if let Some(new_chunk) = new_chunk {
                 let _ = self.chunks.insert(new_chunk.start, new_chunk.clone());
                 Some((origin_chunk, new_chunk))
@@ -83,12 +80,9 @@ impl TransferStatus {
         } else {
             let mut chunks: Vec<_> = self.chunks.values_mut().collect();
             chunks.sort_unstable_by_key(|c| c.remaining());
-            let (origin_chunk, new_chunk) = if let Some(origin_chunk) = chunks.pop() {
-                let new_chunk = origin_chunk.freeze();
-                (origin_chunk.clone(), new_chunk)
-            } else {
-                return None;
-            };
+            let origin_chunk = chunks.pop()?;
+            let new_chunk = origin_chunk.freeze();
+            let (origin_chunk, new_chunk) = (origin_chunk.clone(), new_chunk);
             if let Some(new_chunk) = new_chunk {
                 let _ = self.chunks.insert(new_chunk.start, new_chunk.clone());
                 Some((origin_chunk, new_chunk))

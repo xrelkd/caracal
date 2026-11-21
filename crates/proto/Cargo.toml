@@ -3,7 +3,6 @@ name                 = "caracal-proto"
 description          = "Caracal protobuf"
 version.workspace    = true
 authors.workspace    = true
-homepage.workspace   = true
 readme.workspace     = true
 repository.workspace = true
 license.workspace    = true

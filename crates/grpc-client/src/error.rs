@@ -1,5 +1,3 @@
-#![allow(clippy::module_name_repetitions)]
-
 use std::{fmt, path::PathBuf};
 
 use snafu::{Backtrace, Snafu};
@@ -15,7 +13,8 @@ pub enum Error {
     ))]
     ConnectToServerViaHttp {
         endpoint: http::Uri,
-        source: tonic::transport::Error,
+        #[snafu(source(from(tonic::transport::Error, Box::new)))]
+        source: Box<tonic::transport::Error>,
         backtrace: Backtrace,
     },
 
@@ -26,7 +25,8 @@ pub enum Error {
     ))]
     ConnectToServerViaLocalSocket {
         socket: PathBuf,
-        source: tonic::transport::Error,
+        #[snafu(source(from(tonic::transport::Error, Box::new)))]
+        source: Box<tonic::transport::Error>,
         backtrace: Backtrace,
     },
 }
