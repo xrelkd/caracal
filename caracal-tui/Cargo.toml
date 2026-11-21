@@ -3,7 +3,6 @@ name                 = "caracal-tui"
 description          = "Caracal file downloader terminal user interface"
 version.workspace    = true
 authors.workspace    = true
-homepage.workspace   = true
 readme.workspace     = true
 repository.workspace = true
 license.workspace    = true

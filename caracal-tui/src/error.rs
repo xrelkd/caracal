@@ -19,7 +19,10 @@ pub enum Error {
     },
 
     #[snafu(display("{source}"))]
-    Client { source: caracal_grpc_client::Error },
+    Client {
+        #[snafu(source(from(caracal_grpc_client::Error, Box::new)))]
+        source: Box<caracal_grpc_client::Error>,
+    },
 
     #[snafu(display("No URI is provided"))]
     NoUri,
@@ -36,7 +39,9 @@ impl From<crate::config::Error> for Error {
 }
 
 impl From<caracal_grpc_client::Error> for Error {
-    fn from(source: caracal_grpc_client::Error) -> Self { Self::Client { source } }
+    fn from(source: caracal_grpc_client::Error) -> Self {
+        Self::Client { source: Box::new(source) }
+    }
 }
 
 impl From<crate::tui::ui::Error> for Error {

@@ -23,6 +23,11 @@ pub struct Client {
 
 impl Client {
     /// # Errors
+    #[expect(
+        clippy::result_large_err,
+        reason = "Error variants contain tonic transport errors and backtraces; boxing would \
+                  complicate SNAFU context selectors"
+    )]
     pub async fn new<A>(grpc_endpoint: http::Uri, access_token: Option<A>) -> Result<Self>
     where
         A: fmt::Display + Send,
@@ -40,7 +45,12 @@ impl Client {
     ///
     /// This function will an error if the server is not connected.
     // SAFETY: it will never panic because `grpc_endpoint` is a valid URL
-    #[allow(clippy::missing_panics_doc)]
+    #[expect(clippy::missing_panics_doc, reason = "grpc_endpoint is validated as URL before use")]
+    #[expect(
+        clippy::result_large_err,
+        reason = "Error variants contain tonic transport errors and backtraces; boxing would \
+                  complicate SNAFU context selectors"
+    )]
     pub async fn connect_http<A>(grpc_endpoint: &http::Uri, access_token: Option<A>) -> Result<Self>
     where
         A: fmt::Display + Send,
@@ -60,7 +70,12 @@ impl Client {
     ///
     /// This function will an error if the server is not connected.
     // SAFETY: it will never panic because `dummy_uri` is a valid URL
-    #[allow(clippy::missing_panics_doc)]
+    #[expect(clippy::missing_panics_doc, reason = "uri is validated as URL before use")]
+    #[expect(
+        clippy::result_large_err,
+        reason = "Error variants contain tonic transport errors and backtraces; boxing would \
+                  complicate SNAFU context selectors"
+    )]
     pub async fn connect_local_socket<A>(uri: &http::Uri, access_token: Option<A>) -> Result<Self>
     where
         A: fmt::Display + Send,
